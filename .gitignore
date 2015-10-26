@@ -4,3 +4,6 @@ logs/
 src/gen-java/
 src/resources/org/apache/cassandra/config/version.properties
 pylib/cqlshlib/*.pyc
+
+cass-stress-trace.log
+cassandra.logdir_IS_UNDEFINED/

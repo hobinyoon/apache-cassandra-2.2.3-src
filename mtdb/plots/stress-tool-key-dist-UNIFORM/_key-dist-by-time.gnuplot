@@ -22,5 +22,7 @@ set xdata time
 set timefmt "%H:%M:%S"
 set format x "%.1S"
 
+set pointsize 0.2
+
 plot \
 FN_IN  u 1:3 w points not

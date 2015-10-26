@@ -37,6 +37,7 @@ import org.apache.cassandra.stress.settings.StressSettings;
 import org.apache.cassandra.stress.util.JavaDriverClient;
 import org.apache.cassandra.stress.util.ThriftClient;
 import org.apache.cassandra.stress.util.Timer;
+import org.apache.cassandra.stress.util.Tracer;
 import org.apache.cassandra.thrift.Compression;
 import org.apache.cassandra.thrift.CqlResult;
 import org.apache.cassandra.thrift.CqlRow;
@@ -46,8 +47,12 @@ import org.apache.cassandra.transport.messages.ResultMessage;
 import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.thrift.TException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public abstract class CqlOperation<V> extends PredefinedOperation
 {
+    static Logger logger = LogManager.getLogger(CqlOperation.class);
 
     protected abstract List<Object> getQueryParameters(byte[] key);
     protected abstract String buildQuery();
@@ -216,6 +221,8 @@ public abstract class CqlOperation<V> extends PredefinedOperation
 
         private CqlRunOp(ClientWrapper client, String query, Object queryId, ResultHandler<V> handler, List<Object> params, ByteBuffer key)
         {
+            logger.info("{}", Tracer.GetCallStack());
+
             this.client = client;
             this.query = query;
             this.queryId = queryId;
@@ -298,6 +305,17 @@ public abstract class CqlOperation<V> extends PredefinedOperation
         @Override
         public <V> V execute(Object preparedStatementId, ByteBuffer key, List<Object> queryParams, ResultHandler<V> handler)
         {
+            logger.info("{}", Tracer.GetCallStack());
+
+            logger.info("preparedStatementId=[{}] queryParams={} {}",
+                    ((PreparedStatement) preparedStatementId).getQueryString(),
+                    queryParams,
+                    queryParams.getClass().getName());
+
+            for (Object o: queryParams) {
+                logger.info("{} {}", o.getClass().getName(), o);
+            }
+
             return handler.javaDriverHandler().apply(
                     client.executePrepared(
                             (PreparedStatement) preparedStatementId,

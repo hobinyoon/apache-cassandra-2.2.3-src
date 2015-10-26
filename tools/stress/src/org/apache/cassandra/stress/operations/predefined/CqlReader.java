@@ -32,8 +32,12 @@ import org.apache.cassandra.stress.settings.Command;
 import org.apache.cassandra.stress.settings.StressSettings;
 import org.apache.cassandra.stress.util.Timer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class CqlReader extends CqlOperation<ByteBuffer[][]>
 {
+    static Logger logger = LogManager.getLogger(CqlOperation.class);
 
     public CqlReader(Timer timer, PartitionGenerator generator, SeedManager seedManager, StressSettings settings)
     {
@@ -74,6 +78,7 @@ public class CqlReader extends CqlOperation<ByteBuffer[][]>
     protected CqlRunOp<ByteBuffer[][]> buildRunOp(ClientWrapper client, String query, Object queryId, List<Object> params, ByteBuffer key)
     {
         List<ByteBuffer> expectRow = getColumnValues();
+        logger.info("{}", expectRow);
         return new CqlRunOpMatchResults(client, query, queryId, params, key, Arrays.asList(expectRow));
     }
 

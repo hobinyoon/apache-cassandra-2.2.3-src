@@ -30,9 +30,14 @@ import org.apache.cassandra.stress.generate.SeedManager;
 import org.apache.cassandra.stress.settings.Command;
 import org.apache.cassandra.stress.settings.StressSettings;
 import org.apache.cassandra.stress.util.Timer;
+import org.apache.cassandra.stress.util.Tracer;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class CqlInserter extends CqlOperation<Integer>
 {
+    static Logger logger = LogManager.getLogger(CqlOperation.class);
 
     public CqlInserter(Timer timer, PartitionGenerator generator, SeedManager seedManager, StressSettings settings)
     {
@@ -67,6 +72,7 @@ public class CqlInserter extends CqlOperation<Integer>
         List<ByteBuffer> values = getColumnValues();
         queryParams.addAll(values);
         queryParams.add(ByteBuffer.wrap(key));
+        logger.info("key=[{}] [{}]", key, Tracer.bytesToHex(key));
         return queryParams;
     }
 

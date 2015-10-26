@@ -72,7 +72,8 @@ public class CqlInserter extends CqlOperation<Integer>
         List<ByteBuffer> values = getColumnValues();
         queryParams.addAll(values);
         queryParams.add(ByteBuffer.wrap(key));
-        logger.info("key=[{}] [{}]", key, Tracer.bytesToHex(key));
+        //logger.info("key=[{}] [{}]", key, Tracer.bytesToHex(key));
+        logger.info("key=[{} {}]", Tracer.bytesToHex(key), Tracer.bytesToLong(key));
         return queryParams;
     }
 

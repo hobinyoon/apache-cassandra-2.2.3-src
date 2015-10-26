@@ -17,6 +17,7 @@ public class Tracer {
     }
 
 
+    // http://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
@@ -26,5 +27,14 @@ public class Tracer {
             hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+
+    public static long bytesToLong(byte[] bytes) {
+        long i = 0;
+        for (int j = 0; j < bytes.length; j++) {
+            i = (i << 8) + bytes[j];
+        }
+        return i;
     }
 }

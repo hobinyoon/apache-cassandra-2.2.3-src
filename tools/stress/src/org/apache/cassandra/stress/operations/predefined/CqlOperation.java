@@ -221,7 +221,7 @@ public abstract class CqlOperation<V> extends PredefinedOperation
 
         private CqlRunOp(ClientWrapper client, String query, Object queryId, ResultHandler<V> handler, List<Object> params, ByteBuffer key)
         {
-            logger.info("{}", Tracer.GetCallStack());
+            // logger.info("{}", Tracer.GetCallStack());
 
             this.client = client;
             this.query = query;
@@ -305,16 +305,14 @@ public abstract class CqlOperation<V> extends PredefinedOperation
         @Override
         public <V> V execute(Object preparedStatementId, ByteBuffer key, List<Object> queryParams, ResultHandler<V> handler)
         {
-            logger.info("{}", Tracer.GetCallStack());
-
-            logger.info("preparedStatementId=[{}] queryParams={} {}",
-                    ((PreparedStatement) preparedStatementId).getQueryString(),
-                    queryParams,
-                    queryParams.getClass().getName());
-
-            for (Object o: queryParams) {
-                logger.info("{} {}", o.getClass().getName(), o);
-            }
+            //logger.info("{}", Tracer.GetCallStack());
+            //logger.info("preparedStatementId=[{}] queryParams={} {}",
+            //        ((PreparedStatement) preparedStatementId).getQueryString(),
+            //        queryParams,
+            //        queryParams.getClass().getName());
+            //for (Object o: queryParams) {
+            //    logger.info("{} {}", o.getClass().getName(), o);
+            //}
 
             return handler.javaDriverHandler().apply(
                     client.executePrepared(

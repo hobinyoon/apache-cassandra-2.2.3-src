@@ -10,7 +10,7 @@
              -->
         </Console>
         <File name="File" fileName="cass-stress-trace.log" immediateFlush="false" append="false">
-            <PatternLayout pattern="=== TRACE %d{HH:mm:ss.SSS} [%t %M %F %L] %-5level %msg%n" />
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t %M %F %L] %-5level %msg%n" />
             <!--
             <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
             -->
@@ -18,7 +18,7 @@
     </Appenders>
     <Loggers>
         <Root level="debug">
-            <AppenderRef ref="Console" />
+            <!-- <AppenderRef ref="Console" /> -->
             <AppenderRef ref="File"/>
         </Root>
     </Loggers>

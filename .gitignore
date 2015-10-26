@@ -1,0 +1,6 @@
+build/
+data/
+logs/
+src/gen-java/
+src/resources/org/apache/cassandra/config/version.properties
+pylib/cqlshlib/*.pyc

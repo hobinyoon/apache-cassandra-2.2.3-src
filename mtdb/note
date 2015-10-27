@@ -4,3 +4,12 @@ $ sudo apt-get install -y liblog4j2-java
   system-wide library. moving on.
 
 
+[ERROR] Plugin org.apache.maven.plugins:maven-resources-plugin:2.7 or one of
+its dependencies could not be resolved: Failed to read artifact descriptor for
+org.apache.maven.plugins:maven-resources-plugin:jar:2.7: Could not transfer
+artifact org.apache.maven.plugins:maven-resources-plugin:pom:2.7 from/to
+central (https://repo.maven.apache.org/maven2): java.lang.RuntimeException:
+Unexpected error: java.security.InvalidAlgorithmParameterException: the
+trustAnchors parameter must be non-empty -> [Help 1]
+
+  $ sudo update-ca-certificates -f

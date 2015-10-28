@@ -5,7 +5,7 @@ import sys
 obj_rank_num_reqs = {}
 
 def LoadData():
-	fn = "facebook-num-reqs-by-rank"
+	fn = "../../data/facebook-num-reqs-by-rank"
 	with open(fn) as fo:
 		for line in fo.readlines():
 			if len(line) == 0:

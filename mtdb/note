@@ -12,4 +12,7 @@ central (https://repo.maven.apache.org/maven2): java.lang.RuntimeException:
 Unexpected error: java.security.InvalidAlgorithmParameterException: the
 trustAnchors parameter must be non-empty -> [Help 1]
 
+  http://stackoverflow.com/questions/4764611/java-security-invalidalgorithmparameterexception-the-trustanchors-parameter-mus
+  http://stackoverflow.com/questions/6784463/error-trustanchors-parameter-must-be-non-empty
+
   $ sudo update-ca-certificates -f

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import org.yaml.snakeyaml.Yaml;
@@ -68,7 +67,7 @@ public class Conf
 	public static Global global;
 	public static PerObj per_obj;
 
-	public static void Load() throws IOException {
+	private static void _Load() throws IOException {
 		InputStream input = new FileInputStream(new File("conf/loadgen.yaml"));
 		Yaml yaml = new Yaml();
 		Map root = (Map) yaml.load(input);
@@ -77,8 +76,6 @@ public class Conf
 
 		global = new Global(root.get("global"));
 		per_obj = new PerObj(root.get("per_obj"));
-
-		//_Dump();
 	}
 
 	private static void _Dump() {
@@ -88,5 +85,12 @@ public class Conf
 		sb.append("per_obj:\n");
 		sb.append(per_obj.toString().replaceAll("(?m)^", "  "));
 		System.out.println(sb);
+	}
+
+	public static void Load() throws IOException {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime("Loading ...")) {
+			_Load();
+			//_Dump();
+		}
 	}
 }

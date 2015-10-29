@@ -8,6 +8,11 @@
   <name>loadgen</name>
   <url>http://mtdb</url>
 
+	<properties>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+
   <dependencies>
 		<dependency>
 			<groupId>org.yaml</groupId>

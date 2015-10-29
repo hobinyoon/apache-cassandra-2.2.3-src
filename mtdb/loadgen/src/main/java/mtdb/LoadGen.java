@@ -11,8 +11,35 @@ import java.util.List;
 
 public class LoadGen
 {
-	public static void SimulatedTime() {
+	// Operations to an object
+	public static class WRs implements Comparable<WRs> {
+		long key;	// primary key of the record
+		static long global_key = 0;
+		long w_epoch_sec;
+		List<Long> r_epoch_sec;
+
+		WRs(long w_epoch_sec_) {
+			key = global_key ++;
+			w_epoch_sec = w_epoch_sec_;
+			// TODO: when to populate r_epoch_sec?
+		}
+
+		@Override
+		public int compareTo(WRs r) {
+			return (int)(w_epoch_sec - r.w_epoch_sec);
+		}
+
+		@Override
+		public String toString() {
+			return String.format("%d %s %d",
+					key,
+					LocalDateTime.ofEpochSecond(w_epoch_sec, 0, ZoneOffset.UTC),
+					w_epoch_sec);
+		}
 	}
+
+	// TODO: is List ok? do you need a queue?
+	static List<WRs> _WRs;
 
 	public static void GenWrites() throws InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("GenWrites ...")) {
@@ -35,30 +62,26 @@ public class LoadGen
 						, epoch_sec_dur
 						));
 
-			Cons.P(String.format("Write times (%s):", Conf.global.write_time_dist));
+			_WRs = new ArrayList(Conf.global.writes);
 			if (Conf.global.write_time_dist.equals("Same")) {
 				for (int i = 1; i <= Conf.global.writes; i ++) {
 					long es = epoch_sec_b + epoch_sec_dur * i / Conf.global.writes;
-					Cons.P(String.format("  %s %d",
-								LocalDateTime.ofEpochSecond(es, 0, ZoneOffset.UTC),
-								es));
+					_WRs.add(new WRs(es));
 				}
 			} else if (Conf.global.write_time_dist.equals("Uniform")) {
 				ThreadLocalRandom tlr = ThreadLocalRandom.current();
-				List<Long> epoch_secs = new ArrayList(Conf.global.writes);
 				for (int i = 1; i <= Conf.global.writes; i ++) {
 					long es = tlr.nextLong(epoch_sec_b, epoch_sec_e + 1);
-					epoch_secs.add(es);
+					_WRs.add(new WRs(es));
 				}
-				Collections.sort(epoch_secs);
-				for (long es: epoch_secs) {
-					Cons.P(String.format("  %s %d",
-								LocalDateTime.ofEpochSecond(es, 0, ZoneOffset.UTC),
-								es));
-				}
+				// By sorting, primary keys are randomly ordered.
+				Collections.sort(_WRs);
 			}
 
-			// TODO: primary keys. you can assign sequential numbers.
+			Cons.P(String.format("Write times (%s):", Conf.global.write_time_dist));
+			//for (WRs wrs: _WRs)
+			//	Cons.P(String.format("  %s", wrs));
+			Cons.P(String.format("  generated %d writes", Conf.global.writes));
 		}
 	}
 

@@ -11,8 +11,8 @@ global:
   writes: 10
 
   # Write time distribution
-  # - Uniform distribution with the same inter-arrival intervals.
-  # - Random distribution with a uniform distribution probability.
+  # - Same: The same inter-arrival intervals between writes.
+  # - Uniform: Random distribution with a uniform distribution probability.
   write_time_dist: Uniform
 
 # Per-object options

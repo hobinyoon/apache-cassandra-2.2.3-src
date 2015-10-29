@@ -4,6 +4,10 @@ import java.lang.InterruptedException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class LoadGen
 {
@@ -31,18 +35,30 @@ public class LoadGen
 						, epoch_sec_dur
 						));
 
-			if (Conf.global.write_time_dist.equals("Uniform")) {
-				Cons.P("Write times:");
+			Cons.P(String.format("Write times (%s):", Conf.global.write_time_dist));
+			if (Conf.global.write_time_dist.equals("Same")) {
 				for (int i = 1; i <= Conf.global.writes; i ++) {
-					long epoch_sec = epoch_sec_b + epoch_sec_dur * i / Conf.global.writes;
+					long es = epoch_sec_b + epoch_sec_dur * i / Conf.global.writes;
 					Cons.P(String.format("  %s %d",
-								LocalDateTime.ofEpochSecond(epoch_sec, 0, ZoneOffset.UTC),
-								epoch_sec));
+								LocalDateTime.ofEpochSecond(es, 0, ZoneOffset.UTC),
+								es));
+				}
+			} else if (Conf.global.write_time_dist.equals("Uniform")) {
+				ThreadLocalRandom tlr = ThreadLocalRandom.current();
+				List<Long> epoch_secs = new ArrayList(Conf.global.writes);
+				for (int i = 1; i <= Conf.global.writes; i ++) {
+					long es = tlr.nextLong(epoch_sec_b, epoch_sec_e + 1);
+					epoch_secs.add(es);
+				}
+				Collections.sort(epoch_secs);
+				for (long es: epoch_secs) {
+					Cons.P(String.format("  %s %d",
+								LocalDateTime.ofEpochSecond(es, 0, ZoneOffset.UTC),
+								es));
 				}
 			}
 
-			// TODO: primary keys
-			// TODO: Implement others too.
+			// TODO: primary keys. you can assign sequential numbers.
 		}
 	}
 

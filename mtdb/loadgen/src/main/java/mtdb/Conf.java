@@ -41,13 +41,13 @@ public class Conf
 	}
 
 	public static class PerObj {
-		int avg_reads;
+		double avg_reads;
 		String num_reads_dist;
 		String read_time_dist;
 
 		PerObj(Object obj_) {
 			Map obj = (Map) obj_;
-			avg_reads = Integer.parseInt(obj.get("avg_reads").toString());
+			avg_reads = Double.parseDouble(obj.get("avg_reads").toString());
 			num_reads_dist = obj.get("num_reads_dist").toString();
 			read_time_dist = obj.get("read_time_dist").toString();
 		}
@@ -55,7 +55,7 @@ public class Conf
 		@Override
 		public String toString() {
 			return String.format(
-					"avg_reads: %d\n"
+					"avg_reads: %f\n"
 					+ "num_reads_dist: %s\n"
 					+ "read_time_dist: %s\n"
 					, avg_reads
@@ -88,7 +88,7 @@ public class Conf
 	}
 
 	public static void Load() throws IOException {
-		try (Cons.MeasureTime _ = new Cons.MeasureTime("Loading ...")) {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime("Conf.Loading ...")) {
 			_Load();
 			//_Dump();
 		}

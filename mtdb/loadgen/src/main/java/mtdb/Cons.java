@@ -23,6 +23,14 @@ public class Cons
 		//System.out.println(sb);
 	}
 
+	public static void P(long l) {
+		P(String.format("%d", l));
+	}
+
+	public static void P(double d) {
+		P(String.format("%f", d));
+	}
+
 	public static class MeasureTime implements AutoCloseable
 	{
 		//StackTraceElement _ste;

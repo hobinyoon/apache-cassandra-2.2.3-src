@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -105,40 +106,46 @@ public class NumReadsPerObj
 		ThreadLocalRandom tlr = ThreadLocalRandom.current();
 		long rank = tlr.nextLong(_obj_rank_min, _obj_rank_max + 1);
 
-		// Return the lower bound
+		// Return the upper bound (, which is smaller than the lower bound)
 		if (false) {
-			for (ObjRankNumReqs o: _ornrs) {
-				if (rank <= o.obj_rank) {
-					Cons.P(String.format("%d %f %d", rank, o.num_reqs, (long) o.num_reqs));
-					return (long) o.num_reqs;
+			// A sequential search from the end. Won't be too bad. It might be better than the
+			// binary search since most of the random numbers will fall in the
+			// buckets toward the end.
+			int _ornrs_size = _ornrs.size();
+			double num_reqs = -1.0;
+			for (int i = _ornrs_size - 1; i >= 0; i --) {
+				if (_ornrs.get(i).obj_rank <= rank) {
+					if (i == _ornrs_size - 1) {
+						num_reqs = _ornrs.get(i).num_reqs;
+					} else {
+						num_reqs = _ornrs.get(i+1).num_reqs;
+					}
+					//Cons.P(String.format("%d %f %d", rank, num_reqs, Math.round(num_reqs)));
+					return Math.round(num_reqs);
 				}
 			}
 		}
 
 		// Interpolate between lower and upper bound
-		// TODO: do you need a binary search? ah oh Or, sequential? do some
-		// experiment to see which is faster.
 		if (true) {
 			int _ornrs_size = _ornrs.size();
-			for (int i = 0; i < _ornrs_size; i ++) {
-				if (rank <= _ornrs.get(i).obj_rank) {
-					// when rank is equal to the lower bound, return num_reqs of the
-					// lower bound
-					if (i == 0)
-						return (long) _ornrs.get(i).num_reqs;
-
-					// rank is always != _ornrs[i+1].obj_rank, since the same rank is
-					// filtered out when loading the file
-					//double n = (_ornrs.get(i).num_reqs - _ornrs.get(i-1).num_reqs)
-					//	* (rank - _ornrs.get(i-1).obj_rank) / (_ornrs.get(i).obj_rank - _ornrs.get(i-1).obj_rank)
-					//	+ _ornrs.get(i-1).num_reqs;
-					//Cons.P(String.format("rank=%d i=%d num_reqs=%f | %d %d %f %f", rank, i, n
-					//			, _ornrs.get(i-1).obj_rank, _ornrs.get(i).obj_rank
-					//			, _ornrs.get(i-1).num_reqs, _ornrs.get(i).num_reqs));
-
-					return (long) ( (_ornrs.get(i).num_reqs - _ornrs.get(i-1).num_reqs)
-						* (rank - _ornrs.get(i-1).obj_rank) / (_ornrs.get(i).obj_rank - _ornrs.get(i-1).obj_rank)
-						+ _ornrs.get(i-1).num_reqs );
+			double num_reqs = -1.0;
+			for (int i = _ornrs_size - 1; i >= 0; i --) {
+				if (_ornrs.get(i).obj_rank <= rank) {
+					if (i == _ornrs_size - 1) {
+						num_reqs = _ornrs.get(i).num_reqs;
+					} else {
+						// rank is always != _ornrs[i+1].obj_rank, since the same rank is
+						// filtered out when loading the file
+						num_reqs = (_ornrs.get(i+1).num_reqs - _ornrs.get(i).num_reqs)
+							* (rank - _ornrs.get(i).obj_rank) / (_ornrs.get(i+1).obj_rank - _ornrs.get(i).obj_rank)
+							+ _ornrs.get(i).num_reqs;
+						//Cons.P(String.format("rank=%d i=%d num_reqs=%f %d | %d %d %f %f"
+						//			, rank, i, num_reqs, Math.round(num_reqs)
+						//			, _ornrs.get(i).obj_rank, _ornrs.get(i+1).obj_rank
+						//			, _ornrs.get(i).num_reqs, _ornrs.get(i+1).num_reqs));
+					}
+					return Math.round(num_reqs);
 				}
 			}
 		}
@@ -164,13 +171,11 @@ public class NumReadsPerObj
 				Cons.P(GetNext());
 			}
 		} catch (Exception e) {
-			System.out.printf("Exception: %s\n%s\n",
-					e, Util.getStackTrace(e));
+			System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
 		}
 	}
 
-	public static void main(String[] args)
-	{
+	public static void main(String[] args) {
 		_Test();
 	}
 }

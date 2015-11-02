@@ -101,13 +101,18 @@ public class NumReadsPerObj
 		//	Cons.P(String.format("%d %f", o.obj_rank, o.num_reqs));
 	}
 
+	// 'U': take the upper bound
+	// 'I': interpolate between the lower and the upper bound
+	// Interesting that they don't have a meaningful performance difference.
+	private static char _GETNEXT_METHOD = 'I';
+
 	public static long GetNext() {
 		// Sequential search
 		ThreadLocalRandom tlr = ThreadLocalRandom.current();
 		long rank = tlr.nextLong(_obj_rank_min, _obj_rank_max + 1);
 
 		// Return the upper bound (, which is smaller than the lower bound)
-		if (false) {
+		if (_GETNEXT_METHOD == 'U') {
 			// A sequential search from the end. Won't be too bad. It might be better than the
 			// binary search since most of the random numbers will fall in the
 			// buckets toward the end.
@@ -125,9 +130,8 @@ public class NumReadsPerObj
 				}
 			}
 		}
-
 		// Interpolate between lower and upper bound
-		if (true) {
+		else if (_GETNEXT_METHOD == 'I') {
 			int _ornrs_size = _ornrs.size();
 			double num_reqs = -1.0;
 			for (int i = _ornrs_size - 1; i >= 0; i --) {
@@ -167,8 +171,11 @@ public class NumReadsPerObj
 			Init();
 			//_Dump();
 
-			for (int i = 0; i < 30; i ++) {
-				Cons.P(GetNext());
+			try (Cons.MeasureTime _ = new Cons.MeasureTime("Text GetNext() ...")) {
+				long l = 0;
+				for (int i = 0; i < 1000000; i ++)
+					l += GetNext();
+				Cons.P(l);
 			}
 		} catch (Exception e) {
 			System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));

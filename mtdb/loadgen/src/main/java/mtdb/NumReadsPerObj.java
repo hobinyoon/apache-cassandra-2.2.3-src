@@ -172,10 +172,8 @@ public class NumReadsPerObj
 			//_Dump();
 
 			try (Cons.MeasureTime _ = new Cons.MeasureTime("Text GetNext() ...")) {
-				long l = 0;
 				for (int i = 0; i < 1000000; i ++)
-					l += GetNext();
-				Cons.P(l);
+					Cons.P(GetNext());
 			}
 		} catch (Exception e) {
 			System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));

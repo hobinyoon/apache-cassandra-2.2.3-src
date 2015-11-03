@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.Math;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -138,26 +139,24 @@ public class ReadTimes
 		}
 	}
 
-	private static void _Test() {
-		try {
-			Conf.Init();
-			Init();
-			//_Dump();
-
-			try (Cons.MeasureTime _ = new Cons.MeasureTime("Text GetNext() ...")) {
-				for (int i = 0; i < 100000; i ++) {
-					long age = GetNext();
-					Cons.P(String.format("%10d %s", age,
-								LocalDateTime.ofEpochSecond(age, 0, ZoneOffset.UTC)
-								));
-				}
+	private static void _TestReadTimes() throws FileNotFoundException {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime("Test GetNext() ...")) {
+			String fn = Conf.global.fn_test_obj_ages;
+			PrintWriter writer = new PrintWriter(fn);
+			for (int i = 0; i < 1000000; i ++) {
+				long age = GetNext();
+				writer.println(age);
+				//Cons.P(String.format("%10d %s", age,
+				//			LocalDateTime.ofEpochSecond(age, 0, ZoneOffset.UTC)
+				//			));
 			}
-		} catch (Exception e) {
-			System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
+			writer.close();
+			Cons.P(String.format("Created file %s %d", fn, Util.getFileSize(fn)));
 		}
 	}
 
-	public static void main(String[] args) {
-		_Test();
+	public static void Test() throws Exception {
+		Init();
+		_TestReadTimes();
 	}
 }

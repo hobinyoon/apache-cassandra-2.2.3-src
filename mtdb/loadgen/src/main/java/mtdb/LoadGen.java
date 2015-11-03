@@ -140,6 +140,10 @@ public class LoadGen
 				NumReadsPerObj.Test();
 				return;
 			}
+			if (Conf.global.fn_test_obj_ages.length() > 0) {
+				ReadTimes.Test();
+				return;
+			}
 
 			NumReadsPerObj.Init();
 			ReadTimes.Init();

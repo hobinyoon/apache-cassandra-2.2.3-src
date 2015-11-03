@@ -22,12 +22,15 @@ public class Conf
 			.withRequiredArg().ofType(Long.class);
 		accepts("test_num_reads_per_obj", "Test number of reads per obj. Specify a file name to dump data.")
 			.withRequiredArg().defaultsTo("");
+		accepts("test_obj_ages", "Test obj ages when accessed. Specify a file name to dump data.")
+			.withRequiredArg().defaultsTo("");
 		accepts("dump_wr", "Dump all WRs to a file. Specify a file name.")
 			.withRequiredArg().defaultsTo("");
 	}};
 
 	public static class Global {
 		String fn_test_num_reads_per_obj;
+		String fn_test_obj_ages;
 		String fn_dump_wrs;
 
 		// Yaml options
@@ -132,6 +135,7 @@ public class Conf
 			global.writes = (long) options.valueOf("writes");
 
 		global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
+		global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");
 		global.fn_dump_wrs = (String) options.valueOf("dump_wr");
 	}
 

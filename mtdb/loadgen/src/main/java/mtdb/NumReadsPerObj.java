@@ -125,6 +125,8 @@ public class NumReadsPerObj
 					} else {
 						num_reqs = _ornrs.get(i+1).num_reqs;
 					}
+					// Exclude the first one, write
+					num_reqs -= 1.0;
 					//Cons.P(String.format("%d %f %d", rank, num_reqs, Math.round(num_reqs)));
 					return Math.round(num_reqs);
 				}
@@ -149,6 +151,8 @@ public class NumReadsPerObj
 						//			, _ornrs.get(i).obj_rank, _ornrs.get(i+1).obj_rank
 						//			, _ornrs.get(i).num_reqs, _ornrs.get(i+1).num_reqs));
 					}
+					// Exclude the first one, write
+					num_reqs -= 1.0;
 					return Math.round(num_reqs);
 				}
 			}

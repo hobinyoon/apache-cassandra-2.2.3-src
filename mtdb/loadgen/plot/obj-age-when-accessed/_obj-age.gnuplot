@@ -10,7 +10,7 @@ plot FN_IN u 1:0 w lines not
 set terminal pdfcairo enhanced size 3in, 2in
 set output FN_OUT
 
-set xlabel "obj age when accessed (in sec)"
+set xlabel "Obj age when accessed"
 set ylabel "CDF"
 
 set border (1 + 2) lc rgb "#808080"

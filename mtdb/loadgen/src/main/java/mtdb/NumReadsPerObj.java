@@ -3,6 +3,7 @@ package mtdb;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.PrintWriter;
 import java.io.IOException;
 import java.lang.Math;
 import java.util.ArrayList;
@@ -169,22 +170,19 @@ public class NumReadsPerObj
 		}
 	}
 
-	private static void _Test() {
-		try {
-			Conf.Init();
-			Init();
-			//_Dump();
-
-			try (Cons.MeasureTime _ = new Cons.MeasureTime("Text GetNext() ...")) {
-				for (int i = 0; i < 1000000; i ++)
-					Cons.P(GetNext());
-			}
-		} catch (Exception e) {
-			System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
+	private static void _TestNumReads() throws FileNotFoundException {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime("Test GetNext() ...")) {
+			String fn = Conf.global.fn_test_num_reads_per_obj;
+			PrintWriter writer = new PrintWriter(fn);
+			for (int i = 0; i < 1000000; i ++)
+				writer.println(GetNext());
+			writer.close();
+			Cons.P(String.format("Created file %s %d", fn, Util.getFileSize(fn)));
 		}
 	}
 
-	public static void main(String[] args) {
-		_Test();
+	public static void Test() throws Exception {
+		Init();
+		_TestNumReads();
 	}
 }

@@ -136,6 +136,11 @@ public class LoadGen
 	public static void main(String[] args) {
 		try {
 			Conf.Init(args);
+			if (Conf.global.fn_test_num_reads_per_obj.length() > 0) {
+				NumReadsPerObj.Test();
+				return;
+			}
+
 			NumReadsPerObj.Init();
 			ReadTimes.Init();
 

@@ -125,7 +125,14 @@ public class Conf
 		}
 
 		_dump = (boolean) options.valueOf("dump");
-		_fn_dump = (String) options.valueOf("dumpfn");
+		if (_dump) {
+			_fn_dump = (String) options.valueOf("dumpfn");
+			if (_fn_dump.length() == 0) {
+				System.out.println("  missing dumpfn\n");
+				_PrintHelp();
+				System.exit(1);
+			}
+		}
 	}
 
 	public static void Init()

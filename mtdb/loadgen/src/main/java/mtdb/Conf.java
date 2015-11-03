@@ -20,16 +20,13 @@ public class Conf
 		accepts("help", "Show this help message");
 		accepts("writes", "Number of writes")
 			.withRequiredArg().ofType(Long.class);
-		accepts("dump", "Dump all WRss to a file")
-			.withRequiredArg().ofType(Boolean.class);
-		accepts("dumpfn", "Dump file name")
+		accepts("dump_wr", "Dump all WRs to a file. Specify a file name.")
 			.withRequiredArg().defaultsTo("");
 	}};
 
 	public static class Global {
 		// LoadGen options
-		boolean dump;
-		String fn_dump;
+		String fn_dump_wrs;
 
 		int simulated_time_in_year;
 		double simulation_time_in_min;
@@ -128,17 +125,10 @@ public class Conf
 			System.exit(1);
 		}
 
-		global.writes = (long) options.valueOf("writes");
+		if (options.has("writes"))
+			global.writes = (long) options.valueOf("writes");
 
-		global.dump = (boolean) options.valueOf("dump");
-		if (global.dump) {
-			global.fn_dump = (String) options.valueOf("dumpfn");
-			if (global.fn_dump.length() == 0) {
-				System.out.println("  missing dumpfn\n");
-				_PrintHelp();
-				System.exit(1);
-			}
-		}
+		global.fn_dump_wrs = (String) options.valueOf("dump_wr");
 	}
 
 	public static void Init()

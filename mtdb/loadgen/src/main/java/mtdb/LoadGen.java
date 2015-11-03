@@ -125,7 +125,7 @@ public class LoadGen
 	}
 
 	private static void _DumpWRsForPlot() throws FileNotFoundException {
-		String fn = Conf.global.fn_dump;
+		String fn = Conf.global.fn_dump_wrs;
 		PrintWriter writer = new PrintWriter(fn);
 		for (WRs wrs: _WRs)
 			writer.println(wrs.toStringForPlot());
@@ -140,8 +140,7 @@ public class LoadGen
 			ReadTimes.Init();
 
 			GenWRs();
-
-			if (Conf.global.dump) {
+			if (Conf.global.fn_dump_wrs.length() > 0) {
 				_DumpWRsForPlot();
 			}
 		} catch (Exception e) {

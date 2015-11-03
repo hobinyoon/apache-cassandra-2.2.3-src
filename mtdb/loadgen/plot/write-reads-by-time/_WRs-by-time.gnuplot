@@ -11,7 +11,7 @@ set ylabel "Primary key" offset 1.5,0
 
 set border (1 + 2) lc rgb "#808080"
 set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,10
-set xtics nomirror scale 0.5,0 tc rgb "#808080" format "%Y" rotate by -30
+set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,365.2425*24*3600 format "%Y"
 
 set xdata time
 # seconds since the UNIX epoch

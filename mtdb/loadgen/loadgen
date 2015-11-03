@@ -4,6 +4,7 @@ set -e
 set -u
 
 SRC_DIR=`dirname $BASH_SOURCE`
+pushd $SRC_DIR > /dev/null
 
 DEF_CLASS_PATH_FILE=.dep-class-path
 if [ ! -f $DEF_CLASS_PATH_FILE ];
@@ -17,3 +18,5 @@ time mvn package -Dmaven.test.skip=true
 time java \
 	-cp target/loadgen-0.1.jar:`cat $DEF_CLASS_PATH_FILE` \
 	mtdb.LoadGen "${@:1}"
+
+popd > /dev/null

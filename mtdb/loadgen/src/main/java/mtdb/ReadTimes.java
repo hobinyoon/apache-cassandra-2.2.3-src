@@ -129,7 +129,7 @@ public class ReadTimes
 		}
 
 		// Convert to secs
-		age *= (365.0f / 12 * 24 * 3600);
+		age *= (365.2425f / 12 * 24 * 3600);
 		return Math.round(age);
 	}
 

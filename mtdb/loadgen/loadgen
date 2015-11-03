@@ -43,7 +43,7 @@ fi
 
 if $BUILD_DEP ; then
 	echo "Generating dependency file ..."
-	time mvn dependency:build-classpath | grep -ve "\[" > $DEF_CLASS_PATH_FILE
+	time mvn dependency:build-classpath -Dmdep.outputFile=$DEF_CLASS_PATH_FILE
 	echo
 fi
 

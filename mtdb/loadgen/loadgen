@@ -7,13 +7,31 @@ SRC_DIR=`dirname $BASH_SOURCE`
 pushd $SRC_DIR > /dev/null
 
 DEF_CLASS_PATH_FILE=.dep-class-path
-if [ ! -f $DEF_CLASS_PATH_FILE ];
-then
-	time mvn dependency:build-classpath | grep -ve "\[" > $DEF_CLASS_PATH_FILE
+NEED_BUILD=false
+if [ ! -f $DEF_CLASS_PATH_FILE ]; then
+	NEED_BUILD=true
 fi
 
-# TODO: build only when something has changed
-time mvn package -Dmaven.test.skip=true
+if ! $NEED_BUILD ; then
+	MT_DEP=`find . -maxdepth 1 -name $DEF_CLASS_PATH_FILE -printf "%T@\n"`
+	MT_SRC=`find src -name "*.java" -printf "%T@\n" | sort | tail -n 1`
+	#printf "MT_DEP: %s\n" $MT_DEP
+	#printf "MT_SRC: %s\n" $MT_SRC
+	if [[ "$MT_DEP" < "$MT_SRC" ]] ; then
+		printf "Src files are older than the dependency file\n  %s\n  %s\n" $MT_SRC $MT_DEP
+		NEED_BUILD=true
+	fi
+fi
+
+if $NEED_BUILD ; then
+	echo "Generating dependency file ..."
+	time mvn dependency:build-classpath | grep -ve "\[" > $DEF_CLASS_PATH_FILE
+	echo
+
+	echo "Building package file ..."
+	time mvn package -Dmaven.test.skip=true
+	echo
+fi
 
 time java \
 	-cp target/loadgen-0.1.jar:`cat $DEF_CLASS_PATH_FILE` \

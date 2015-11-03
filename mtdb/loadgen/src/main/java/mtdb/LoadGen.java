@@ -29,12 +29,17 @@ public class LoadGen
 
 		void _PopulateRs() {
 			// Populate r_epoch_sec
-			// TODO: populate in advance? or online?
 			long num_reads = NumReadsPerObj.GetNext();
 			//Cons.P(String.format("num_reads=%d", num_reads));
 			r_epoch_sec = new ArrayList((int)num_reads);
-			for (long i = 0; i < num_reads; i ++)
-				r_epoch_sec.add(w_epoch_sec + ReadTimes.GetNext());
+			for (long i = 0; i < num_reads; i ++) {
+				// Reads after the last write doesn't need to be stored for the purpose
+				// of the simulation
+				long r = w_epoch_sec + ReadTimes.GetNext();
+				if (r >= _w_epoch_sec_e)
+					continue;
+				r_epoch_sec.add(r);
+			}
 			Collections.sort(r_epoch_sec);
 		}
 
@@ -77,40 +82,43 @@ public class LoadGen
 		}
 	}
 
-	// TODO: is List ok? do you need a queue?
 	static List<WRs> _WRs;
+	static LocalDateTime _w_dt_b;
+	static LocalDateTime _w_dt_e;
+	static long _w_epoch_sec_b;
+	static long _w_epoch_sec_e;
 
 	public static void GenWRs() throws InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("GenWRs ...")) {
 			// Simulated datetime begin and end
-			LocalDateTime dt_b = LocalDateTime.of(2010, 1, 1, 0, 0);
-			LocalDateTime dt_e = LocalDateTime.of(2010 + Conf.global.simulated_time_in_year, 1, 1, 0, 0);
+			_w_dt_b = LocalDateTime.of(2010, 1, 1, 0, 0);
+			_w_dt_e = LocalDateTime.of(2010 + Conf.global.simulated_time_in_year, 1, 1, 0, 0);
 
 			ZoneId zoneId = ZoneId.systemDefault();
 			// Ignore sub-second resolution
-			long epoch_sec_b = dt_b.atZone(zoneId).toEpochSecond();
-			long epoch_sec_e = dt_e.atZone(zoneId).toEpochSecond();
-			long epoch_sec_dur = epoch_sec_e - epoch_sec_b;
+			_w_epoch_sec_b = _w_dt_b.atZone(zoneId).toEpochSecond();
+			_w_epoch_sec_e = _w_dt_e.atZone(zoneId).toEpochSecond();
+			long epoch_sec_dur = _w_epoch_sec_e - _w_epoch_sec_b;
 
 			Cons.P(String.format("Simulated datetime:\n"
 						+ "  begin: %s %d\n"
 						+ "  end:   %s %d\n"
 						+ "  dur:   %d"
-						, dt_b, epoch_sec_b
-						, dt_e, epoch_sec_e
+						, _w_dt_b, _w_epoch_sec_b
+						, _w_dt_e, _w_epoch_sec_e
 						, epoch_sec_dur
 						));
 
 			_WRs = new ArrayList((int) Conf.global.writes);
 			if (Conf.global.write_time_dist.equals("Same")) {
 				for (int i = 1; i <= Conf.global.writes; i ++) {
-					long es = epoch_sec_b + epoch_sec_dur * i / Conf.global.writes;
+					long es = _w_epoch_sec_b + epoch_sec_dur * i / Conf.global.writes;
 					_WRs.add(new WRs(es));
 				}
 			} else if (Conf.global.write_time_dist.equals("Uniform")) {
 				ThreadLocalRandom tlr = ThreadLocalRandom.current();
 				for (int i = 1; i <= Conf.global.writes; i ++) {
-					long es = tlr.nextLong(epoch_sec_b, epoch_sec_e + 1);
+					long es = tlr.nextLong(_w_epoch_sec_b, _w_epoch_sec_e + 1);
 					_WRs.add(new WRs(es));
 				}
 				// By sorting, primary keys are randomly ordered.

@@ -1,5 +1,6 @@
 package mtdb;
 
+import java.io.File;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.Throwable;
@@ -12,5 +13,12 @@ class Util
 		PrintWriter pw = new PrintWriter(sw);
 		t.printStackTrace(pw);
 		return sw.toString();
+	}
+
+	public static long getFileSize(String fn) {
+		File f = new File(fn);
+		if (! f.exists())
+			return 0;
+		return f.length();
 	}
 }

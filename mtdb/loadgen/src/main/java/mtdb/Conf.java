@@ -16,15 +16,27 @@ import org.yaml.snakeyaml.Yaml;
 public class Conf
 {
 	// Command line options
-	static public boolean _dump;
-	static public String _fn_dump;
+	private static final OptionParser _opt_parser = new OptionParser() {{
+		accepts("help", "Show this help message");
+		accepts("writes", "Number of writes")
+			.withRequiredArg().ofType(Long.class);
+		accepts("dump", "Dump all WRss to a file")
+			.withRequiredArg().ofType(Boolean.class);
+		accepts("dumpfn", "Dump file name")
+			.withRequiredArg().defaultsTo("");
+	}};
 
 	public static class Global {
+		// LoadGen options
+		boolean dump;
+		String fn_dump;
+
 		int simulated_time_in_year;
 		double simulation_time_in_min;
-		int writes;
+		long writes;
 		String write_time_dist;
 
+		// Init with a YAML obj. Can be overwritten by command line options.
 		Global(Object obj_) {
 			Map obj = (Map) obj_;
 			simulated_time_in_year = Integer.parseInt(obj.get("simulated_time_in_year").toString());
@@ -75,7 +87,7 @@ public class Conf
 	public static Global global;
 	public static PerObj per_obj;
 
-	private static void _Load() throws IOException {
+	private static void _LoadYaml() throws IOException {
 		InputStream input = new FileInputStream(new File("conf/loadgen.yaml"));
 		Yaml yaml = new Yaml();
 		Map root = (Map) yaml.load(input);
@@ -94,14 +106,6 @@ public class Conf
 		sb.append(per_obj.toString().replaceAll("(?m)^", "  "));
 		System.out.println(sb);
 	}
-
-	private static final OptionParser _opt_parser = new OptionParser() {{
-		accepts("help", "Show this help message");
-		accepts("dump", "Dump all WRss to a file")
-			.withRequiredArg().ofType(Boolean.class).defaultsTo(false);
-		accepts("dumpfn", "Dump file name")
-			.withRequiredArg().defaultsTo("");
-	}};
 
 	private static void _PrintHelp() throws IOException {
 		System.out.println("Usage: LoadGen [<option>]*");
@@ -124,10 +128,12 @@ public class Conf
 			System.exit(1);
 		}
 
-		_dump = (boolean) options.valueOf("dump");
-		if (_dump) {
-			_fn_dump = (String) options.valueOf("dumpfn");
-			if (_fn_dump.length() == 0) {
+		global.writes = (long) options.valueOf("writes");
+
+		global.dump = (boolean) options.valueOf("dump");
+		if (global.dump) {
+			global.fn_dump = (String) options.valueOf("dumpfn");
+			if (global.fn_dump.length() == 0) {
 				System.out.println("  missing dumpfn\n");
 				_PrintHelp();
 				System.exit(1);
@@ -143,7 +149,7 @@ public class Conf
 	public static void Init(String[] args)
 		throws IOException, java.text.ParseException, InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("Conf.Init ...")) {
-			_Load();
+			_LoadYaml();
 			_ParseCmdlnOptions(args);
 			//_Dump();
 		}

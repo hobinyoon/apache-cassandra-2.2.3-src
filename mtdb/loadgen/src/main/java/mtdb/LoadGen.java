@@ -34,7 +34,7 @@ public class LoadGen
 			//Cons.P(String.format("num_reads=%d", num_reads));
 			r_epoch_sec = new ArrayList((int)num_reads);
 			for (long i = 0; i < num_reads; i ++)
-				r_epoch_sec.add(ReadTimes.GetNext());
+				r_epoch_sec.add(w_epoch_sec + ReadTimes.GetNext());
 			Collections.sort(r_epoch_sec);
 		}
 
@@ -101,7 +101,7 @@ public class LoadGen
 						, epoch_sec_dur
 						));
 
-			_WRs = new ArrayList(Conf.global.writes);
+			_WRs = new ArrayList((int) Conf.global.writes);
 			if (Conf.global.write_time_dist.equals("Same")) {
 				for (int i = 1; i <= Conf.global.writes; i ++) {
 					long es = epoch_sec_b + epoch_sec_dur * i / Conf.global.writes;
@@ -125,7 +125,7 @@ public class LoadGen
 	}
 
 	private static void _DumpWRsForPlot() throws FileNotFoundException {
-		String fn = Conf._fn_dump;
+		String fn = Conf.global.fn_dump;
 		PrintWriter writer = new PrintWriter(fn);
 		for (WRs wrs: _WRs)
 			writer.println(wrs.toStringForPlot());
@@ -141,7 +141,7 @@ public class LoadGen
 
 			GenWRs();
 
-			if (Conf._dump) {
+			if (Conf.global.dump) {
 				_DumpWRsForPlot();
 			}
 		} catch (Exception e) {

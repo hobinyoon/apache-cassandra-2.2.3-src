@@ -140,7 +140,7 @@ public class ReadTimes
 
 	private static void _Test() {
 		try {
-			Conf.Load();
+			Conf.Init();
 			Init();
 			//_Dump();
 

@@ -1,5 +1,7 @@
 package mtdb;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.lang.InterruptedException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -21,7 +23,19 @@ public class LoadGen
 		WRs(long w_epoch_sec_) {
 			key = global_key ++;
 			w_epoch_sec = w_epoch_sec_;
-			// TODO: when to populate r_epoch_sec?
+
+			_PopulateRs();
+		}
+
+		void _PopulateRs() {
+			// Populate r_epoch_sec
+			// TODO: populate in advance? or online?
+			long num_reads = NumReadsPerObj.GetNext();
+			//Cons.P(String.format("num_reads=%d", num_reads));
+			r_epoch_sec = new ArrayList((int)num_reads);
+			for (long i = 0; i < num_reads; i ++)
+				r_epoch_sec.add(ReadTimes.GetNext());
+			Collections.sort(r_epoch_sec);
 		}
 
 		@Override
@@ -31,18 +45,43 @@ public class LoadGen
 
 		@Override
 		public String toString() {
-			return String.format("%d %s %d",
-					key,
-					LocalDateTime.ofEpochSecond(w_epoch_sec, 0, ZoneOffset.UTC),
-					w_epoch_sec);
+			StringBuilder sb = new StringBuilder(1000);
+			sb.append(key);
+			sb.append(" ");
+			sb.append(w_epoch_sec);
+			sb.append("\n");
+			for (long r: r_epoch_sec) {
+				sb.append("  ");
+				sb.append(r);
+				sb.append("\n");
+			}
+			return sb.toString();
+			//return String.format("%d %d %s",
+			//		key,
+			//		w_epoch_sec,
+			//		LocalDateTime.ofEpochSecond(w_epoch_sec, 0, ZoneOffset.UTC));
+		}
+
+		public String toStringForPlot() {
+			StringBuilder sb = new StringBuilder(1000);
+			sb.append(key);
+			sb.append(" W ");
+			sb.append(w_epoch_sec);
+			for (long r: r_epoch_sec) {
+				sb.append("\n");
+				sb.append(key);
+				sb.append(" R ");
+				sb.append(r);
+			}
+			return sb.toString();
 		}
 	}
 
 	// TODO: is List ok? do you need a queue?
 	static List<WRs> _WRs;
 
-	public static void GenWrites() throws InterruptedException {
-		try (Cons.MeasureTime _ = new Cons.MeasureTime("GenWrites ...")) {
+	public static void GenWRs() throws InterruptedException {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime("GenWRs ...")) {
 			// Simulated datetime begin and end
 			LocalDateTime dt_b = LocalDateTime.of(2010, 1, 1, 0, 0);
 			LocalDateTime dt_e = LocalDateTime.of(2010 + Conf.global.simulated_time_in_year, 1, 1, 0, 0);
@@ -85,16 +124,28 @@ public class LoadGen
 		}
 	}
 
-	public static void main(String[] args)
-	{
+	private static void _DumpWRsForPlot() throws FileNotFoundException {
+		String fn = Conf._fn_dump;
+		PrintWriter writer = new PrintWriter(fn);
+		for (WRs wrs: _WRs)
+			writer.println(wrs.toStringForPlot());
+		writer.close();
+		Cons.P(String.format("Created file %s %d", fn, Util.getFileSize(fn)));
+	}
+
+	public static void main(String[] args) {
 		try {
-			Conf.Load();
+			Conf.Init(args);
+			NumReadsPerObj.Init();
+			ReadTimes.Init();
 
-			GenWrites();
+			GenWRs();
 
-			// TODO: GenReads() online
+			if (Conf._dump) {
+				_DumpWRsForPlot();
+			}
 		} catch (Exception e) {
-			System.out.println("Exception: " + e);
+			System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
 		}
 	}
 }

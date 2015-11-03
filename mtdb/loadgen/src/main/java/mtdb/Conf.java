@@ -4,13 +4,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 import org.yaml.snakeyaml.Yaml;
 
 
 public class Conf
 {
+	// Command line options
+	static public boolean _dump;
+	static public String _fn_dump;
+
 	public static class Global {
 		int simulated_time_in_year;
 		double simulation_time_in_min;
@@ -87,9 +95,49 @@ public class Conf
 		System.out.println(sb);
 	}
 
-	public static void Load() throws IOException {
-		try (Cons.MeasureTime _ = new Cons.MeasureTime("Conf.Loading ...")) {
+	private static final OptionParser _opt_parser = new OptionParser() {{
+		accepts("help", "Show this help message");
+		accepts("dump", "Dump all WRss to a file")
+			.withRequiredArg().ofType(Boolean.class).defaultsTo(false);
+		accepts("dumpfn", "Dump file name")
+			.withRequiredArg().defaultsTo("");
+	}};
+
+	private static void _PrintHelp() throws IOException {
+		System.out.println("Usage: LoadGen [<option>]*");
+		_opt_parser.printHelpOn(System.out);
+	}
+
+	private static void _ParseCmdlnOptions(String[] args)
+		throws IOException, java.text.ParseException, InterruptedException {
+		if (args == null)
+			return;
+
+		OptionSet options = _opt_parser.parse(args);
+		if (options.has("help")) {
+			_PrintHelp();
+			System.exit(0);
+		}
+		List<?> nonop_args = options.nonOptionArguments();
+		if (nonop_args.size() != 0) {
+			_PrintHelp();
+			System.exit(1);
+		}
+
+		_dump = (boolean) options.valueOf("dump");
+		_fn_dump = (String) options.valueOf("dumpfn");
+	}
+
+	public static void Init()
+		throws IOException, java.text.ParseException, InterruptedException {
+		Init(null);
+	}
+
+	public static void Init(String[] args)
+		throws IOException, java.text.ParseException, InterruptedException {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime("Conf.Init ...")) {
 			_Load();
+			_ParseCmdlnOptions(args);
 			//_Dump();
 		}
 	}

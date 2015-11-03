@@ -8,7 +8,7 @@ global:
   simulation_time_in_min: 1
 
   # Total number of writes
-  writes: 10
+  writes: 300
 
   # Write time distribution
   # - Same: The same inter-arrival intervals between writes.

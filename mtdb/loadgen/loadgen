@@ -7,29 +7,39 @@ SRC_DIR=`dirname $BASH_SOURCE`
 pushd $SRC_DIR > /dev/null
 
 DEF_CLASS_PATH_FILE=.dep-class-path
-NEED_BUILD=false
+BUILD_DEP=false
+BUILD_PKG=false
 if [ ! -f $DEF_CLASS_PATH_FILE ]; then
-	NEED_BUILD=true
+	BUILD_DEP=true
 fi
 
-if ! $NEED_BUILD ; then
+# Check modification times
+MT_SRC=`find src -name "*.java" -printf "%T@\n" | sort | tail -n 1`
+MT_JAR=`find target -maxdepth 1 -name "loadgen-*.jar" -printf "%T@\n"`
+
+if ! $BUILD_PKG ; then
 	MT_DEP=`find . -maxdepth 1 -name $DEF_CLASS_PATH_FILE -printf "%T@\n"`
-	MT_SRC=`find src -name "*.java" -printf "%T@\n" | sort | tail -n 1`
-	#printf "MT_DEP: %s\n" $MT_DEP
-	#printf "MT_SRC: %s\n" $MT_SRC
 	if [[ "$MT_DEP" < "$MT_SRC" ]] ; then
 		printf "Src files are older than the dependency file\n  %s\n  %s\n" $MT_SRC $MT_DEP
-		NEED_BUILD=true
+		BUILD_DEP=true
 	fi
 fi
 
-if $NEED_BUILD ; then
-	echo "Generating dependency file ..."
-	time mvn dependency:build-classpath | grep -ve "\[" > $DEF_CLASS_PATH_FILE
-	echo
+if [[ "$MT_JAR" < "$MT_SRC" ]] ; then
+	printf "Src files are older than the target jar file\n  %s\n  %s\n" $MT_SRC $MT_JAR
+	BUILD_PKG=true
+fi
 
+# Build package first so that you can terminate early on errors
+if $BUILD_PKG ; then
 	echo "Building package file ..."
 	time mvn package -Dmaven.test.skip=true
+	echo
+fi
+
+if $BUILD_DEP ; then
+	echo "Generating dependency file ..."
+	time mvn dependency:build-classpath | grep -ve "\[" > $DEF_CLASS_PATH_FILE
 	echo
 fi
 
@@ -37,4 +47,5 @@ time java \
 	-cp target/loadgen-0.1.jar:`cat $DEF_CLASS_PATH_FILE` \
 	mtdb.LoadGen "${@:1}"
 
+# Not necessary since this is executed in a subprocess. Leave it.
 popd > /dev/null

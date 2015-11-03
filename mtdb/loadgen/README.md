@@ -2,7 +2,7 @@
 
 ### Prerequisite
 ```
-sudo apt-get install -y maven gnuplot-nox
+$ sudo apt-get install -y maven gnuplot-nox
 ```
 
 ### Troubleshootings

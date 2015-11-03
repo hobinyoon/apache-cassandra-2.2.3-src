@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+set -u
+
+SRC_DIR=`dirname $BASH_SOURCE`
+
+DEF_CLASS_PATH_FILE=.dep-class-path
+if [ ! -f $DEF_CLASS_PATH_FILE ];
+then
+	time mvn dependency:build-classpath | grep -ve "\[" > $DEF_CLASS_PATH_FILE
+fi
+
+# TODO: build only when something has changed
+time mvn package -Dmaven.test.skip=true
+
+time java \
+	-cp target/loadgen-0.1.jar:`cat $DEF_CLASS_PATH_FILE` \
+	mtdb.LoadGen "${@:1}"

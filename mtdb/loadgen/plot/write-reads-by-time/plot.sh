@@ -10,7 +10,7 @@ FN_DATA=WRs
 if [ ! -f $FN_DATA ];
 then
 	echo "Generating data ..."
-	../../loadgen --dump=true --dumpfn=plot/write-reads-by-time/$FN_DATA --writes=50 | sed 's/^/  /'
+	../../loadgen --dump_wr=plot/write-reads-by-time/$FN_DATA --writes=50 | sed 's/^/  /'
 fi
 
 # Plot

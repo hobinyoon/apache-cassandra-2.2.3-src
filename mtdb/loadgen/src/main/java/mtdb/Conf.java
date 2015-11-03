@@ -20,14 +20,17 @@ public class Conf
 		accepts("help", "Show this help message");
 		accepts("writes", "Number of writes")
 			.withRequiredArg().ofType(Long.class);
+		accepts("test_num_reads_per_obj", "Test number of reads per obj. Specify a file name to dump data.")
+			.withRequiredArg().defaultsTo("");
 		accepts("dump_wr", "Dump all WRs to a file. Specify a file name.")
 			.withRequiredArg().defaultsTo("");
 	}};
 
 	public static class Global {
-		// LoadGen options
+		String fn_test_num_reads_per_obj;
 		String fn_dump_wrs;
 
+		// Yaml options
 		int simulated_time_in_year;
 		double simulation_time_in_min;
 		long writes;
@@ -128,12 +131,8 @@ public class Conf
 		if (options.has("writes"))
 			global.writes = (long) options.valueOf("writes");
 
+		global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
 		global.fn_dump_wrs = (String) options.valueOf("dump_wr");
-	}
-
-	public static void Init()
-		throws IOException, java.text.ParseException, InterruptedException {
-		Init(null);
 	}
 
 	public static void Init(String[] args)

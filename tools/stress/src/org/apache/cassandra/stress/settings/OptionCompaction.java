@@ -18,6 +18,7 @@
 package org.apache.cassandra.stress.settings;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,17 +27,26 @@ import com.google.common.base.Function;
 import org.apache.cassandra.config.CFMetaData;
 import org.apache.cassandra.exceptions.ConfigurationException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * For specifying replication options
  */
 class OptionCompaction extends OptionMulti
 {
+    static Logger logger = LogManager.getLogger(OptionCompaction.class);
 
-    private final OptionSimple strategy = new OptionSimple("strategy=", new StrategyAdapter(), null, "The compaction strategy to use", false);
+    private final OptionSimple strategy =
+        new OptionSimple("strategy=", new StrategyAdapter(),
+                "org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy",
+                "The compaction strategy to use", false);
 
     public OptionCompaction()
     {
         super("compaction", "Define the compaction strategy and any parameters", true);
+        // Wanted to set compaction strategy options here, but not sure how.
+        //collectAsMap.accept("min_threshold=25");
     }
 
     public String getStrategy()
@@ -46,7 +56,11 @@ class OptionCompaction extends OptionMulti
 
     public Map<String, String> getOptions()
     {
-        return extraOptions();
+        //return extraOptions();
+
+        Map<String, String> o = new LinkedHashMap();
+        o.put("min_threshold", "25");
+        return o;
     }
 
     protected List<? extends Option> options()

@@ -2594,7 +2594,10 @@ def read_options(cmdlineargs, environment):
         parser.error('"%s" is not a valid timeout.' % (options.connect_timeout,))
         options.connect_timeout = DEFAULT_CONNECT_TIMEOUT_SECONDS
 
-    options.client_timeout = option_with_default(configs.get, 'connection', 'client_timeout', '10')
+    # Allow long running queries such as count(*)
+    options.client_timeout = option_with_default(configs.get, 'connection', 'client_timeout', '60')
+    #options.client_timeout = option_with_default(configs.get, 'connection', 'client_timeout', '10')
+
     if options.client_timeout.lower() == 'none':
         options.client_timeout = None
     else:

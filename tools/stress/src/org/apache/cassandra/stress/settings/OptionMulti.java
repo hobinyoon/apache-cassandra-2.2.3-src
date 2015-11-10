@@ -25,11 +25,15 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * For specifying multiple grouped sub-options in the form: group(arg1=,arg2,arg3) etc.
  */
 abstract class OptionMulti extends Option
 {
+    static Logger logger = LogManager.getLogger(OptionMulti.class);
 
     private static final Pattern ARGS = Pattern.compile("([^,]+)", Pattern.CASE_INSENSITIVE);
 
@@ -51,6 +55,7 @@ abstract class OptionMulti extends Option
 
     public Map<String, String> extraOptions()
     {
+        //logger.info(collectAsMap);
         return collectAsMap == null ? new HashMap<String, String>() : collectAsMap.options;
     }
 
@@ -71,6 +76,7 @@ abstract class OptionMulti extends Option
     @Override
     public boolean accept(String param)
     {
+        //logger.info("");
         Matcher m = pattern.matcher(param);
         if (!m.matches())
             return false;
@@ -148,6 +154,7 @@ abstract class OptionMulti extends Option
 
         boolean accept(String param)
         {
+            //logger.info(param);
             String[] args = param.split("=");
             if (args.length == 2 && args[1].length() > 0 && args[0].length() > 0)
             {

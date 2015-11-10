@@ -78,7 +78,7 @@ public class CqlReader extends CqlOperation<ByteBuffer[][]>
     protected CqlRunOp<ByteBuffer[][]> buildRunOp(ClientWrapper client, String query, Object queryId, List<Object> params, ByteBuffer key)
     {
         List<ByteBuffer> expectRow = getColumnValues();
-        logger.info("{}", expectRow);
+        //logger.info("{}", expectRow);
         return new CqlRunOpMatchResults(client, query, queryId, params, key, Arrays.asList(expectRow));
     }
 

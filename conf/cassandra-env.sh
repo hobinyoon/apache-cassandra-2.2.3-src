@@ -238,6 +238,11 @@ JVM_OPTS="$JVM_OPTS -XX:ThreadPriorityPolicy=42"
 # stop-the-world GC pauses during resize, and so that we can lock the
 # heap in memory on startup to prevent any of it from being swapped
 # out.
+# MTDB: reduce the size to simulate a small-memory node
+MAX_HEAP_SIZE="512M"
+HEAP_NEWSIZE="256M"
+echo "MAX_HEAP_SIZE="${MAX_HEAP_SIZE}
+echo "HEAP_NEWSIZE="${HEAP_NEWSIZE}
 JVM_OPTS="$JVM_OPTS -Xms${MAX_HEAP_SIZE}"
 JVM_OPTS="$JVM_OPTS -Xmx${MAX_HEAP_SIZE}"
 JVM_OPTS="$JVM_OPTS -Xmn${HEAP_NEWSIZE}"

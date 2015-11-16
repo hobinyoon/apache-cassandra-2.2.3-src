@@ -256,4 +256,35 @@ public class View
             }
         };
     }
+
+    public String mtdbTraceString() {
+        StringBuilder sb = new StringBuilder(1000);
+        sb.append("view=@").append(System.identityHashCode(this));
+
+        boolean first = true;
+        //sb.append(" memtables=[");
+        //for (Memtable m: memtables) {
+        //    if (first) {
+        //        first = false;
+        //    } else {
+        //        sb.append(" ");
+        //    }
+        //    sb.append("@");
+        //    sb.append(System.identityHashCode(m));
+        //}
+        //sb.append("]");
+
+        sb.append(" sstables=[");
+        first = true;
+        for (SSTableReader s: sstables) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(" ");
+            }
+            sb.append(s.descriptor.generation);
+        }
+        sb.append("]");
+        return sb.toString();
+    }
 }

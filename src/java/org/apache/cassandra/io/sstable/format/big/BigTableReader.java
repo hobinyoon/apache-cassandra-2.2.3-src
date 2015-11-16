@@ -40,6 +40,7 @@ import org.apache.cassandra.io.util.FileDataInput;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.tracing.Tracing;
 import org.apache.cassandra.utils.ByteBufferUtil;
+import org.apache.cassandra.utils.Tracer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,6 +117,9 @@ public class BigTableReader extends SSTableReader
             assert key instanceof DecoratedKey; // EQ only make sense if the key is a valid row key
             if (!bf.isPresent((DecoratedKey)key))
             {
+                //logger.warn("MTDB: Bloom filter allows skipping sstable {}\n{}",
+                //        descriptor.generation,
+                //        Tracer.GetCallStack());
                 Tracing.trace("Bloom filter allows skipping sstable {}", descriptor.generation);
                 return null;
             }

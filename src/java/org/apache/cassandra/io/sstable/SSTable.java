@@ -88,6 +88,9 @@ public abstract class SSTable
         this.components = new CopyOnWriteArraySet<>(dataComponents);
         this.metadata = metadata;
         this.partitioner = partitioner;
+
+        if (descriptor.baseFilename().contains("/keyspace1/"))
+            logger.warn("MTDB: {}", descriptor);
     }
 
     /**

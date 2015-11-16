@@ -1789,6 +1789,9 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         try
         {
             int gcBefore = gcBefore(filter.timestamp);
+
+            // MTDB: may want to enable row cache later to avoid having to read
+            // records from erasure coded SSTables.
             if (isRowCacheEnabled())
             {
                 assert !isIndex(); // CASSANDRA-5732
@@ -1805,7 +1808,14 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             }
             else
             {
+                //boolean mtdb_trace = filter.getColumnFamilyName().equals("standard1");
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB: {}", filter);
+                //}
                 ColumnFamily cf = getTopLevelColumns(filter, gcBefore);
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB: {}", cf);
+                //}
 
                 if (cf == null)
                     return null;
@@ -1878,7 +1888,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         long failingSince = -1L;
         while (true)
         {
-            ViewFragment view = select(filter);
+            ViewFragment view = select(filter, false);
             Refs<SSTableReader> refs = Refs.tryRef(view.sstables);
             if (refs != null)
                 return new RefViewFragment(view.sstables, view.memtables, refs);
@@ -1899,12 +1909,33 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         }
     }
 
-    public ViewFragment select(Function<View, List<SSTableReader>> filter)
+    public ViewFragment select(Function<View, List<SSTableReader>> filter, boolean mtdb_trace)
     {
         View view = data.getView();
+        //if (mtdb_trace) {
+        //    logger.warn("MTDB: {}", view.mtdbTraceString());
+        //}
+
         List<SSTableReader> sstables = view.intervalTree.isEmpty()
                                        ? Collections.<SSTableReader>emptyList()
                                        : filter.apply(view);
+        //if (mtdb_trace) {
+        //    StringBuilder sb = new StringBuilder(1000);
+        //    boolean first = true;
+        //    sb.append("sstables=[");
+        //    first = true;
+        //    for (SSTableReader s: sstables) {
+        //        if (first) {
+        //            first = false;
+        //        } else {
+        //            sb.append(" ");
+        //        }
+        //        sb.append(s.descriptor.generation);
+        //    }
+        //    sb.append("]");
+        //    logger.warn("MTDB: {}", sb.toString());
+        //}
+
         return new ViewFragment(sstables, view.getAllMemtables());
     }
 
@@ -1984,7 +2015,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         try (OpOrder.Group op = readOrdering.start())
         {
             List<String> files = new ArrayList<>();
-            for (SSTableReader sstr : select(viewFilter(dk)).sstables)
+            for (SSTableReader sstr : select(viewFilter(dk), false).sstables)
             {
                 // check if the key actually exists in this sstable, without updating cache and stats
                 if (sstr.getPosition(dk, SSTableReader.Operator.EQ, false) != null)
@@ -2076,7 +2107,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
     {
         assert !(range.keyRange() instanceof Range) || !((Range<?>)range.keyRange()).isWrapAround() || range.keyRange().right.isMinimum() : range.keyRange();
 
-        final ViewFragment view = select(viewFilter(range.keyRange()));
+        final ViewFragment view = select(viewFilter(range.keyRange()), false);
         Tracing.trace("Executing seq scan across {} sstables for {}", view.sstables.size(), range.keyRange().getString(metadata.getKeyValidator()));
 
         final CloseableIterator<Row> iterator = RowIteratorFactory.getIterator(view.memtables, view.sstables, range, this, now);

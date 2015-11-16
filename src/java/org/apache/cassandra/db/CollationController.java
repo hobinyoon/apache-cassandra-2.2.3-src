@@ -36,13 +36,19 @@ import org.apache.cassandra.db.filter.NamesQueryFilter;
 import org.apache.cassandra.db.filter.QueryFilter;
 import org.apache.cassandra.db.marshal.CounterColumnType;
 import org.apache.cassandra.io.sstable.format.SSTableReader;
+import org.apache.cassandra.io.sstable.SSTableAccMon;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.tracing.Tracing;
 import org.apache.cassandra.utils.SearchIterator;
 import org.apache.cassandra.utils.memory.HeapAllocator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class CollationController
 {
+    private static final Logger logger = LoggerFactory.getLogger(CollationController.class);
+
     private final ColumnFamilyStore cfs;
     private final QueryFilter filter;
     private final int gcBefore;
@@ -71,11 +77,15 @@ public class CollationController
      */
     private ColumnFamily collectTimeOrderedData(boolean copyOnHeap)
     {
+        boolean mtdb_trace = filter.getColumnFamilyName().equals("standard1");
         final ColumnFamily container = ArrayBackedSortedColumns.factory.create(cfs.metadata, filter.filter.isReversed());
+        //if (mtdb_trace) {
+        //    logger.warn("MTDB: {} {}", container, container.deletionInfo());
+        //}
         List<OnDiskAtomIterator> iterators = new ArrayList<>();
         boolean isEmpty = true;
         Tracing.trace("Acquiring sstable references");
-        ColumnFamilyStore.ViewFragment view = cfs.select(cfs.viewFilter(filter.key));
+        ColumnFamilyStore.ViewFragment view = cfs.select(cfs.viewFilter(filter.key), mtdb_trace);
         DeletionInfo returnDeletionInfo = container.deletionInfo();
 
         try
@@ -83,9 +93,15 @@ public class CollationController
             Tracing.trace("Merging memtable contents");
             for (Memtable memtable : view.memtables)
             {
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB: {}", memtable);
+                //}
                 ColumnFamily cf = memtable.getColumnFamily(filter.key);
                 if (cf != null)
                 {
+                    //if (mtdb_trace) {
+                    //    logger.warn("MTDB: {}", cf);
+                    //}
                     filter.delete(container.deletionInfo(), cf);
                     isEmpty = false;
                     Iterator<Cell> iter = filter.getIterator(cf);
@@ -95,6 +111,9 @@ public class CollationController
                         if (copyOnHeap)
                             cell = cell.localCopy(cfs.metadata, HeapAllocator.instance);
                         container.addColumn(cell);
+                        if (mtdb_trace) {
+                            logger.warn("MTDB: {}", container);
+                        }
                     }
                 }
             }
@@ -127,12 +146,38 @@ public class CollationController
                 OnDiskAtomIterator iter = reducedFilter.getSSTableColumnIterator(sstable);
                 iterators.add(iter);
                 isEmpty = false;
+                if (mtdb_trace) {
+                    //SSTableAccMon.Update(this, readMeter.count());
+                    SSTableAccMon.Update(sstable);
+
+                    // iter.getColumnFamily() == null means the sstable doesn't
+                    // have the requested data. and probably by the bloom
+                    // filter said so.
+                    //logger.warn("MTDB: sstable {} read_meter_count={} false_positive={} true_positive={} iter.getColumnFamily()={}"
+                    //        , sstable.descriptor.generation
+                    //        , sstable.getReadMeter().count()
+                    //        , sstable.getBloomFilterFalsePositiveCount()
+                    //        , sstable.getBloomFilterTruePositiveCount()
+                    //        , iter.getColumnFamily()
+                    //        );
+                }
                 if (iter.getColumnFamily() != null)
                 {
+                    //if (mtdb_trace) {
+                    //    logger.warn("MTDB: {} {}", container, iter.getColumnFamily());
+                    //}
                     container.delete(iter.getColumnFamily());
+                    //if (mtdb_trace) {
+                    //    logger.warn("MTDB: {}", container);
+                    //}
                     sstablesIterated++;
-                    while (iter.hasNext())
+                    // Seems like adding columns one by one
+                    while (iter.hasNext()) {
                         container.addAtom(iter.next());
+                        //if (mtdb_trace) {
+                        //    logger.warn("MTDB: {}", container);
+                        //}
+                    }
                 }
             }
 
@@ -151,6 +196,9 @@ public class CollationController
                 && !cfs.isAutoCompactionDisabled()
                 && cfs.getCompactionStrategy().shouldDefragment())
             {
+                if (mtdb_trace) {
+                    logger.warn("MTDB: what is \"hoist up\"?");
+                }
                 // !!WARNING!!   if we stop copying our data to a heap-managed object,
                 //               we will need to track the lifetime of this mutation as well
                 Tracing.trace("Defragmenting requested data");
@@ -199,8 +247,13 @@ public class CollationController
      */
     private ColumnFamily collectAllData(boolean copyOnHeap)
     {
+        boolean mtdb_trace = filter.getColumnFamilyName().equals("standard1");
+        if (mtdb_trace) {
+            logger.warn("MTDB:");
+        }
+
         Tracing.trace("Acquiring sstable references");
-        ColumnFamilyStore.ViewFragment view = cfs.select(cfs.viewFilter(filter.key));
+        ColumnFamilyStore.ViewFragment view = cfs.select(cfs.viewFilter(filter.key), mtdb_trace);
         List<Iterator<? extends OnDiskAtom>> iterators = new ArrayList<>(Iterables.size(view.memtables) + view.sstables.size());
         ColumnFamily returnCF = ArrayBackedSortedColumns.factory.create(cfs.metadata, filter.filter.isReversed());
         DeletionInfo returnDeletionInfo = returnCF.deletionInfo();

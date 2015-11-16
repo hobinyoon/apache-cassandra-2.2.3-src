@@ -98,7 +98,7 @@ public class SizeEstimatesRecorder extends MigrationListener implements Runnable
             {
                 while (refs == null)
                 {
-                    ColumnFamilyStore.ViewFragment view = table.select(table.viewFilter(Range.makeRowRange(range)));
+                    ColumnFamilyStore.ViewFragment view = table.select(table.viewFilter(Range.makeRowRange(range)), false);
                     refs = Refs.tryRef(view.sstables);
                 }
 

@@ -1,5 +1,7 @@
 ## Workload generator for long running applications
 
+Runs on Ubuntu 15.10
+
 ### Prerequisite
 ```
 $ sudo apt-get install -y maven gnuplot-nox

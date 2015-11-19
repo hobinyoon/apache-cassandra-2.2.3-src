@@ -45,7 +45,11 @@ public class Tracer {
         return new String(hexChars);
     }
 
-    public static long bytesToLong(byte[] bytes) {
+    public static long toLong(ByteBuffer bb) {
+        return toLong(bb.array());
+    }
+
+    public static long toLong(byte[] bytes) {
         long i = 0;
         for (int j = 0; j < bytes.length; j++) {
             i = (i << 8) + bytes[j];

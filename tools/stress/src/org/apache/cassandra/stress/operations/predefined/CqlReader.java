@@ -97,7 +97,7 @@ public class CqlReader extends CqlOperation<ByteBuffer[][]>
     public static void PrintKeys() {
         StringBuilder sb = new StringBuilder();
         for (ByteBuffer k: keys)
-            sb.append("\n").append(Tracer.toHex(k));
+            sb.append("\n").append(Tracer.toLong(k));
 
         if (sb.length() > 0)
             logger.info("keys:{}", sb.toString());

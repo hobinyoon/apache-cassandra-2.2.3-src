@@ -1,0 +1,8 @@
+extract write key file
+  $ 7z x write-keys.7z
+
+generate sequentially reassigned keys file
+  $ ./reassign-sequential-keys.py write-keys keys-sequential
+
+plot
+  $ ./plot.sh

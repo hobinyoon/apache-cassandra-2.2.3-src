@@ -1,5 +1,0 @@
-generate sequentially reassigned keys file
-  $ ./reassign-sequential-keys.py ../raw-keys/cass-stress-trace.log keys-sequential
-
-plot
-  $ ./plot.sh

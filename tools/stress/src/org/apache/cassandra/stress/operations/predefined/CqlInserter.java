@@ -30,7 +30,7 @@ import org.apache.cassandra.stress.generate.SeedManager;
 import org.apache.cassandra.stress.settings.Command;
 import org.apache.cassandra.stress.settings.StressSettings;
 import org.apache.cassandra.stress.util.Timer;
-import org.apache.cassandra.stress.util.Tracer;
+import org.apache.cassandra.utils.Tracer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +38,7 @@ import org.apache.logging.log4j.Logger;
 public class CqlInserter extends CqlOperation<Integer>
 {
     static Logger logger = LogManager.getLogger(CqlInserter.class);
+    static List<byte[]> keys = new ArrayList();
 
     public CqlInserter(Timer timer, PartitionGenerator generator, SeedManager seedManager, StressSettings settings)
     {
@@ -72,8 +73,11 @@ public class CqlInserter extends CqlOperation<Integer>
         List<ByteBuffer> values = getColumnValues();
         queryParams.addAll(values);
         queryParams.add(ByteBuffer.wrap(key));
-        //logger.info("key=[{}] [{}]", key, Tracer.bytesToHex(key));
-        //logger.info("key=[{} {}]", Tracer.bytesToHex(key), Tracer.bytesToLong(key));
+        synchronized (keys) {
+            keys.add(key);
+            //logger.info("key=[{} {}]", Tracer.toHex(key), Tracer.toLong(key));
+        }
+
         return queryParams;
     }
 
@@ -86,5 +90,14 @@ public class CqlInserter extends CqlOperation<Integer>
     public boolean isWrite()
     {
         return true;
+    }
+
+    public static void PrintKeys() {
+        StringBuilder sb = new StringBuilder();
+        for (byte[] k: keys)
+            sb.append("\n").append(Tracer.toLong(k));
+
+        if (sb.length() > 0)
+            logger.info("keys:{}", sb.toString());
     }
 }

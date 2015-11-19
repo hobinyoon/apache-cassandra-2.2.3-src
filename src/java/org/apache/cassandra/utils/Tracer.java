@@ -1,5 +1,7 @@
 package org.apache.cassandra.utils;
 
+import java.nio.ByteBuffer;
+
 public class Tracer {
     public static String GetCallStack() {
         StringBuilder sb = new StringBuilder(1024);
@@ -27,9 +29,13 @@ public class Tracer {
         return in.replaceAll("(?m)^", sb.toString());
     }
 
+    public static String toHex(ByteBuffer bb) {
+        return toHex(bb.array());
+    }
+
     // http://stackoverflow.com/questions/9655181/how-to-convert-a-byte-array-to-a-hex-string-in-java
     final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
-    public static String bytesToHex(byte[] bytes) {
+    public static String toHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for ( int j = 0; j < bytes.length; j++ ) {
             int v = bytes[j] & 0xFF;
@@ -38,7 +44,6 @@ public class Tracer {
         }
         return new String(hexChars);
     }
-
 
     public static long bytesToLong(byte[] bytes) {
         long i = 0;

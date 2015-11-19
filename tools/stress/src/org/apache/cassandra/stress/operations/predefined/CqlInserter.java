@@ -37,7 +37,7 @@ import org.apache.logging.log4j.Logger;
 
 public class CqlInserter extends CqlOperation<Integer>
 {
-    static Logger logger = LogManager.getLogger(CqlOperation.class);
+    static Logger logger = LogManager.getLogger(CqlInserter.class);
 
     public CqlInserter(Timer timer, PartitionGenerator generator, SeedManager seedManager, StressSettings settings)
     {

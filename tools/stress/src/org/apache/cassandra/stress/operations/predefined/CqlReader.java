@@ -22,6 +22,7 @@ package org.apache.cassandra.stress.operations.predefined;
 
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,13 +32,15 @@ import org.apache.cassandra.stress.generate.SeedManager;
 import org.apache.cassandra.stress.settings.Command;
 import org.apache.cassandra.stress.settings.StressSettings;
 import org.apache.cassandra.stress.util.Timer;
+import org.apache.cassandra.utils.Tracer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class CqlReader extends CqlOperation<ByteBuffer[][]>
 {
-    static Logger logger = LogManager.getLogger(CqlOperation.class);
+    static Logger logger = LogManager.getLogger(CqlReader.class);
+    static List<ByteBuffer> keys = new ArrayList();
 
     public CqlReader(Timer timer, PartitionGenerator generator, SeedManager seedManager, StressSettings settings)
     {
@@ -77,9 +80,26 @@ public class CqlReader extends CqlOperation<ByteBuffer[][]>
     @Override
     protected CqlRunOp<ByteBuffer[][]> buildRunOp(ClientWrapper client, String query, Object queryId, List<Object> params, ByteBuffer key)
     {
+        synchronized (keys) {
+            keys.add(key);
+            //logger.info("key=[{}] {}", Tracer.toHex(key), key);
+        }
+
         List<ByteBuffer> expectRow = getColumnValues();
-        //logger.info("{}", expectRow);
+        //for (ByteBuffer bb: expectRow) {
+        //    logger.info("[{}] {}"
+        //            , Tracer.toHex(bb), bb);
+        //}
+
         return new CqlRunOpMatchResults(client, query, queryId, params, key, Arrays.asList(expectRow));
     }
 
+    public static void PrintKeys() {
+        StringBuilder sb = new StringBuilder();
+        for (ByteBuffer k: keys)
+            sb.append("\n").append(Tracer.toHex(k));
+
+        if (sb.length() > 0)
+            logger.info("keys:{}", sb.toString());
+    }
 }

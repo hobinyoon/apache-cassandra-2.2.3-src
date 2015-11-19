@@ -22,6 +22,7 @@ import java.net.Socket;
 import java.net.SocketException;
 
 import org.apache.cassandra.stress.settings.StressSettings;
+import org.apache.cassandra.stress.operations.predefined.CqlReader;
 import org.apache.cassandra.utils.FBUtilities;
 import org.apache.cassandra.utils.WindowsTimer;
 
@@ -116,6 +117,9 @@ public final class Stress
 
         if (FBUtilities.isWindows())
             WindowsTimer.endTimerPeriod(1);
+
+        CqlReader.PrintKeys();
+
         System.exit(0);
     }
 

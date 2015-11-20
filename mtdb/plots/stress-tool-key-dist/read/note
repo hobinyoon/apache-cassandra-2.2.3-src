@@ -1,0 +1,8 @@
+extract input file read-keys
+  $ 7z x read-keys.7z
+
+reassign keys so that there are no gaps between keys
+  $ ./reassign-sequential-keys.py read-keys keys-sequential
+
+plot
+  $ ./plot

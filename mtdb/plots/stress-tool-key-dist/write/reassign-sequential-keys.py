@@ -12,7 +12,6 @@ rea_map = {}
 
 def LoadKeys():
 	global keys_map
-	fn = "read-keys"
 	with open(fn_in) as fo:
 		for line in fo.readlines():
 			k = int(line)

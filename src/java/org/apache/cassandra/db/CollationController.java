@@ -111,9 +111,9 @@ public class CollationController
                         if (copyOnHeap)
                             cell = cell.localCopy(cfs.metadata, HeapAllocator.instance);
                         container.addColumn(cell);
-                        if (mtdb_trace) {
-                            logger.warn("MTDB: {}", container);
-                        }
+                        //if (mtdb_trace) {
+                        //    logger.warn("MTDB: {}", container);
+                        //}
                     }
                 }
             }

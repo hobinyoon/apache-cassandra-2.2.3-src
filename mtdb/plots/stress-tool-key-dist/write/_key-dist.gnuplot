@@ -17,7 +17,7 @@ set output FN_OUT
 #set rmargin at screen 0.940
 
 set xlabel "Operation order (normalized)" offset 0,0.3
-set ylabel "Key (normalized)" offset 1.6,0
+set ylabel "Key (sequantially reassigned)" offset 1.6,0
 
 set border (1 + 2) lc rgb "#808080"
 set ytics nomirror scale 0.5,0 tc rgb "#808080"

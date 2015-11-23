@@ -17,7 +17,7 @@ echo "Generating data for plotting ..."
 
 echo
 echo "Plotting ..."
-export FN_IN=$SRC_DIR/../data/$FN_IN_DATETIME"-formatted"
+export FN_IN=$SRC_DIR/../data/$FN_IN_DATETIME"-by-sstables-by-time"
 export FN_OUT=$SRC_DIR/"sstable-accesses-by-time-"$FN_IN_DATETIME".pdf"
 gnuplot $SRC_DIR/_sstable-accesses-by-time.gnuplot
 echo "Created "$FN_OUT

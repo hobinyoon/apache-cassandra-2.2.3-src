@@ -90,7 +90,7 @@ def main(argv):
 	global fn_in
 	global fn_out
 	fn_in = argv[1]
-	fn_out = fn_in + "-formatted"
+	fn_out = fn_in + "-by-sstables-by-time"
 
 	ReadInputAndGenFormattedFile()
 

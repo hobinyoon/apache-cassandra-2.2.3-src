@@ -41,7 +41,6 @@ def ReadInputAndGenFormattedFile():
 			#print len(t)
 			for i in range(len(t)):
 				if i == 0:
-					# replace decimal point , with .
 					time = t[i]
 					continue
 				elif i == 1:

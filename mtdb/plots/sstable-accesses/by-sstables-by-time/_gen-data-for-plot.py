@@ -24,50 +24,7 @@ class ReadCnt:
 				self.bf_tp - r.bf_tp)
 
 
-def ReadInputAndPrintMatrix():
-	time_sstgen_cnt = {}
-
-	global fn_in
-	with open(fn_in) as fo:
-		for line in fo.readlines():
-			# print line
-			if len(line) == 0:
-				continue
-			if line[0] == "#":
-				continue
-
-			t = line.split()
-			time = None
-			#print len(t)
-			for i in range(len(t)):
-				if i == 0:
-					# replace decimal point , with .
-					time = string.replace(t[0], ",", ".")
-					continue
-
-				t2 = t[i].split(":")
-				if len(t2) != 2:
-					raise RuntimeError("Unexpected format: [%s] [%s]" % (line, t2))
-				sstable_gen = int(t2[0])
-				t3 = t2[1].split(",")
-				if len(t3) != 3:
-					raise RuntimeError("Unexpected format: [%s] [%s]" % (line, t2))
-				read_cnt = int(t3[0])
-				bf_fp_cnt = int(t3[1])
-				bf_tp_cnt = int(t3[2])
-
-				if time not in time_sstgen_cnt:
-					time_sstgen_cnt[time] = {}
-
-				time_sstgen_cnt[time][sstable_gen] = ReadCnt(read_cnt, bf_fp_cnt, bf_tp_cnt)
-
-	# Print the matrix
-	for k, v in time_sstgen_cnt.iteritems():
-		for k2, v2 in v.iteritems():
-			print "%s %2d %s" % (k, k2, v2)
-
-
-def ReadInputAndPrintMatrix1():
+def ReadInputAndGenFormattedFile():
 	sstgen_time_cnt = {}
 
 	global fn_in
@@ -109,7 +66,6 @@ def ReadInputAndPrintMatrix1():
 				sstgen_time_cnt[sstable_gen][time] = ReadCnt(read_cnt, bf_fp_cnt, bf_tp_cnt)
 
 	with open(fn_out, "w") as fo:
-		# Print the matrix
 		fo.write("# sstable_gen              read_cnt    bf_tp_cnt bf_n_cnt\n")
 		fo.write("#                     time     bf_fp_cnt\n")
 		for k, v in sorted(sstgen_time_cnt.iteritems()):
@@ -136,8 +92,7 @@ def main(argv):
 	fn_in = argv[1]
 	fn_out = fn_in + "-formatted"
 
-	#ReadInputAndPrintMatrix()
-	ReadInputAndPrintMatrix1()
+	ReadInputAndGenFormattedFile()
 
 
 if __name__ == "__main__":

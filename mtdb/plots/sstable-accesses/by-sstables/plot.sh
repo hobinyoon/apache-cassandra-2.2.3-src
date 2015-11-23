@@ -21,3 +21,11 @@ export FN_IN=$SRC_DIR/../data/$FN_IN_DATETIME"-by-sstables"
 export FN_OUT=$SRC_DIR/"sstable-accesses-"$FN_IN_DATETIME".pdf"
 gnuplot $SRC_DIR/_sstable-accesses.gnuplot
 echo "Created "$FN_OUT
+
+#export FN_OUT=$SRC_DIR/"sstable-accesses-1-"$FN_IN_DATETIME".pdf"
+#gnuplot $SRC_DIR/_sstable-accesses-1.gnuplot
+#echo "Created "$FN_OUT
+#
+#export FN_OUT=$SRC_DIR/"sstable-accesses-2-"$FN_IN_DATETIME".pdf"
+#gnuplot $SRC_DIR/_sstable-accesses-2.gnuplot
+#echo "Created "$FN_OUT

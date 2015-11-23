@@ -33,7 +33,6 @@ set xrange [0.5:NUM_SSTABLES+0.5]
 
 set style fill solid 0.2 noborder
 
-BOX_WIDTH=0.2
+BOX_WIDTH=0.5
 plot \
-FN_IN u ($1-0.2):($2/1000):(BOX_WIDTH) w boxes not, \
-FN_IN u ($1+0.2):(($3+$4)/1000):(BOX_WIDTH) w boxes not
+FN_IN u 1:($2/1000):(BOX_WIDTH) w boxes not

@@ -23,7 +23,7 @@ set output FN_OUT
 #set rmargin at screen 0.940
 
 set xlabel "SStable gen ID" offset 0,0.3
-set ylabel "# of reads (in K)" offset 1.6,0
+set ylabel "# of reads\nhitting DB file (in K)" offset 1.6,0
 
 set border (1 + 2) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080"
@@ -33,7 +33,6 @@ set xrange [0.5:NUM_SSTABLES+0.5]
 
 set style fill solid 0.2 noborder
 
-BOX_WIDTH=0.2
+BOX_WIDTH=0.5
 plot \
-FN_IN u ($1-0.2):($2/1000):(BOX_WIDTH) w boxes not, \
-FN_IN u ($1+0.2):(($3+$4)/1000):(BOX_WIDTH) w boxes not
+FN_IN u 1:(($3+$4)/1000):(BOX_WIDTH) w boxes not

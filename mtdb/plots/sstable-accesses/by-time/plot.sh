@@ -13,11 +13,11 @@ FN_IN_DATETIME=$1
 SRC_DIR=`dirname $BASH_SOURCE`
 
 echo "Generating data for plotting ..."
-./_gen-data-for-plot.py data/$FN_IN_DATETIME
+./_gen-data-for-plot.py ../data/$FN_IN_DATETIME
 
 echo
 echo "Plotting ..."
-export FN_IN=$SRC_DIR/data/$FN_IN_DATETIME"-formatted"
+export FN_IN=$SRC_DIR/../data/$FN_IN_DATETIME"-formatted"
 export FN_OUT=$SRC_DIR/"sstable-accesses-by-time-"$FN_IN_DATETIME".pdf"
 gnuplot $SRC_DIR/_sstable-accesses-by-time.gnuplot
 echo "Created "$FN_OUT

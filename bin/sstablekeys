@@ -48,7 +48,33 @@ if [ $# -eq "0" ]; then
     exit 2
 fi
 
+# Add -Djna.nosys=true
+#
+# $ ./sstablekeys ~/work/cassandra/data/data/keyspace1/standard1-8be2ccd08fb411e5b8c71d822de6a4f1/la-9-big-Data.db
+# WARNING: please note that sstable2json is now deprecated and will be removed in Cassandra 3.0. Please see https://issues.apache.org/jira/browse/CASSANDRA-9618 for details.
+# WARN  03:19:06 Only 44619 MB free across all data volumes. Consider adding more capacity to your cluster or removing obsolete snapshots
+# ERROR 03:19:07 Exiting due to error while processing commit log during initialization.
+# java.lang.Error:
+#
+# There is an incompatible JNA native library installed on this system
+# /usr/java/packages/lib/amd64:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib.
+# To resolve this issue you may do one of the following:
+#  - remove or uninstall the offending library
+#  - set the system property jna.nosys=true
+#  - set jna.boot.library.path to include the path to the version of the
+#    jnidispatch library included with the JNA jar file you are using
+#
+# 	at com.sun.jna.Native.<clinit>(Native.java:146) ~[jna-4.0.0.jar:4.0.0 (b2)]
+# 	at org.apache.cassandra.utils.CLibrary.<clinit>(CLibrary.java:63) ~[main/:na]
+# 	at org.apache.cassandra.db.commitlog.CommitLogSegment.<init>(CommitLogSegment.java:144) ~[main/:na]
+# 	at org.apache.cassandra.db.commitlog.MemoryMappedSegment.<init>(MemoryMappedSegment.java:47) ~[main/:na]
+# 	at org.apache.cassandra.db.commitlog.CommitLogSegment.createSegment(CommitLogSegment.java:121) ~[main/:na]
+# 	at org.apache.cassandra.db.commitlog.CommitLogSegmentManager$1.runMayThrow(CommitLogSegmentManager.java:122) ~[main/:na]
+# 	at org.apache.cassandra.utils.WrappedRunnable.run(WrappedRunnable.java:28) [main/:na]
+# 	at java.lang.Thread.run(Thread.java:745) [na:1.8.0_66-internal]
+
 "$JAVA" $JAVA_AGENT -cp "$CLASSPATH" $JVM_OPTS -Dstorage-config="$CASSANDRA_CONF" \
+        -Djna.nosys=true \
         -Dcassandra.storagedir="$cassandra_storagedir" \
         -Dlogback.configurationFile=logback-tools.xml \
         org.apache.cassandra.tools.SSTableExport "$@" -e

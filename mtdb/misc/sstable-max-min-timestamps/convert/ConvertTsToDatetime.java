@@ -11,8 +11,7 @@ public class ConvertTsToDatetime
 
 	private static String toDateTime(long ts) {
 		Date now = new java.util.Date((long)(ts/1000.0));
-		String strDate = sdfDate.format(now);
-		return strDate;
+		return sdfDate.format(now);
 	}
 
 	public static void main(String args[]) {
@@ -23,11 +22,16 @@ public class ConvertTsToDatetime
 				while ((line = br.readLine()) != null) {
 					//System.out.printf("[%s]\n", line);
 					String[] tokens = line.split(" ");
-					if (tokens.length != 4)
+					if (tokens.length != 6)
 						throw new RuntimeException(String.format("Unexpected format [%s]", line));
 					int sstgen = Integer.parseInt(tokens[1]);
-					long ts = Long.parseLong(tokens[3]);
-					System.out.printf("%2d %d %s\n", sstgen, ts, toDateTime(ts));
+					long ts_max = Long.parseLong(tokens[3]);
+					long ts_min = Long.parseLong(tokens[5]);
+					System.out.printf("%2d %d %d %s %s\n"
+							, sstgen
+							, ts_max , ts_min
+							, toDateTime(ts_max) , toDateTime(ts_min)
+							);
 				}
 			}
 		} catch (Exception e) {

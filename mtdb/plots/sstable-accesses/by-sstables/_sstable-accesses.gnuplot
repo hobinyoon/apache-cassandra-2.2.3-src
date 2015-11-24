@@ -31,9 +31,9 @@ set ytics nomirror scale 0.5,0 tc rgb "#808080"
 
 set xrange [0.5:NUM_SSTABLES+0.5]
 
-set style fill solid 0.2 noborder
+set style fill solid 0.5 noborder
 
-BOX_WIDTH=0.2
+BOX_WIDTH=0.3
 plot \
 FN_IN u ($1-0.2):($2/1000):(BOX_WIDTH) w boxes not, \
-FN_IN u ($1+0.2):(($3+$4)/1000):(BOX_WIDTH) w boxes not
+FN_IN u ($1+0.2):(($3+$4)/1000):(BOX_WIDTH) w boxes lc rgb "#0000FF" not

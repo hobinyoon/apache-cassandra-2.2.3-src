@@ -15,9 +15,16 @@ class ReadCnt:
 		self.bf_fp = fp
 		self.bf_tp = tp
 		self.bf_n = r - fp - tp
+		self.reads_miss = r - tp
 
 	def __str__(self):
-		return "%8d %4d %7d %8d" % (self.reads, self.bf_fp, self.bf_tp, self.bf_n)
+		return "%8d %4d %7d %8d %8d" % (self.reads, self.bf_fp, self.bf_tp, self.bf_n, self.reads_miss)
+
+	def __add__(self, r):
+		return ReadCnt(
+				self.reads + r.reads,
+				self.bf_fp + r.bf_fp,
+				self.bf_tp + r.bf_tp)
 
 	def __sub__(self, r):
 		return ReadCnt(
@@ -70,12 +77,14 @@ def ReadInputAndGenFormattedFile():
 	with open(fn_out, "w") as fo:
 		fo.write("# time: %s\n" % time)
 		fo.write("#\n")
-		fmt = "%2d %8d %4d %7d %8d"
-		header = Util.BuildHeader(fmt, "sstable_gen read_cnt bf_fp_cnt bf_tp_cnt bf_n_cnt")
+		fmt = "%2d %8d %4d %7d %8d %8d"
+		header = Util.BuildHeader(fmt, "sstable_gen read_cnt bf_fp_cnt bf_tp_cnt(read_hit) bf_n_cnt read_miss")
 		fo.write(header)
 		for k, v in sorted(sst_readcnt.iteritems()):
 			fo.write("%2d %s\n" % (k, v))
 	print "Created file %s %d" % (fn_out, os.path.getsize(fn_out))
+
+
 
 
 def main(argv):

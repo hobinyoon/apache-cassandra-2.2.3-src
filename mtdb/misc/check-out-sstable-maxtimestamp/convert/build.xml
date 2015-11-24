@@ -1,0 +1,15 @@
+<project name="ConvertTsToDatetime" default="build" basedir=".">
+	<target name="build" >
+		<javac includeantruntime="false" srcdir="." destdir="." includes="*.java" />
+	</target>
+
+	<target name="run" depends="build">
+		<java classname="ConvertTsToDatetime" fork="true" />
+	</target>
+
+	<target name="clean">
+		<delete>
+			<fileset dir="." includes="*.class"/>
+		</delete>
+	</target>
+</project>

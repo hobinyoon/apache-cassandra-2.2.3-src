@@ -1,6 +1,6 @@
 <project name="ConvertTsToDatetime" default="build" basedir=".">
 	<target name="build" >
-		<javac includeantruntime="false" srcdir="." destdir="." includes="*.java" />
+		<javac includeantruntime="false" debug="true" srcdir="." destdir="." includes="*.java" />
 	</target>
 
 	<target name="run" depends="build">

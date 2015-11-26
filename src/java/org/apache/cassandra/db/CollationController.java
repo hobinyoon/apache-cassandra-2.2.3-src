@@ -123,23 +123,50 @@ public class CollationController
             NamesQueryFilter namesFilter = (NamesQueryFilter) filter.filter;
             TreeSet<CellName> filterColumns = new TreeSet<>(namesFilter.columns);
             QueryFilter reducedFilter = new QueryFilter(filter.key, filter.cfName, namesFilter.withUpdatedColumns(filterColumns), filter.timestamp);
+            //if (mtdb_trace) {
+            //    logger.warn("MTDB: reducedFilter={} filter.timestamp={}", reducedFilter, filter.timestamp);
+            //}
 
             /* add the SSTables on disk */
+            // Hobin: sstables with bigger gen (younger sstables) first
             Collections.sort(view.sstables, SSTableReader.maxTimestampComparator);
+            //if (mtdb_trace) {
+            //    for (SSTableReader sstable : view.sstables)
+            //    {
+            //        logger.warn("MTDB: sstable {} max_ts {} min_ts {}"
+            //                , sstable.descriptor.generation
+            //                , sstable.getMaxTimestamp()
+            //                , sstable.getMinTimestamp()
+            //                );
+            //    }
+            //}
 
             // read sorted sstables
+            // Hobin: view.sstables contains all sstables
             for (SSTableReader sstable : view.sstables)
             {
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB: sstable {}", sstable.descriptor.generation);
+                //}
+
                 // if we've already seen a row tombstone with a timestamp greater
                 // than the most recent update to this sstable, we're done, since the rest of the sstables
                 // will also be older
                 if (sstable.getMaxTimestamp() < returnDeletionInfo.getTopLevelDeletion().markedForDeleteAt)
                     break;
 
+                // Hobin: max ts makes sense, not min ts. You want a guarantee
+                // that a SSTable doesn't have a key with a ts bigger than a
+                // value.
                 long currentMaxTs = sstable.getMaxTimestamp();
                 reduceNameFilter(reducedFilter, container, currentMaxTs);
+                // Hobin: reducedFilter.filter.columns becomes empty after
+                // checking with the currentMaxTs
                 if (((NamesQueryFilter) reducedFilter.filter).columns.isEmpty())
                     break;
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB: sstable {}", sstable.descriptor.generation);
+                //}
 
                 Tracing.trace("Merging data from sstable {}", sstable.descriptor.generation);
                 sstable.incrementReadCount();

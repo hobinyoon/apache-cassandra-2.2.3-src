@@ -1,3 +1,4 @@
-data/*-formatted
+data/*-by-sstables
+data/*-by-sstables-by-time
 *.pdf
 *.pyc

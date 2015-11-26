@@ -1,5 +1,5 @@
 build/
-data/
+data/*
 logs/
 src/gen-java/
 src/resources/org/apache/cassandra/config/version.properties

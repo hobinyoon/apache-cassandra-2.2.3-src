@@ -21,10 +21,16 @@ package org.apache.cassandra.stress.operations.predefined;
  */
 
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cassandra.stress.generate.PartitionGenerator;
@@ -94,12 +100,17 @@ public class CqlReader extends CqlOperation<ByteBuffer[][]>
         return new CqlRunOpMatchResults(client, query, queryId, params, key, Arrays.asList(expectRow));
     }
 
-    public static void PrintKeys() {
-        StringBuilder sb = new StringBuilder();
-        for (ByteBuffer k: keys)
-            sb.append("\n").append(Tracer.toLong(k));
+    public static void PrintKeys() throws FileNotFoundException {
+        if (keys.size() == 0)
+            return;
 
-        if (sb.length() > 0)
-            logger.info("keys:{}", sb.toString());
+        DateFormat dateFormat = new SimpleDateFormat("yy-MM-dd-HH:mm:ss");
+        Date date = new Date();
+        String fnOut = String.format("read-keys-%s", dateFormat.format(date));
+        try (PrintWriter pw = new PrintWriter(fnOut)) {
+            for (ByteBuffer k: keys)
+                pw.println(Tracer.toHex(k));
+        }
+        System.out.printf("Created file %s %d\n", fnOut, (new File(fnOut)).length());
     }
 }

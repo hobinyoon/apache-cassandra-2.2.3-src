@@ -21,8 +21,14 @@ package org.apache.cassandra.stress.operations.predefined;
  */
 
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cassandra.stress.generate.PartitionGenerator;
@@ -92,12 +98,17 @@ public class CqlInserter extends CqlOperation<Integer>
         return true;
     }
 
-    public static void PrintKeys() {
-        StringBuilder sb = new StringBuilder();
-        for (byte[] k: keys)
-            sb.append("\n").append(Tracer.toLong(k));
+    public static void PrintKeys() throws FileNotFoundException {
+        if (keys.size() == 0)
+            return;
 
-        if (sb.length() > 0)
-            logger.info("keys:{}", sb.toString());
+        DateFormat dateFormat = new SimpleDateFormat("yy-MM-dd-HH:mm:ss");
+        Date date = new Date();
+        String fnOut = String.format("write-keys-%s", dateFormat.format(date));
+        try (PrintWriter pw = new PrintWriter(fnOut)) {
+            for (byte[] k: keys)
+                pw.println(Tracer.toHex(k));
+        }
+        System.out.printf("Created file %s %d\n", fnOut, (new File(fnOut)).length());
     }
 }

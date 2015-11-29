@@ -1,0 +1,65 @@
+#!/bin/bash
+
+set -e
+set -u
+
+SRC_DIR=`dirname $BASH_SOURCE`
+pushd $SRC_DIR > /dev/null
+
+DEF_CLASS_PATH_FILE=.dep-class-path
+BUILD_DEP=false
+BUILD_PKG=false
+if [ ! -f $DEF_CLASS_PATH_FILE ]; then
+	BUILD_DEP=true
+fi
+
+# Check if the target jar exists
+find target -maxdepth 1 -name "casscli-*.jar" > /dev/null || BUILD_PKG=true
+
+# Check modification times
+MT_SRC=`find src -name "*.java" -printf "%T@\n" | sort | tail -n 1`
+
+# No need to build dependency file everytime source files change
+#if ! $BUILD_DEP ; then
+#	MT_DEP=`find . -maxdepth 1 -name $DEF_CLASS_PATH_FILE -printf "%T@\n"`
+#	if [[ "$MT_DEP" < "$MT_SRC" ]] ; then
+#		printf "Src files are older than the dependency file\n  %s\n  %s\n" $MT_SRC $MT_DEP
+#		BUILD_DEP=true
+#	fi
+#fi
+
+if ! $BUILD_PKG ; then
+	MT_JAR=`find target -maxdepth 1 -name "casscli-*.jar" -printf "%T@\n"`
+	if [[ "$MT_JAR" < "$MT_SRC" ]] ; then
+		#printf "Src files are older than the dependency file\n  %s\n  %s\n" $MT_SRC $MT_JAR
+		printf "Src files are older than the dependency file\n"
+		BUILD_PKG=true
+	fi
+fi
+
+# Build package first so that you can terminate early on errors
+if $BUILD_PKG ; then
+	echo "Building package file ..."
+	time mvn package -Dmaven.test.skip=true | sed 's/^/  /'
+	if [ "${PIPESTATUS[0]}" -ne "0" ]; then
+		exit 1
+	fi
+	echo
+fi
+
+if $BUILD_DEP ; then
+	echo "Generating dependency file ..."
+	time mvn dependency:build-classpath -Dmdep.outputFile=$DEF_CLASS_PATH_FILE | sed 's/^/  /'
+	if [ "${PIPESTATUS[0]}" -ne "0" ]; then
+		exit 1
+	fi
+	touch $DEF_CLASS_PATH_FILE
+	echo
+fi
+
+time java \
+	-cp target/casscli-0.1.jar:`cat $DEF_CLASS_PATH_FILE` \
+	mtdb.CassCli "${@:1}"
+
+# Not necessary since this is executed in a subprocess. Leave it.
+popd > /dev/null

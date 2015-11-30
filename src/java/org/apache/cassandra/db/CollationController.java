@@ -77,7 +77,9 @@ public class CollationController
      */
     private ColumnFamily collectTimeOrderedData(boolean copyOnHeap)
     {
-        boolean mtdb_trace = filter.getColumnFamilyName().equals("standard1");
+        boolean mtdb_trace = (
+                filter.getColumnFamilyName().equals("standard1")
+                || filter.getColumnFamilyName().equals("mtdb1"));
         final ColumnFamily container = ArrayBackedSortedColumns.factory.create(cfs.metadata, filter.filter.isReversed());
         //if (mtdb_trace) {
         //    logger.warn("MTDB: {} {}", container, container.deletionInfo());
@@ -274,7 +276,9 @@ public class CollationController
      */
     private ColumnFamily collectAllData(boolean copyOnHeap)
     {
-        boolean mtdb_trace = filter.getColumnFamilyName().equals("standard1");
+        boolean mtdb_trace = (
+                filter.getColumnFamilyName().equals("standard1")
+                || filter.getColumnFamilyName().equals("mtdb1"));
         if (mtdb_trace) {
             logger.warn("MTDB:");
         }

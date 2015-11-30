@@ -23,7 +23,7 @@ MT_SRC=`find src -name "*.java" -printf "%T@\n" | sort | tail -n 1`
 #if ! $BUILD_DEP ; then
 #	MT_DEP=`find . -maxdepth 1 -name $DEF_CLASS_PATH_FILE -printf "%T@\n"`
 #	if [[ "$MT_DEP" < "$MT_SRC" ]] ; then
-#		printf "Src files are older than the dependency file\n  %s\n  %s\n" $MT_SRC $MT_DEP
+#		printf "The dependency file is outdated\n  %s\n  %s\n" $MT_SRC $MT_DEP
 #		BUILD_DEP=true
 #	fi
 #fi
@@ -31,8 +31,7 @@ MT_SRC=`find src -name "*.java" -printf "%T@\n" | sort | tail -n 1`
 if ! $BUILD_PKG ; then
 	MT_JAR=`find target -maxdepth 1 -name "casscli-*.jar" -printf "%T@\n"`
 	if [[ "$MT_JAR" < "$MT_SRC" ]] ; then
-		#printf "Src files are older than the dependency file\n  %s\n  %s\n" $MT_SRC $MT_JAR
-		printf "Src files are older than the dependency file\n"
+		#printf "The package file is outdated\n  %s\n  %s\n" $MT_SRC $MT_JAR
 		BUILD_PKG=true
 	fi
 fi
@@ -59,7 +58,7 @@ fi
 
 time java \
 	-cp target/casscli-0.1.jar:`cat $DEF_CLASS_PATH_FILE` \
-	mtdb.CassCli "${@:1}"
+	mtdb.Reader "${@:1}"
 
 # Not necessary since this is executed in a subprocess. Leave it.
 popd > /dev/null

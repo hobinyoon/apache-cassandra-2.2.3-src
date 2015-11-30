@@ -13,23 +13,25 @@ if [ ! -f $DEF_CLASS_PATH_FILE ]; then
 	BUILD_DEP=true
 fi
 
-find target -maxdepth 1 -name "loadgen-*.jar" || BUILD_PKG=true
+# Check if the target jar exists
+find target -maxdepth 1 -name "loadgen-*.jar" > /dev/null || BUILD_PKG=true
 
 # Check modification times
 MT_SRC=`find src -name "*.java" -printf "%T@\n" | sort | tail -n 1`
 
-if ! $BUILD_DEP ; then
-	MT_DEP=`find . -maxdepth 1 -name $DEF_CLASS_PATH_FILE -printf "%T@\n"`
-	if [[ "$MT_DEP" < "$MT_SRC" ]] ; then
-		printf "Src files are older than the dependency file\n  %s\n  %s\n" $MT_SRC $MT_DEP
-		BUILD_DEP=true
-	fi
-fi
+# No need to build dependency file everytime source files change
+#if ! $BUILD_DEP ; then
+#	MT_DEP=`find . -maxdepth 1 -name $DEF_CLASS_PATH_FILE -printf "%T@\n"`
+#	if [[ "$MT_DEP" < "$MT_SRC" ]] ; then
+#		printf "The dependency file is outdated\n  %s\n  %s\n" $MT_SRC $MT_DEP
+#		BUILD_DEP=true
+#	fi
+#fi
 
 if ! $BUILD_PKG ; then
 	MT_JAR=`find target -maxdepth 1 -name "loadgen-*.jar" -printf "%T@\n"`
 	if [[ "$MT_JAR" < "$MT_SRC" ]] ; then
-		printf "Src files are older than the dependency file\n  %s\n  %s\n" $MT_SRC $MT_JAR
+		#printf "The package file is outdated\n  %s\n  %s\n" $MT_SRC $MT_JAR
 		BUILD_PKG=true
 	fi
 fi
@@ -37,13 +39,19 @@ fi
 # Build package first so that you can terminate early on errors
 if $BUILD_PKG ; then
 	echo "Building package file ..."
-	time mvn package -Dmaven.test.skip=true
+	time mvn package -Dmaven.test.skip=true | sed 's/^/  /'
+	if [ "${PIPESTATUS[0]}" -ne "0" ]; then
+		exit 1
+	fi
 	echo
 fi
 
 if $BUILD_DEP ; then
 	echo "Generating dependency file ..."
-	time mvn dependency:build-classpath -Dmdep.outputFile=$DEF_CLASS_PATH_FILE
+	time mvn dependency:build-classpath -Dmdep.outputFile=$DEF_CLASS_PATH_FILE | sed 's/^/  /'
+	if [ "${PIPESTATUS[0]}" -ne "0" ]; then
+		exit 1
+	fi
 	touch $DEF_CLASS_PATH_FILE
 	echo
 fi

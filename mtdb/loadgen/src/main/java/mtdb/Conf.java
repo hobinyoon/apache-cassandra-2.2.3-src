@@ -26,6 +26,8 @@ public class Conf
 			.withRequiredArg().defaultsTo("");
 		accepts("dump_wr", "Dump all WRs to a file. Specify a file name.")
 			.withRequiredArg().defaultsTo("");
+		accepts("db", "Issue requests to the database server.")
+			.withRequiredArg();
 	}};
 
 	public static class Global {
@@ -33,7 +35,6 @@ public class Conf
 		String fn_test_obj_ages;
 		String fn_dump_wrs;
 
-		// Yaml options
 		int simulated_time_in_year;
 		double simulation_time_in_min;
 		long writes;
@@ -87,8 +88,30 @@ public class Conf
 		}
 	}
 
+	public static class Db {
+		boolean requests;
+		int num_readers;
+
+		Db(Object obj_) {
+			Map obj = (Map) obj_;
+			requests = Boolean.parseBoolean(obj.get("requests").toString());
+			num_readers = Integer.parseInt(obj.get("num_readers").toString());
+		}
+
+		@Override
+		public String toString() {
+			return String.format(
+					"requests: %s\n"
+					+ "num_readers: %d\n"
+					, requests
+					, num_readers
+					);
+		}
+	}
+
 	public static Global global;
 	public static PerObj per_obj;
+	public static Db db;
 
 	private static void _LoadYaml() throws IOException {
 		InputStream input = new FileInputStream(new File("conf/loadgen.yaml"));
@@ -99,6 +122,7 @@ public class Conf
 
 		global = new Global(root.get("global"));
 		per_obj = new PerObj(root.get("per_obj"));
+		db = new Db(root.get("db"));
 	}
 
 	private static void _Dump() {
@@ -107,6 +131,8 @@ public class Conf
 		sb.append(global.toString().replaceAll("(?m)^", "  "));
 		sb.append("per_obj:\n");
 		sb.append(per_obj.toString().replaceAll("(?m)^", "  "));
+		sb.append("db:\n");
+		sb.append(db.toString().replaceAll("(?m)^", "  "));
 		System.out.println(sb);
 	}
 
@@ -137,6 +163,9 @@ public class Conf
 		global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
 		global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");
 		global.fn_dump_wrs = (String) options.valueOf("dump_wr");
+
+		if (options.has("db"))
+			db.requests = Boolean.parseBoolean((String) options.valueOf("db"));
 	}
 
 	public static void Init(String[] args)

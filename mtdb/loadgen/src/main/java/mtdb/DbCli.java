@@ -1,7 +1,10 @@
 package mtdb;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DbCli
 {
@@ -71,22 +74,38 @@ public class DbCli
 		}
 	}
 
-	public static void Run() throws InterruptedException {
-		try (Cons.MeasureTime _ = new Cons.MeasureTime("Making requests ...")) {
-			try {
-				for (Reqs.WRs wrs: Reqs._WRs)
-					_q.put(new OpW(wrs));
-				_q.put(new OpEndmarkW());
+	private static AtomicInteger numOpWsProcessed = new AtomicInteger();
+	private static Object allOpWsProcessed = new Object();
 
-				// TODO: take() and put() elements in parallel
+	private static class DbClientThread implements Runnable
+	{
+		public void run() {
+			try {
 				while (true) {
 					Op op = _q.take();
-					Cons.P(op);
+					Cons.P(String.format("%s tid=%d", op, Thread.currentThread().getId()));
 
 					if (op instanceof OpW) {
-						for (long res: op.wrs.r_epoch_sec) {
+						// Simulate a write
+						Thread.sleep(10);
+
+						// Reads operations of the object are enqueued after the write to
+						// make sure the records are returned from the database server.
+						for (long res: op.wrs.r_epoch_sec)
 							_q.put(new OpR(op.wrs, res));
+
+						StartDbClient();
+
+						if (numOpWsProcessed.incrementAndGet() == Reqs._WRs.size()) {
+							// No more DbClient thread is created at this point. Notify
+							// the main thread to join them all.
+							synchronized (allOpWsProcessed) {
+								allOpWsProcessed.notify();
+							}
 						}
+					} else if (op instanceof OpR) {
+						// Simulate a read
+						Thread.sleep(20);
 					} else if (op instanceof OpEndmarkW) {
 						for (int i = 0; i < Conf.db.num_threads; i ++) {
 							_q.put(new OpEndmarkR());
@@ -98,6 +117,66 @@ public class DbCli
 			} catch (Exception e) {
 				System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
 			}
+		}
+	}
+
+	private static List<Thread> _threads = new ArrayList();
+
+	private static void StartDbClient() {
+		synchronized (_threads) {
+			if (Conf.db.num_threads <= _threads.size())
+				return;
+
+			// Start a consumer (DB client) thread one by one to prevent a bunch of
+			// writes happening before any reads
+			Thread t = new Thread(new DbClientThread());
+			t.start();
+			_threads.add(t);
+		}
+	}
+
+	private static void JoinAllDbClients() throws InterruptedException {
+		// When can you start joining DbClient threads? How do you know when no
+		// more thread is created?
+		//  - How many OpW(s) are completed? We know this number and it's the
+		//  easiest.
+		//
+		// More difficult alternatives:
+		//  - How many DbClient threads are created? It depends on the maximum
+		//  number of threads and the number of OpW(s).
+		//  - How many EndmarkerRs are you expecting to be processed? Depends on
+		//  the number of threads created.
+		//
+		// Not working:
+		//  - Wail till after consuming the OpEndmarkW. Other threads may still be
+		//  working an OpW, possibly creating more threads.
+		//  - Wait till after all OpEndmarkR(s) are consumed. We don't know if they
+		//  will ever be consumed all since we are starting DbClient threads
+		//  dynamically.
+		//
+		// Wait till all DbClient threads are done with OpEndmarkR before joining
+		// them.
+		synchronized (allOpWsProcessed) {
+			allOpWsProcessed.wait();
+		}
+
+		synchronized (_threads) {
+			// All DbClient threads can be joined here, even though they are created
+			// in a hierarchical manner.
+			for (Thread t: _threads)
+				t.join();
+			Cons.P("Joined them all");
+		}
+	}
+
+	public static void Run() throws InterruptedException {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime("Making requests ...")) {
+			for (Reqs.WRs wrs: Reqs._WRs)
+				_q.put(new OpW(wrs));
+			_q.put(new OpEndmarkW());
+
+			StartDbClient();
+			JoinAllDbClients();
 		}
 	}
 }

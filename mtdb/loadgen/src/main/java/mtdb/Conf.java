@@ -162,6 +162,8 @@ public class Conf
 
 		if (options.has("writes"))
 			global.writes = (long) options.valueOf("writes");
+		if (global.writes <= 0)
+			throw new RuntimeException("Unexpected global.writes=" + global.writes);
 
 		global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
 		global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");

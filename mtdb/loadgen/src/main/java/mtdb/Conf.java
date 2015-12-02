@@ -28,6 +28,8 @@ public class Conf
 			.withRequiredArg().defaultsTo("");
 		accepts("db", "Issue requests to the database server.")
 			.withRequiredArg();
+		accepts("db_threads", "Number of client threads that make requests to the database server.")
+			.withRequiredArg().ofType(Integer.class);
 	}};
 
 	public static class Global {
@@ -52,10 +54,10 @@ public class Conf
 		@Override
 		public String toString() {
 			return String.format(
-					"simulated_time_in_year: %d\n"
-					+ "simulation_time_in_min: %f\n"
-					+ "writes: %d\n"
-					+ "write_time_dist: %s\n"
+					"simulated_time_in_year: %d"
+					+ "\nsimulation_time_in_min: %f"
+					+ "\nwrites: %d"
+					+ "\nwrite_time_dist: %s"
 					, simulated_time_in_year
 					, simulation_time_in_min
 					, writes
@@ -79,9 +81,9 @@ public class Conf
 		@Override
 		public String toString() {
 			return String.format(
-					"avg_reads: %f\n"
-					+ "num_reads_dist: %s\n"
-					+ "read_time_dist: %s\n"
+					"avg_reads: %f"
+					+ "\nnum_reads_dist: %s"
+					+ "\nread_time_dist: %s"
 					, avg_reads
 					, num_reads_dist
 					, read_time_dist);
@@ -90,21 +92,21 @@ public class Conf
 
 	public static class Db {
 		boolean requests;
-		int num_readers;
+		int num_threads;
 
 		Db(Object obj_) {
 			Map obj = (Map) obj_;
 			requests = Boolean.parseBoolean(obj.get("requests").toString());
-			num_readers = Integer.parseInt(obj.get("num_readers").toString());
+			num_threads = Integer.parseInt(obj.get("num_threads").toString());
 		}
 
 		@Override
 		public String toString() {
 			return String.format(
-					"requests: %s\n"
-					+ "num_readers: %d\n"
+					"requests: %s"
+					+ "\nnum_threads: %d"
 					, requests
-					, num_readers
+					, num_threads
 					);
 		}
 	}
@@ -129,11 +131,12 @@ public class Conf
 		StringBuilder sb = new StringBuilder(1000);
 		sb.append("global:\n");
 		sb.append(global.toString().replaceAll("(?m)^", "  "));
-		sb.append("per_obj:\n");
+		sb.append("\nper_obj:\n");
 		sb.append(per_obj.toString().replaceAll("(?m)^", "  "));
-		sb.append("db:\n");
+		sb.append("\ndb:\n");
 		sb.append(db.toString().replaceAll("(?m)^", "  "));
-		System.out.println(sb);
+		//System.out.println(sb);
+		Cons.P(sb);
 	}
 
 	private static void _PrintHelp() throws IOException {
@@ -166,6 +169,8 @@ public class Conf
 
 		if (options.has("db"))
 			db.requests = Boolean.parseBoolean((String) options.valueOf("db"));
+		if (options.has("db_threads"))
+			db.num_threads = (int) options.valueOf("db_threads");
 	}
 
 	public static void Init(String[] args)
@@ -173,7 +178,7 @@ public class Conf
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("Conf.Init ...")) {
 			_LoadYaml();
 			_ParseCmdlnOptions(args);
-			//_Dump();
+			_Dump();
 		}
 	}
 }

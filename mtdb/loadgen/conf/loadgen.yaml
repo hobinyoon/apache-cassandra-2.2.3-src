@@ -36,5 +36,5 @@ db:
   # Request IO to the database server
   requests: True
 
-  # Number of reader threads
-  num_readers: 100
+  # Number of client threads
+  num_threads: 100

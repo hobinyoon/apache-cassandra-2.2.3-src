@@ -81,14 +81,14 @@ public class DbCli
 				// TODO: take() and put() elements in parallel
 				while (true) {
 					Op op = _q.take();
-					System.out.printf("[%s]\n", op);
+					Cons.P(op);
 
 					if (op instanceof OpW) {
 						for (long res: op.wrs.r_epoch_sec) {
 							_q.put(new OpR(op.wrs, res));
 						}
 					} else if (op instanceof OpEndmarkW) {
-						for (int i = 0; i < Conf.db.num_readers; i ++) {
+						for (int i = 0; i < Conf.db.num_threads; i ++) {
 							_q.put(new OpEndmarkR());
 						}
 					} else if (op instanceof OpEndmarkR) {

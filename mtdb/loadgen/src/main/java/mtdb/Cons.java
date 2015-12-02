@@ -8,27 +8,12 @@ public class Cons
 	public static int _ind_len = 0;
 	public static StringBuilder _ind = new StringBuilder();
 
-	public static void P(String msg) {
+	public static void P(Object o) {
 		if (_ind_len > 0) {
-			System.out.println(msg.replaceAll("(?m)^", _ind.toString()));
+			System.out.println(o.toString().replaceAll("(?m)^", _ind.toString()));
 		} else {
-			System.out.println(msg);
+			System.out.println(o);
 		}
-
-		//StringBuilder sb = new StringBuilder(200);
-		//for (int i = 0; i < _ind_len; i ++) {
-		//	sb.append(" ");
-		//}
-		//sb.append(msg);
-		//System.out.println(sb);
-	}
-
-	public static void P(long l) {
-		P(String.format("%d", l));
-	}
-
-	public static void P(double d) {
-		P(String.format("%f", d));
 	}
 
 	public static class MeasureTime implements AutoCloseable

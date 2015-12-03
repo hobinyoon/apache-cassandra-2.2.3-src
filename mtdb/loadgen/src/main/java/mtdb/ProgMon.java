@@ -17,15 +17,15 @@ class ProgMon {
 			try {
 				int w_total = Reqs._WRs.size();
 				int w_prev = 0;
-				String fmt = "%7d %5.1f %4d %4d %8d %4d %8d";
+				String fmt = "%7d %5.1f %5d %5d %8d %5d %8d";
 				Cons.P(Util.BuildHeader(fmt, 0
 							, "num_OpW_requested"
 							, "percent_completed"
 							, "OpW_per_sec"
 							, "running_on_time_cnt"
-							, "running_on_time_sleep_avg_in_us"
+							, "running_on_time_sleep_avg_in_ms"
 							, "running_behind_cnt"
-							, "running_behind_avg_in_us"
+							, "running_behind_avg_in_ms"
 							));
 				while (true) {
 					try {
@@ -40,10 +40,10 @@ class ProgMon {
 					//System.out.printf("  %d/%d %.2f%%", w, w_total, (100.0 * w / w_total));
 					int extraSleepRunningOnTimeCnt = _extraSleepRunningOnTimeCnt.get();
 					long extraSleepRunningOnTimeAvg = (extraSleepRunningOnTimeCnt == 0) ?
-						0 : (_extraSleepRunningOnTimeSum.get() / extraSleepRunningOnTimeCnt / 1000);
+						0 : (_extraSleepRunningOnTimeSum.get() / extraSleepRunningOnTimeCnt / 1000000);
 					int extraSleepRunningBehindCnt = _extraSleepRunningBehindCnt.get();
 					long extraSleepRunningBehindAvg = (extraSleepRunningBehindCnt == 0) ?
-						0 : (_extraSleepRunningBehindSum.get() / extraSleepRunningBehindCnt / 1000);
+						0 : (_extraSleepRunningBehindSum.get() / extraSleepRunningBehindCnt / 1000000);
 					Cons.P(String.format(fmt
 								, w
 								, 100.0 * w / w_total

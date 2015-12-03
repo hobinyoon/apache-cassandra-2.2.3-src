@@ -16,6 +16,8 @@ public class LoadGen
 
 			NumReadsPerObj.Init();
 			ReadTimes.Init();
+			SimTime.Init();
+
 			Reqs.GenWRs();
 
 			if (Conf.global.fn_dump_wrs.length() > 0) {

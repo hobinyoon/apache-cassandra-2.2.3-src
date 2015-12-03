@@ -4,32 +4,25 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.lang.InterruptedException;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.lang3.time.DurationFormatUtils;
-
 public class Reqs
 {
-	static LocalDateTime _w_dt_b;
-	static LocalDateTime _w_dt_e;
-	static long _w_epoch_sec_b;
-	public static long _w_epoch_sec_e;
-
 	// Write and reads operations to an object
 	public static class WRs implements Comparable<WRs> {
-		long key;	// primary key of the record
-		static long global_key = 0;
+		// Primary key of the record
+		long key;
+		// All WRs instances are created serially. No need to be atomic.
+		static long _nextKey = 0;
 		long w_epoch_sec;
 		List<Long> r_epoch_sec;
 
 		WRs(long w_epoch_sec_) {
-			key = global_key ++;
+			key = _nextKey ++;
 			w_epoch_sec = w_epoch_sec_;
 		}
 
@@ -39,10 +32,10 @@ public class Reqs
 			//Cons.P(String.format("num_reads=%d", num_reads));
 			r_epoch_sec = new ArrayList((int)num_reads);
 			for (long i = 0; i < num_reads; i ++) {
-				// Reads after the last write doesn't need to be stored for the purpose
-				// of the simulation
+				// Do not add reads after the last write, which is the end of the
+				// simulation.
 				long r = w_epoch_sec + ReadTimes.GetNext();
-				if (r >= _w_epoch_sec_e)
+				if (r >= SimTime.SimulatedTimeEndEs())
 					continue;
 				r_epoch_sec.add(r);
 			}
@@ -104,35 +97,16 @@ public class Reqs
 	public static void GenWRs() throws InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime(
 					String.format("Generating %d WRs(s) ...", Conf.global.writes))) {
-			// Simulated datetime begin and end
-			_w_dt_b = LocalDateTime.of(2010, 1, 1, 0, 0);
-			_w_dt_e = LocalDateTime.of(2010 + Conf.global.simulated_time_in_year, 1, 1, 0, 0);
-
-			ZoneId zoneId = ZoneId.systemDefault();
-			// Ignore sub-second resolution
-			_w_epoch_sec_b = _w_dt_b.atZone(zoneId).toEpochSecond();
-			_w_epoch_sec_e = _w_dt_e.atZone(zoneId).toEpochSecond();
-			long epoch_sec_dur = _w_epoch_sec_e - _w_epoch_sec_b;
-
-			Cons.P(String.format("Simulated datetime:"
-						+ "\n  begin: %16s %10d"
-						+ "\n  end:   %16s %10d"
-						//+ "\n  dur:   %16s %10d"
-						, _w_dt_b, _w_epoch_sec_b
-						, _w_dt_e, _w_epoch_sec_e
-						//, DurationFormatUtils.formatDurationHMS(epoch_sec_dur * 1000), epoch_sec_dur
-						));
-
 			_WRs = new ArrayList(Conf.global.writes);
 			if (Conf.global.write_time_dist.equals("Same")) {
 				for (int i = 1; i <= Conf.global.writes; i ++) {
-					long es = _w_epoch_sec_b + epoch_sec_dur * i / Conf.global.writes;
+					long es = SimTime.SimulatedTimeBeginEs() + SimTime.SimulatedTimeDurEs() * i / Conf.global.writes;
 					_WRs.add(new WRs(es));
 				}
 			} else if (Conf.global.write_time_dist.equals("Uniform")) {
 				ThreadLocalRandom tlr = ThreadLocalRandom.current();
 				for (int i = 1; i <= Conf.global.writes; i ++) {
-					long es = tlr.nextLong(_w_epoch_sec_b, _w_epoch_sec_e + 1);
+					long es = tlr.nextLong(SimTime.SimulatedTimeBeginEs(), SimTime.SimulatedTimeEndEs() + 1);
 					_WRs.add(new WRs(es));
 				}
 				// Sort by their write epochs. Primary keys are randomly ordered after

@@ -54,7 +54,7 @@ public class DbCli
 		OpEndmark() {
 			wrs = null;
 			// Assign the biggest (youngest) epoch value
-			epoch_sec = Reqs._w_epoch_sec_e + 100;
+			epoch_sec = SimTime.SimulatedTimeEndEs() + 100;
 		}
 	}
 
@@ -84,6 +84,7 @@ public class DbCli
 					//Cons.P(String.format("%s tid=%d", op, Thread.currentThread().getId()));
 
 					if (op instanceof OpW) {
+						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
 						// Simulate a write
 						Thread.sleep(10);
 
@@ -107,7 +108,8 @@ public class DbCli
 							_progMon.interrupt();
 						}
 					} else if (op instanceof OpR) {
-						// Simulate a read
+						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
+						// Simulate a read, which is slower than write
 						Thread.sleep(20);
 					} else if (op instanceof OpEndmarkW) {
 						for (int i = 0; i < Conf.db.num_threads; i ++) {
@@ -215,8 +217,11 @@ public class DbCli
 				_q.put(new OpW(wrs));
 			_q.put(new OpEndmarkW());
 
+			SimTime.StartSimulation();
+
 			StartDbClient();
 			_progMon.start();
+
 			JoinAllDbClients();
 			_progMon.join();
 		}

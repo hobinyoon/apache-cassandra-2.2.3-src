@@ -2,6 +2,8 @@ package mtdb;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
 
@@ -11,14 +13,17 @@ class SimTime {
 	// 2010-01-01 to 2015-01-01.
 	private static LocalDateTime _simulatedTimeBegin;
 	private static LocalDateTime _simulatedTimeEnd;
-	// In epoch second
+	// In seconds from Epoch
 	private static long _simulatedTimeBeginEs;
 	private static long _simulatedTimeEndEs;
 	private static long _simulatedTimeDurEs;
 
 	private static ZoneId _zoneId;
 
+	// In nano seconds
 	private static long _simulationTimeBegin;
+	private static long _simulationTimeEnd;
+	private static long _simulationTimeDur;
 
 	public static void Init() {
 		_simulatedTimeBegin = LocalDateTime.of(2010, 1, 1, 0, 0);
@@ -54,12 +59,91 @@ class SimTime {
 	}
 
 	public static void StartSimulation() {
+		_simulationTimeDur = (long) (Conf.global.simulation_time_in_min * 60 * 1000000000);
 		_simulationTimeBegin = System.nanoTime();
+		_simulationTimeEnd = _simulationTimeBegin + _simulationTimeBegin;
+		Cons.P(String.format("Simulation time:"
+					+ "\n  begin: %14d"
+					+ "\n  end:   %14d"
+					+ "\n  dur:   %14d"
+					, _simulationTimeBegin
+					, _simulationTimeEnd
+					, _simulationTimeDur
+					));
 	}
 
-	public static void SleepUntilSimulatedTime(long simulatedTime) {
+	// 4 ms
+	final private static long _minSleepNano = 4000000;
+
+	public static void SleepUntilSimulatedTime(long simulatedTimeEs) throws InterruptedException {
+		long durSinceSimulatedTimeBegin = simulatedTimeEs - _simulatedTimeBeginEs;
+
+		// _simulationTimeDur : _simulatedTimeDurEs
+		//   = targetDurSinceSimulationTimeBegin : durSinceSimulatedTimeBegin
+		//
+		// targetDurSinceSimulationTimeBegin = (targetSimulationTime - _simulationTimeBegin)
+		//
+		// sleep for (targetSimulationTime - curTime)
+
+		//targetDurSinceSimulationTimeBegin = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs;
+		//(targetSimulationTime - _simulationTimeBegin) = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs;
+		long targetSimulationTime = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs + _simulationTimeBegin;
 		long curTime = System.nanoTime();
-		long durSinceSimulationTimeBegin = _simulationTimeBegin - curTime;
-		// TODO: sleep
+		long extraSleep = targetSimulationTime - curTime;
+		Cons.P(String.format("extraSleep: %10d %4d %7d"
+					, extraSleep
+					, extraSleep / 1000000
+					, extraSleep % 1000000
+					));
+		if (extraSleep <= 0) {
+			// TODO: report simulator is running behind
+		}
+		if (extraSleep <= _minSleepNano)
+			return;
+		Thread.sleep(extraSleep / 1000000, (int) (extraSleep % 1000000));
+	}
+
+	public static void TestMinimumSleeptime() throws InterruptedException {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime("Testing minimum Thread.sleep() time ...")) {
+			int runs = 1000;
+			List<Long> sleepTimes = new ArrayList();
+			for (int i = 0; i < runs; i ++) {
+				long before = System.nanoTime();
+				Thread.sleep(0, 1);
+				long after = System.nanoTime();
+				sleepTimes.add(after - before);
+			}
+
+			long min = -1;
+			long max = -1;
+			long sum = 0;
+			boolean first = true;
+			for (long st: sleepTimes) {
+				if (first) {
+					min = max = st;
+					first = false;
+				} else {
+					if (st < min) {
+						min = st;
+					} else if (max < st) {
+						max = st;
+					}
+				}
+				sum += st;
+			}
+			double avg = ((double) sum) / runs;
+
+			Cons.P(String.format(
+						"In nano seconds"
+						+ "\navg: %f"
+						+ "\nmin: %d"
+						+ "\nmax: %d"
+						+ "\nruns: %d"
+						, avg
+						, min
+						, max
+						, runs
+						));
+		}
 	}
 }

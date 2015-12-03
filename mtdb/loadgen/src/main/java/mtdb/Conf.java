@@ -21,11 +21,11 @@ public class Conf
 		accepts("writes", "Number of writes")
 			.withRequiredArg().ofType(Integer.class);
 		accepts("test_num_reads_per_obj", "Test number of reads per obj. Specify a file name to dump data.")
-			.withRequiredArg().defaultsTo("");
+			.withRequiredArg();
 		accepts("test_obj_ages", "Test obj ages when accessed. Specify a file name to dump data.")
-			.withRequiredArg().defaultsTo("");
+			.withRequiredArg();
 		accepts("dump_wr", "Dump all WRs to a file. Specify a file name.")
-			.withRequiredArg().defaultsTo("");
+			.withRequiredArg();
 		accepts("db", "Issue requests to the database server.")
 			.withRequiredArg();
 		accepts("db_threads", "Number of client threads that make requests to the database server.")
@@ -165,9 +165,20 @@ public class Conf
 		if (global.writes <= 0)
 			throw new RuntimeException("Unexpected global.writes=" + global.writes);
 
-		global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
-		global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");
-		global.fn_dump_wrs = (String) options.valueOf("dump_wr");
+		if (options.has("test_num_reads_per_obj"))
+			global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
+		else
+			global.fn_test_num_reads_per_obj = "";
+
+		if (options.has("test_obj_ages"))
+			global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");
+		else
+			global.fn_test_obj_ages = "";
+
+		if (options.has("dump_wr"))
+			global.fn_dump_wrs = (String) options.valueOf("dump_wr");
+		else
+			global.fn_dump_wrs = "";
 
 		if (options.has("db"))
 			db.requests = Boolean.parseBoolean((String) options.valueOf("db"));

@@ -19,7 +19,7 @@ public class Conf
 	private static final OptionParser _opt_parser = new OptionParser() {{
 		accepts("help", "Show this help message");
 		accepts("writes", "Number of writes")
-			.withRequiredArg().ofType(Long.class);
+			.withRequiredArg().ofType(Integer.class);
 		accepts("test_num_reads_per_obj", "Test number of reads per obj. Specify a file name to dump data.")
 			.withRequiredArg().defaultsTo("");
 		accepts("test_obj_ages", "Test obj ages when accessed. Specify a file name to dump data.")
@@ -39,7 +39,7 @@ public class Conf
 
 		int simulated_time_in_year;
 		double simulation_time_in_min;
-		long writes;
+		int writes;
 		String write_time_dist;
 
 		// Init with a YAML obj. Can be overwritten by command line options.
@@ -161,7 +161,7 @@ public class Conf
 		}
 
 		if (options.has("writes"))
-			global.writes = (long) options.valueOf("writes");
+			global.writes = (int) options.valueOf("writes");
 		if (global.writes <= 0)
 			throw new RuntimeException("Unexpected global.writes=" + global.writes);
 

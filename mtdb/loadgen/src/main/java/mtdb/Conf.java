@@ -30,6 +30,8 @@ public class Conf
 			.withRequiredArg();
 		accepts("db_threads", "Number of client threads that make requests to the database server.")
 			.withRequiredArg().ofType(Integer.class);
+		accepts("sim_time", "Simulation time in minutes.")
+			.withRequiredArg().ofType(Double.class);
 	}};
 
 	public static class Global {
@@ -55,7 +57,7 @@ public class Conf
 		public String toString() {
 			return String.format(
 					"simulated_time_in_year: %d"
-					+ "\nsimulation_time_in_min: %f"
+					+ "\nsimulation_time_in_min: %.1f"
 					+ "\nwrites: %d"
 					+ "\nwrite_time_dist: %s"
 					, simulated_time_in_year
@@ -184,6 +186,9 @@ public class Conf
 			db.requests = Boolean.parseBoolean((String) options.valueOf("db"));
 		if (options.has("db_threads"))
 			db.num_threads = (int) options.valueOf("db_threads");
+
+		if (options.has("sim_time"))
+			global.simulation_time_in_min = (double) options.valueOf("sim_time");
 	}
 
 	public static void Init(String[] args)

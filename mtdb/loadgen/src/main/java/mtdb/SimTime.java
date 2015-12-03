@@ -72,8 +72,9 @@ class SimTime {
 					));
 	}
 
-	// 4 ms
-	final private static long _minSleepNano = 4000000;
+	// Average Thread.sleep(0, 1) time is 1.1 ms on a 8 core Xeon E5420 @ 2.50GHz
+	// machine
+	final private static long _minSleepNano = 2000000;
 
 	public static void SleepUntilSimulatedTime(long simulatedTimeEs) throws InterruptedException {
 		long durSinceSimulatedTimeBegin = simulatedTimeEs - _simulatedTimeBeginEs;

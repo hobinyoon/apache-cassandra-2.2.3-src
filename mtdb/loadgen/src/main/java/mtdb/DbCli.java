@@ -8,8 +8,6 @@ import java.util.List;
 
 public class DbCli
 {
-	// TODO: Monitor progress by the number of requested writes / all writes.
-
 	private static BlockingQueue<Op> _q = new PriorityBlockingQueue();
 
 	public static class Op implements Comparable<Op> {
@@ -83,7 +81,7 @@ public class DbCli
 			try {
 				while (true) {
 					Op op = _q.take();
-					Cons.P(String.format("%s tid=%d", op, Thread.currentThread().getId()));
+					//Cons.P(String.format("%s tid=%d", op, Thread.currentThread().getId()));
 
 					if (op instanceof OpW) {
 						// Simulate a write
@@ -102,6 +100,10 @@ public class DbCli
 							synchronized (allOpWsProcessed) {
 								allOpWsProcessed.notify();
 							}
+
+							// Interrupt the monitoring thread so that it finishes sleep()
+							// early.
+							_progMon.interrupt();
 						}
 					} else if (op instanceof OpR) {
 						// Simulate a read
@@ -123,6 +125,10 @@ public class DbCli
 	private static List<Thread> _threads = new ArrayList();
 
 	private static void StartDbClient() {
+		// Similar to test and test-and-set
+		if (Conf.db.num_threads <= _threads.size())
+			return;
+
 		synchronized (_threads) {
 			if (Conf.db.num_threads <= _threads.size())
 				return;
@@ -165,18 +171,56 @@ public class DbCli
 			// in a hierarchical manner.
 			for (Thread t: _threads)
 				t.join();
-			Cons.P("Joined them all");
 		}
 	}
 
+	private static class ProgMon implements Runnable
+	{
+		public void run() {
+			// Monitor the progress by the number of requested writes / all writes.
+			try {
+				int w_total = Reqs._WRs.size();
+				int w_prev = 0;
+				while (true) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// sleep() can be interrupted when w == w_total
+					}
+
+					int w = numOpWsProcessed.get();
+					//System.out.printf("\033[1K");
+					//System.out.printf("\033[1G");
+					//System.out.printf("  %d/%d %.2f%%", w, w_total, (100.0 * w / w_total));
+					Cons.P(String.format("%d %d op/s %.2f%%",
+								w, w - w_prev, 100.0 * w / w_total));
+					if (w == w_total)
+						break;
+					w_prev = w;
+					//System.out.flush();
+				}
+				//System.out.printf("\n");
+
+				// TODO: keep the last one?
+			} catch (Exception e) {
+				System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
+			}
+		}
+	}
+
+	private static Thread _progMon = new Thread(new ProgMon());
+
 	public static void Run() throws InterruptedException {
-		try (Cons.MeasureTime _ = new Cons.MeasureTime("Making requests ...")) {
+		try (Cons.MeasureTime _ = new Cons.MeasureTime(
+					String.format("Making %d WRs requests ...", Reqs._WRs.size()))) {
 			for (Reqs.WRs wrs: Reqs._WRs)
 				_q.put(new OpW(wrs));
 			_q.put(new OpEndmarkW());
 
 			StartDbClient();
+			_progMon.start();
 			JoinAllDbClients();
+			_progMon.join();
 		}
 	}
 }

@@ -96,7 +96,9 @@ class SimTime {
 		//			, extraSleep / 1000000
 		//			, extraSleep % 1000000
 		//			));
-		if (extraSleep <= 0) {
+		if (extraSleep > 0) {
+			ProgMon.SimulatorRunningOnTime(extraSleep);
+		} else {
 			ProgMon.SimulatorRunningBehind(extraSleep);
 		}
 		if (extraSleep <= _minSleepNano)

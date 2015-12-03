@@ -91,13 +91,13 @@ class SimTime {
 		long targetSimulationTime = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs + _simulationTimeBegin;
 		long curTime = System.nanoTime();
 		long extraSleep = targetSimulationTime - curTime;
-		Cons.P(String.format("extraSleep: %10d %4d %7d"
-					, extraSleep
-					, extraSleep / 1000000
-					, extraSleep % 1000000
-					));
+		//Cons.P(String.format("extraSleep: %10d %4d %7d"
+		//			, extraSleep
+		//			, extraSleep / 1000000
+		//			, extraSleep % 1000000
+		//			));
 		if (extraSleep <= 0) {
-			// TODO: report simulator is running behind
+			ProgMon.SimulatorRunningBehind(extraSleep);
 		}
 		if (extraSleep <= _minSleepNano)
 			return;

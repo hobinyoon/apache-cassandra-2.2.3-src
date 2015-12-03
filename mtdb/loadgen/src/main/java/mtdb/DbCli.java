@@ -72,7 +72,7 @@ public class DbCli
 		}
 	}
 
-	private static AtomicInteger numOpWsProcessed = new AtomicInteger();
+	private static AtomicInteger _numOpWsProcessed = new AtomicInteger();
 	private static Object allOpWsProcessed = new Object();
 
 	private static class DbClientThread implements Runnable
@@ -96,16 +96,12 @@ public class DbCli
 
 						StartDbClient();
 
-						if (numOpWsProcessed.incrementAndGet() == Reqs._WRs.size()) {
+						if (_numOpWsProcessed.incrementAndGet() == Reqs._WRs.size()) {
 							// No more DbClient thread is created at this point. Notify
 							// the main thread to join them all.
 							synchronized (allOpWsProcessed) {
 								allOpWsProcessed.notify();
 							}
-
-							// Interrupt the monitoring thread so that it finishes sleep()
-							// early.
-							_progMon.interrupt();
 						}
 					} else if (op instanceof OpR) {
 						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
@@ -123,6 +119,10 @@ public class DbCli
 				System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
 			}
 		}
+	}
+
+	public static int NumOpWsRequested() {
+		return _numOpWsProcessed.get();
 	}
 
 	private static List<Thread> _threads = new ArrayList();
@@ -176,40 +176,6 @@ public class DbCli
 		}
 	}
 
-	private static class ProgMon implements Runnable
-	{
-		public void run() {
-			// Monitor the progress by the number of requested writes / all writes.
-			try {
-				int w_total = Reqs._WRs.size();
-				int w_prev = 0;
-				while (true) {
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						// sleep() can be interrupted when w == w_total
-					}
-
-					int w = numOpWsProcessed.get();
-					//System.out.printf("\033[1K");
-					//System.out.printf("\033[1G");
-					//System.out.printf("  %d/%d %.2f%%", w, w_total, (100.0 * w / w_total));
-					Cons.P(String.format("%d %d op/s %.2f%%",
-								w, w - w_prev, 100.0 * w / w_total));
-					if (w == w_total)
-						break;
-					w_prev = w;
-					//System.out.flush();
-				}
-				//System.out.printf("\n");
-			} catch (Exception e) {
-				System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
-			}
-		}
-	}
-
-	private static Thread _progMon = new Thread(new ProgMon());
-
 	public static void Run() throws InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime(
 					String.format("Making %d WRs requests ...", Reqs._WRs.size()))) {
@@ -220,10 +186,10 @@ public class DbCli
 			SimTime.StartSimulation();
 
 			StartDbClient();
-			_progMon.start();
+			ProgMon.Start();
 
 			JoinAllDbClients();
-			_progMon.join();
+			ProgMon.Stop();
 		}
 	}
 }

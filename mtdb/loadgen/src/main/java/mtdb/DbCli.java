@@ -89,6 +89,7 @@ public class DbCli
 
 						// Reads operations of the object are enqueued after the write to
 						// make sure the records are returned from the database server.
+						op.wrs.PopulateRs();
 						for (long res: op.wrs.r_epoch_sec)
 							_q.put(new OpR(op.wrs, res));
 
@@ -125,20 +126,19 @@ public class DbCli
 	private static List<Thread> _threads = new ArrayList();
 
 	private static void StartDbClient() {
-		// Similar to test and test-and-set
+		// Start a consumer (DB client) thread one by one to prevent a bunch of
+		// writes happening before any reads. Design is similar to test and
+		// test-and-set.
 		if (Conf.db.num_threads <= _threads.size())
 			return;
-
+		Thread t;
 		synchronized (_threads) {
 			if (Conf.db.num_threads <= _threads.size())
 				return;
-
-			// Start a consumer (DB client) thread one by one to prevent a bunch of
-			// writes happening before any reads
-			Thread t = new Thread(new DbClientThread());
-			t.start();
+			t = new Thread(new DbClientThread());
 			_threads.add(t);
 		}
+		t.start();
 	}
 
 	private static void JoinAllDbClients() throws InterruptedException {
@@ -200,8 +200,6 @@ public class DbCli
 					//System.out.flush();
 				}
 				//System.out.printf("\n");
-
-				// TODO: keep the last one?
 			} catch (Exception e) {
 				System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
 			}

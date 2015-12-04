@@ -107,7 +107,7 @@ public class NumReadsPerObj
 	// Interesting that they don't have a meaningful performance difference.
 	private static char _GETNEXT_METHOD = 'I';
 
-	public static long GetNext() {
+	public static int GetNext() {
 		// Sequential search
 		ThreadLocalRandom tlr = ThreadLocalRandom.current();
 		long rank = tlr.nextLong(_obj_rank_min, _obj_rank_max + 1);
@@ -129,7 +129,9 @@ public class NumReadsPerObj
 					// Exclude the first one, write
 					num_reqs -= 1.0;
 					//Cons.P(String.format("%d %f %d", rank, num_reqs, Math.round(num_reqs)));
-					return Math.round(num_reqs);
+
+					// Cast to float to call int round(float a);
+					return Math.round((float) num_reqs);
 				}
 			}
 		}
@@ -154,7 +156,7 @@ public class NumReadsPerObj
 					}
 					// Exclude the first one, write
 					num_reqs -= 1.0;
-					return Math.round(num_reqs);
+					return Math.round((float) num_reqs);
 				}
 			}
 		}

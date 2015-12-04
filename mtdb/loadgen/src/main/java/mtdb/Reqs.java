@@ -21,17 +21,17 @@ public class Reqs
 		long w_epoch_sec;
 		List<Long> r_epoch_sec;
 
-		WRs(long w_epoch_sec_) {
+		WRs(long w_epoch_sec) {
 			key = _nextKey ++;
-			w_epoch_sec = w_epoch_sec_;
+			this.w_epoch_sec = w_epoch_sec;
 		}
 
 		public void PopulateRs() {
 			// Populate r_epoch_sec
-			long num_reads = NumReadsPerObj.GetNext();
+			int num_reads = NumReadsPerObj.GetNext();
 			//Cons.P(String.format("num_reads=%d", num_reads));
-			r_epoch_sec = new ArrayList((int)num_reads);
-			for (long i = 0; i < num_reads; i ++) {
+			r_epoch_sec = new ArrayList(num_reads);
+			for (int i = 0; i < num_reads; i ++) {
 				// Do not add reads after the last write, which is the end of the
 				// simulation.
 				long r = w_epoch_sec + ReadTimes.GetNext();

@@ -61,7 +61,7 @@ class SimTime {
 	public static void StartSimulation() {
 		_simulationTimeDur = (long) (Conf.global.simulation_time_in_min * 60 * 1000000000);
 		_simulationTimeBegin = System.nanoTime();
-		_simulationTimeEnd = _simulationTimeBegin + _simulationTimeBegin;
+		_simulationTimeEnd = _simulationTimeBegin + _simulationTimeDur;
 		Cons.P(String.format("Simulation time:"
 					+ "\n  begin: %14d"
 					+ "\n  end:   %14d"
@@ -88,7 +88,8 @@ class SimTime {
 
 		//targetDurSinceSimulationTimeBegin = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs;
 		//(targetSimulationTime - _simulationTimeBegin) = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs;
-		long targetSimulationTime = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs + _simulationTimeBegin;
+		long targetSimulationTime = (long) (((double) _simulationTimeDur) * durSinceSimulatedTimeBegin
+				/ _simulatedTimeDurEs + _simulationTimeBegin);
 		long curTime = System.nanoTime();
 		long extraSleep = targetSimulationTime - curTime;
 		//Cons.P(String.format("extraSleep: %10d %4d %7d"

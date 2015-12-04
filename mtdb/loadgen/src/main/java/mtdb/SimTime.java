@@ -63,9 +63,9 @@ class SimTime {
 		_simulationTimeBegin = System.nanoTime();
 		_simulationTimeEnd = _simulationTimeBegin + _simulationTimeDur;
 		Cons.P(String.format("Simulation time:"
-					+ "\n  begin: %14d"
-					+ "\n  end:   %14d"
-					+ "\n  dur:   %14d"
+					+ "\n  begin: %16d"
+					+ "\n  end:   %16d"
+					+ "\n  dur:   %16d"
 					, _simulationTimeBegin
 					, _simulationTimeEnd
 					, _simulationTimeDur

@@ -18,42 +18,42 @@ public class Reqs
 		long key;
 		// All WRs instances are created serially. No need to be atomic.
 		static long _nextKey = 0;
-		long w_epoch_sec;
-		List<Long> r_epoch_sec;
+		long wEpochSec;
+		List<Long> rEpochSecs;
 
-		WRs(long w_epoch_sec) {
+		WRs(long wEpochSec) {
 			key = _nextKey ++;
-			this.w_epoch_sec = w_epoch_sec;
+			this.wEpochSec = wEpochSec;
 		}
 
 		public void PopulateRs() {
-			// Populate r_epoch_sec
+			// Populate rEpochSecs
 			int num_reads = NumReadsPerObj.GetNext();
 			//Cons.P(String.format("num_reads=%d", num_reads));
-			r_epoch_sec = new ArrayList(num_reads);
+			rEpochSecs = new ArrayList(num_reads);
 			for (int i = 0; i < num_reads; i ++) {
 				// Do not add reads after the last write, which is the end of the
 				// simulation.
-				long r = w_epoch_sec + ReadTimes.GetNext();
+				long r = wEpochSec + ReadTimes.GetNext();
 				if (r >= SimTime.SimulatedTimeEndEs())
 					continue;
-				r_epoch_sec.add(r);
+				rEpochSecs.add(r);
 			}
-			Collections.sort(r_epoch_sec);
+			Collections.sort(rEpochSecs);
 		}
 
 		@Override
 		public int compareTo(WRs r) {
-			return (int)(w_epoch_sec - r.w_epoch_sec);
+			return (int)(wEpochSec - r.wEpochSec);
 		}
 
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder(1000);
 			sb.append("key: ").append(key).append("\n");
-			sb.append("w: ").append(w_epoch_sec);
+			sb.append("w: ").append(wEpochSec);
 			boolean first = true;
-			for (long r: r_epoch_sec) {
+			for (long r: rEpochSecs) {
 				if (first) {
 					sb.append("\nr: ");
 					first = false;
@@ -65,16 +65,16 @@ public class Reqs
 			return sb.toString();
 			//return String.format("%d %d %s",
 			//		key,
-			//		w_epoch_sec,
-			//		LocalDateTime.ofEpochSecond(w_epoch_sec, 0, ZoneOffset.UTC));
+			//		wEpochSec,
+			//		LocalDateTime.ofEpochSecond(wEpochSec, 0, ZoneOffset.UTC));
 		}
 
 		public String toStringForPlot() {
 			StringBuilder sb = new StringBuilder(1000);
 			sb.append(key);
 			sb.append(" W ");
-			sb.append(w_epoch_sec);
-			for (long r: r_epoch_sec) {
+			sb.append(wEpochSec);
+			for (long r: rEpochSecs) {
 				sb.append("\n");
 				sb.append(key);
 				sb.append(" R ");

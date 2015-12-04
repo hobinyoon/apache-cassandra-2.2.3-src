@@ -29,7 +29,7 @@ public class DbCli
 	protected class OpW extends Op {
 		OpW(Reqs.WRs wrs) {
 			this.wrs = wrs;
-			epoch_sec = wrs.w_epoch_sec;
+			epoch_sec = wrs.wEpochSec;
 		}
 
 		@Override
@@ -96,7 +96,7 @@ public class DbCli
 						// Reads operations of the object are enqueued after the write to
 						// make sure the records are returned from the database server.
 						op.wrs.PopulateRs();
-						for (long res: op.wrs.r_epoch_sec)
+						for (long res: op.wrs.rEpochSecs)
 							dbCli._q.put(new OpR(op.wrs, res));
 
 						dbCli.StartDbClient();

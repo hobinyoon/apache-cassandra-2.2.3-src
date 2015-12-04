@@ -85,8 +85,7 @@ public class DbCli
 
 					if (op instanceof OpW) {
 						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
-						// Simulate a write
-						Thread.sleep(10);
+						DbCli.Write(op);
 
 						// Reads operations of the object are enqueued after the write to
 						// make sure the records are returned from the database server.
@@ -105,8 +104,7 @@ public class DbCli
 						}
 					} else if (op instanceof OpR) {
 						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
-						// Simulate a read, which is slower than write
-						Thread.sleep(20);
+						DbCli.Read(op);
 					} else if (op instanceof OpEndmarkW) {
 						for (int i = 0; i < Conf.db.num_threads; i ++) {
 							_q.put(new OpEndmarkR());
@@ -174,6 +172,16 @@ public class DbCli
 			for (Thread t: _threads)
 				t.join();
 		}
+	}
+
+	public static void Write(Op op) throws InterruptedException {
+		// Simulate a write
+		Thread.sleep(10);
+	}
+
+	public static void Read(Op op) throws InterruptedException {
+		// Simulate a read, which is slower than write
+		Thread.sleep(20);
 	}
 
 	public static void Run() throws InterruptedException {

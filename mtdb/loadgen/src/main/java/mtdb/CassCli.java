@@ -1,5 +1,8 @@
 package mtdb;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.ThreadLocalRandom;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -15,22 +18,21 @@ public class CassCli extends DbCli
 				_instance = this;
 			}
 		}
-
-		BuildC0();
 	}
 
-	private void BuildC0() {
-		StringBuilder sb = new StringBuilder(1001);
-		int j = 0;
-		while (true) {
-			for (int i = 0; (i < 26 && j != 1000); i ++, j ++) {
-				sb.append((char) ('a' + i));
-			}
-			if (j == 1000)
-				break;
-		}
-		_c0 = sb.toString();
-		Cons.P(_c0);
+	// Generate random uncompressible data
+	private String BuildC0(int length) {
+		ThreadLocalRandom tlr = ThreadLocalRandom.current();
+		// 64-bit, 8-byte
+		long l = tlr.nextLong();
+
+		ByteBuffer bb = ByteBuffer.allocate(length);
+		//b.order(ByteOrder.BIG_ENDIAN); // optional, the initial order of a byte buffer is always BIG_ENDIAN.
+		// bb is padded with 0s for the remainders of 8-byte blocks.
+		for (int i = 0; i < (length / 8); i ++)
+			bb.putLong(l);
+		//Cons.P(Util.toHex(bb.array()));
+		return Util.toHex(bb.array());
 	}
 
 	private Cluster _cluster = null;
@@ -59,10 +61,10 @@ public class CassCli extends DbCli
 	protected void DbWrite(Op op) {
 		_session.execute(String.format(
 					"INSERT INTO table1 (key, epoch_sec, c0) "
-					+ "VALUES (%d, %d, '%s')"
+					+ "VALUES (%d, %d, 0x%s)"
 					, op.wrs.key
 					, op.wrs.wEpochSec
-					, _c0
+					, BuildC0(1000)
 					));
 	}
 

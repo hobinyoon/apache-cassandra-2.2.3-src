@@ -1808,7 +1808,9 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             }
             else
             {
-                //boolean mtdb_trace = filter.getColumnFamilyName().equals("standard1");
+                //boolean mtdb_trace = (
+                //        filter.getColumnFamilyName().equals("mtdb1")
+                //        || filter.getColumnFamilyName().equals("standard1"));
                 //if (mtdb_trace) {
                 //    logger.warn("MTDB: {}", filter);
                 //}

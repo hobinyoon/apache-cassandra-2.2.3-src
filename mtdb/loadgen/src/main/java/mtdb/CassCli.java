@@ -7,12 +7,31 @@ import com.datastax.driver.core.Session;
 
 public class CassCli extends DbCli
 {
+	private String _c0;
+
 	public CassCli() {
 		synchronized (_mutex) {
 			if (_instance == null) {
 				_instance = this;
 			}
 		}
+
+		BuildC0();
+	}
+
+	private void BuildC0() {
+		StringBuilder sb = new StringBuilder(1001);
+		int j = 0;
+		while (true) {
+			for (int i = 0; (i < 26 && j != 1000); i ++, j ++) {
+				sb.append((char) ('a' + i));
+			}
+			if (j == 1000)
+				break;
+		}
+		_c0 = sb.toString();
+		Cons.P(_c0);
+		System.exit(0);
 	}
 
 	private Cluster _cluster = null;
@@ -40,10 +59,12 @@ public class CassCli extends DbCli
 	@Override
 	protected void DbWrite(Op op) {
 		_session.execute(String.format(
-					"INSERT INTO table1 (key, c0) "
-					+ "VALUES (%d, '%d ABCDEFGHIJKLMNOPQRSTUVWXYZ')"
+					"INSERT INTO table1 (key, epoch_sec, c0) "
+					+ "VALUES (%d, %d, '%s')"
 					, op.wrs.key
-					, op.wrs.wEpochSec));
+					, op.wrs.wEpochSec
+					, _c0
+					));
 	}
 
 	@Override

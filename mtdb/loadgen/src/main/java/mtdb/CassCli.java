@@ -31,7 +31,6 @@ public class CassCli extends DbCli
 		}
 		_c0 = sb.toString();
 		Cons.P(_c0);
-		System.exit(0);
 	}
 
 	private Cluster _cluster = null;

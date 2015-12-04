@@ -8,5 +8,9 @@ USE mtdb1;
 CREATE TABLE table1 (
 		key int,
 		epoch_sec int,
-		C0 text,
-		PRIMARY KEY (key));
+		C0 blob,
+		PRIMARY KEY (key)
+		)
+	WITH compression = { 'sstable_compression' : '' }
+	AND compaction = {'class' : 'SizeTieredCompactionStrategy', 'min_threshold' : 25 }
+	;

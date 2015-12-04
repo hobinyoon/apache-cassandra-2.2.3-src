@@ -24,15 +24,14 @@ public class LoadGen
 				Reqs.DumpWRsForPlot();
 			}
 			if (Conf.db.requests) {
-				DbCli.Run();
-				// TODO: Let CassCli inherit DbCli
-				//CassCli.Run();
+				DbCli dbCli = new CassCli();
+				dbCli.Run();
 			}
 		} catch (Exception e) {
 			System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
 		}
 
-		// Cassandra Cluster.close() takes too long. A quick and dirty hack.
+		// Cassandra Cluster.close() takes too long. A quick hack.
 		System.exit(0);
 	}
 }

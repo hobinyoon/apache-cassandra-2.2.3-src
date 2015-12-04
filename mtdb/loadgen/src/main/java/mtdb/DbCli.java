@@ -8,9 +8,9 @@ import java.util.List;
 
 public class DbCli
 {
-	private static BlockingQueue<Op> _q = new PriorityBlockingQueue();
+	private BlockingQueue<Op> _q = new PriorityBlockingQueue();
 
-	public static class Op implements Comparable<Op> {
+	protected class Op implements Comparable<Op> {
 		Reqs.WRs wrs;
 		long epoch_sec;
 
@@ -26,7 +26,7 @@ public class DbCli
 		}
 	}
 
-	public static class OpW extends Op {
+	protected class OpW extends Op {
 		OpW(Reqs.WRs wrs) {
 			this.wrs = wrs;
 			epoch_sec = wrs.w_epoch_sec;
@@ -38,7 +38,7 @@ public class DbCli
 		}
 	}
 
-	public static class OpR extends Op {
+	protected class OpR extends Op {
 		OpR(Reqs.WRs wrs, long epoch_sec) {
 			this.wrs = wrs;
 			this.epoch_sec = epoch_sec;
@@ -50,7 +50,7 @@ public class DbCli
 		}
 	}
 
-	public static class OpEndmark extends Op {
+	private class OpEndmark extends Op {
 		OpEndmark() {
 			wrs = null;
 			// Assign the biggest (youngest) epoch value
@@ -58,56 +58,62 @@ public class DbCli
 		}
 	}
 
-	public static class OpEndmarkW extends OpEndmark {
+	private class OpEndmarkW extends OpEndmark {
 		@Override
 		public String toString() {
 			return String.format("EW %d %d", epoch_sec, this.hashCode());
 		}
 	}
 
-	public static class OpEndmarkR extends OpEndmark {
+	private class OpEndmarkR extends OpEndmark {
 		@Override
 		public String toString() {
 			return String.format("ER %d %d", epoch_sec, this.hashCode());
 		}
 	}
 
-	private static AtomicInteger _numOpWsProcessed = new AtomicInteger();
-	private static Object allOpWsProcessed = new Object();
+	private AtomicInteger _numOpWsProcessed = new AtomicInteger();
+	private Object _allOpWsProcessed = new Object();
 
-	private static class DbClientThread implements Runnable
+	private class DbClientThread implements Runnable
 	{
+		private DbCli dbCli;
+
+		DbClientThread(DbCli dbCli) {
+			this.dbCli = dbCli;
+		}
+
 		public void run() {
 			try {
 				while (true) {
-					Op op = _q.take();
+					Op op = dbCli._q.take();
 					//Cons.P(String.format("%s tid=%d", op, Thread.currentThread().getId()));
 
 					if (op instanceof OpW) {
 						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
-						DbCli.Write(op);
+						dbCli.DbWrite(op);
 
 						// Reads operations of the object are enqueued after the write to
 						// make sure the records are returned from the database server.
 						op.wrs.PopulateRs();
 						for (long res: op.wrs.r_epoch_sec)
-							_q.put(new OpR(op.wrs, res));
+							dbCli._q.put(new OpR(op.wrs, res));
 
-						StartDbClient();
+						dbCli.StartDbClient();
 
-						if (_numOpWsProcessed.incrementAndGet() == Reqs._WRs.size()) {
+						if (dbCli._numOpWsProcessed.incrementAndGet() == Reqs._WRs.size()) {
 							// No more DbClient thread is created at this point. Notify
 							// the main thread to join them all.
-							synchronized (allOpWsProcessed) {
-								allOpWsProcessed.notify();
+							synchronized (_allOpWsProcessed) {
+								_allOpWsProcessed.notify();
 							}
 						}
 					} else if (op instanceof OpR) {
 						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
-						DbCli.Read(op);
+						dbCli.DbRead(op);
 					} else if (op instanceof OpEndmarkW) {
 						for (int i = 0; i < Conf.db.num_threads; i ++) {
-							_q.put(new OpEndmarkR());
+							dbCli._q.put(new OpEndmarkR());
 						}
 					} else if (op instanceof OpEndmarkR) {
 						break;
@@ -120,12 +126,14 @@ public class DbCli
 	}
 
 	public static int NumOpWsRequested() {
-		return _numOpWsProcessed.get();
+		if (_instance == null)
+			throw new RuntimeException("No _instance yet");
+		return _instance._numOpWsProcessed.get();
 	}
 
-	private static List<Thread> _threads = new ArrayList();
+	private List<Thread> _threads = new ArrayList();
 
-	private static void StartDbClient() {
+	private void StartDbClient() {
 		// Start a consumer (DB client) thread one by one to prevent a bunch of
 		// writes happening before any reads. Design is similar to test and
 		// test-and-set.
@@ -135,13 +143,13 @@ public class DbCli
 		synchronized (_threads) {
 			if (Conf.db.num_threads <= _threads.size())
 				return;
-			t = new Thread(new DbClientThread());
+			t = new Thread(new DbClientThread(this));
 			_threads.add(t);
 		}
 		t.start();
 	}
 
-	private static void JoinAllDbClients() throws InterruptedException {
+	private void JoinAllDbClients() throws InterruptedException {
 		// When can you start joining DbClient threads? How do you know when no
 		// more thread is created?
 		//  - How many OpW(s) are completed? We know this number and it's the
@@ -162,8 +170,8 @@ public class DbCli
 		//
 		// Wait till all DbClient threads are done with OpEndmarkR before joining
 		// them.
-		synchronized (allOpWsProcessed) {
-			allOpWsProcessed.wait();
+		synchronized (_allOpWsProcessed) {
+			_allOpWsProcessed.wait();
 		}
 
 		synchronized (_threads) {
@@ -174,22 +182,15 @@ public class DbCli
 		}
 	}
 
-	public static void Write(Op op) throws InterruptedException {
-		// Simulate a write
-		Thread.sleep(10);
-	}
-
-	public static void Read(Op op) throws InterruptedException {
-		// Simulate a read, which is slower than write
-		Thread.sleep(20);
-	}
-
-	public static void Run() throws InterruptedException {
+	public void Run() throws InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime(
 					String.format("Making %d WRs requests ...", Reqs._WRs.size()))) {
+			// TODO: These two can be done in parallel
 			for (Reqs.WRs wrs: Reqs._WRs)
 				_q.put(new OpW(wrs));
 			_q.put(new OpEndmarkW());
+
+			DbInit();
 
 			SimTime.StartSimulation();
 
@@ -197,7 +198,36 @@ public class DbCli
 			ProgMon.Start();
 
 			JoinAllDbClients();
+
 			ProgMon.Stop();
+			DbClose();
 		}
+	}
+
+	protected static final Integer _mutex = new Integer(0);
+	protected static DbCli _instance = null;
+
+	public DbCli() {
+		synchronized (_mutex) {
+			if (_instance == null) {
+				_instance = this;
+			}
+		}
+	}
+
+	protected void DbInit() {
+	}
+
+	protected void DbClose() {
+	}
+
+	protected void DbWrite(Op op) throws InterruptedException {
+		// Simulate a write
+		Thread.sleep(10);
+	}
+
+	protected void DbRead(Op op) throws InterruptedException {
+		// Simulate a read, which is slower than write
+		Thread.sleep(20);
 	}
 }

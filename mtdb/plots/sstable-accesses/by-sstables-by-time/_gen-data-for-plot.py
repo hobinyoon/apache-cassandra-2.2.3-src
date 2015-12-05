@@ -37,6 +37,7 @@ def ReadInputAndGenFormattedFile():
 				continue
 
 			time = None
+			event_type = None
 			t = line.split()
 			#print len(t)
 			for i in range(len(t)):
@@ -47,11 +48,17 @@ def ReadInputAndGenFormattedFile():
 					# replace decimal point , with .
 					time += ("-" + string.replace(t[i], ",", "."))
 					continue
+				elif i == 2:
+					event_type = t[i]
+					continue
+
+				if event_type != "SstAccess":
+					break
 
 				t2 = t[i].split(":")
 				if len(t2) != 2:
 					raise RuntimeError("Unexpected format: [%s] [%s]" % (line, t2))
-				sstable_gen = int(t2[0])
+				sstable_gen = int(t2[0][3:])
 				t3 = t2[1].split(",")
 				if len(t3) != 3:
 					raise RuntimeError("Unexpected format: [%s] [%s]" % (line, t2))

@@ -22,8 +22,11 @@ set output FN_OUT
 #set lmargin at screen 0.185
 #set rmargin at screen 0.940
 
+set print "-"
+print sprintf("SSTableMaxAccesses=%d", GPVAL_DATA_Y_MAX)
+
 set xlabel "Time (min)" offset 0,0.3
-set ylabel sprintf("Normalized # of accesses\nper sec by SSTables (max=%d)", GPVAL_DATA_Y_MAX)  offset 1.6,0
+set ylabel "Normalized # of accesses\nper sec by SSTables" offset 1.6,0
 
 set border (1 + 2) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080"

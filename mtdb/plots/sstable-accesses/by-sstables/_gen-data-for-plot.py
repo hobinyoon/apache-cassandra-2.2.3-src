@@ -4,6 +4,7 @@ import os
 import string
 import sys
 
+sys.path.insert(0, "../..")
 import Util
 
 fn_in = None

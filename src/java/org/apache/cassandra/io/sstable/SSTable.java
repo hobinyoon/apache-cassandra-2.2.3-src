@@ -89,7 +89,8 @@ public abstract class SSTable
         this.metadata = metadata;
         this.partitioner = partitioner;
 
-        if (descriptor.baseFilename().contains("/keyspace1/"))
+        if (descriptor.baseFilename().contains("/mtdb1/")
+                || descriptor.baseFilename().contains("/keyspace1/"))
             logger.warn("MTDB: {}", descriptor);
     }
 

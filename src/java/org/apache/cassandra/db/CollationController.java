@@ -78,12 +78,12 @@ public class CollationController
     private ColumnFamily collectTimeOrderedData(boolean copyOnHeap)
     {
         boolean mtdb_trace = (
-                filter.getColumnFamilyName().equals("mtdb1")
+                filter.getColumnFamilyName().equals("table1")
                 || filter.getColumnFamilyName().equals("standard1"));
         final ColumnFamily container = ArrayBackedSortedColumns.factory.create(cfs.metadata, filter.filter.isReversed());
-        //if (mtdb_trace) {
-        //    logger.warn("MTDB: {} {}", container, container.deletionInfo());
-        //}
+        if (mtdb_trace) {
+            logger.warn("MTDB: {} {}", container, container.deletionInfo());
+        }
         List<OnDiskAtomIterator> iterators = new ArrayList<>();
         boolean isEmpty = true;
         Tracing.trace("Acquiring sstable references");
@@ -95,15 +95,15 @@ public class CollationController
             Tracing.trace("Merging memtable contents");
             for (Memtable memtable : view.memtables)
             {
-                //if (mtdb_trace) {
-                //    logger.warn("MTDB: {}", memtable);
-                //}
+                if (mtdb_trace) {
+                    logger.warn("MTDB: {}", memtable);
+                }
                 ColumnFamily cf = memtable.getColumnFamily(filter.key);
                 if (cf != null)
                 {
-                    //if (mtdb_trace) {
-                    //    logger.warn("MTDB: {}", cf);
-                    //}
+                    if (mtdb_trace) {
+                        logger.warn("MTDB: {}", cf);
+                    }
                     filter.delete(container.deletionInfo(), cf);
                     isEmpty = false;
                     Iterator<Cell> iter = filter.getIterator(cf);
@@ -113,9 +113,9 @@ public class CollationController
                         if (copyOnHeap)
                             cell = cell.localCopy(cfs.metadata, HeapAllocator.instance);
                         container.addColumn(cell);
-                        //if (mtdb_trace) {
-                        //    logger.warn("MTDB: {}", container);
-                        //}
+                        if (mtdb_trace) {
+                            logger.warn("MTDB: {}", container);
+                        }
                     }
                 }
             }
@@ -125,31 +125,31 @@ public class CollationController
             NamesQueryFilter namesFilter = (NamesQueryFilter) filter.filter;
             TreeSet<CellName> filterColumns = new TreeSet<>(namesFilter.columns);
             QueryFilter reducedFilter = new QueryFilter(filter.key, filter.cfName, namesFilter.withUpdatedColumns(filterColumns), filter.timestamp);
-            //if (mtdb_trace) {
-            //    logger.warn("MTDB: reducedFilter={} filter.timestamp={}", reducedFilter, filter.timestamp);
-            //}
+            if (mtdb_trace) {
+                logger.warn("MTDB: reducedFilter={} filter.timestamp={}", reducedFilter, filter.timestamp);
+            }
 
             /* add the SSTables on disk */
             // Hobin: sstables with bigger gen (younger sstables) first
             Collections.sort(view.sstables, SSTableReader.maxTimestampComparator);
-            //if (mtdb_trace) {
-            //    for (SSTableReader sstable : view.sstables)
-            //    {
-            //        logger.warn("MTDB: sstable {} max_ts {} min_ts {}"
-            //                , sstable.descriptor.generation
-            //                , sstable.getMaxTimestamp()
-            //                , sstable.getMinTimestamp()
-            //                );
-            //    }
-            //}
+            if (mtdb_trace) {
+                for (SSTableReader sstable : view.sstables)
+                {
+                    logger.warn("MTDB: sstable {} max_ts {} min_ts {}"
+                            , sstable.descriptor.generation
+                            , sstable.getMaxTimestamp()
+                            , sstable.getMinTimestamp()
+                            );
+                }
+            }
 
             // read sorted sstables
             // Hobin: view.sstables contains all sstables
             for (SSTableReader sstable : view.sstables)
             {
-                //if (mtdb_trace) {
-                //    logger.warn("MTDB: sstable {}", sstable.descriptor.generation);
-                //}
+                if (mtdb_trace) {
+                    logger.warn("MTDB: sstable {}", sstable.descriptor.generation);
+                }
 
                 // if we've already seen a row tombstone with a timestamp greater
                 // than the most recent update to this sstable, we're done, since the rest of the sstables
@@ -166,9 +166,9 @@ public class CollationController
                 // checking with the currentMaxTs
                 if (((NamesQueryFilter) reducedFilter.filter).columns.isEmpty())
                     break;
-                //if (mtdb_trace) {
-                //    logger.warn("MTDB: sstable {}", sstable.descriptor.generation);
-                //}
+                if (mtdb_trace) {
+                    logger.warn("MTDB: sstable {}", sstable.descriptor.generation);
+                }
 
                 Tracing.trace("Merging data from sstable {}", sstable.descriptor.generation);
                 sstable.incrementReadCount();
@@ -182,13 +182,13 @@ public class CollationController
                     // iter.getColumnFamily() == null means the sstable doesn't
                     // have the requested data. and probably by the bloom
                     // filter said so.
-                    //logger.warn("MTDB: sstable {} read_meter_count={} false_positive={} true_positive={} iter.getColumnFamily()={}"
-                    //        , sstable.descriptor.generation
-                    //        , sstable.getReadMeter().count()
-                    //        , sstable.getBloomFilterFalsePositiveCount()
-                    //        , sstable.getBloomFilterTruePositiveCount()
-                    //        , iter.getColumnFamily()
-                    //        );
+                    logger.warn("MTDB: sstable {} read_meter_count={} false_positive={} true_positive={} iter.getColumnFamily()={}"
+                            , sstable.descriptor.generation
+                            , sstable.getReadMeter().count()
+                            , sstable.getBloomFilterFalsePositiveCount()
+                            , sstable.getBloomFilterTruePositiveCount()
+                            , iter.getColumnFamily()
+                            );
                 }
                 if (iter.getColumnFamily() != null)
                 {
@@ -277,14 +277,16 @@ public class CollationController
     private ColumnFamily collectAllData(boolean copyOnHeap)
     {
         boolean mtdb_trace = (
-                filter.getColumnFamilyName().equals("standard1")
-                || filter.getColumnFamilyName().equals("mtdb1"));
-        if (mtdb_trace) {
-            logger.warn("MTDB:");
-        }
+                filter.getColumnFamilyName().equals("table1")
+                || filter.getColumnFamilyName().equals("standard1"));
+        //if (mtdb_trace) {
+        //    logger.warn("MTDB:");
+        //}
 
         Tracing.trace("Acquiring sstable references");
         ColumnFamilyStore.ViewFragment view = cfs.select(cfs.viewFilter(filter.key), mtdb_trace);
+        // Hobin: sometimes view has a smaller number of SSTables, probably by
+        // some kind of filtering using cache.
         List<Iterator<? extends OnDiskAtom>> iterators = new ArrayList<>(Iterables.size(view.memtables) + view.sstables.size());
         ColumnFamily returnCF = ArrayBackedSortedColumns.factory.create(cfs.metadata, filter.filter.isReversed());
         DeletionInfo returnDeletionInfo = returnCF.deletionInfo();
@@ -293,6 +295,9 @@ public class CollationController
             Tracing.trace("Merging memtable tombstones");
             for (Memtable memtable : view.memtables)
             {
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB: memtable={}", memtable);
+                //}
                 final ColumnFamily cf = memtable.getColumnFamily(filter.key);
                 if (cf != null)
                 {
@@ -331,6 +336,9 @@ public class CollationController
 
             for (SSTableReader sstable : view.sstables)
             {
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB: sstable={}", sstable);
+                //}
                 minTimestamp = Math.min(minTimestamp, sstable.getMinTimestamp());
                 // if we've already seen a row tombstone with a timestamp greater
                 // than the most recent update to this sstable, we can skip it
@@ -353,6 +361,23 @@ public class CollationController
                 sstable.incrementReadCount();
                 OnDiskAtomIterator iter = filter.getSSTableColumnIterator(sstable);
                 iterators.add(iter);
+
+                if (mtdb_trace) {
+                    //SSTableAccMon.Update(this, readMeter.count());
+                    SSTableAccMon.Update(sstable);
+
+                    // iter.getColumnFamily() == null means the sstable doesn't
+                    // have the requested data. and probably by the bloom
+                    // filter said so.
+                    //logger.warn("MTDB: sstable {} read_meter_count={} false_positive={} true_positive={} iter.getColumnFamily()={}"
+                    //        , sstable.descriptor.generation
+                    //        , sstable.getReadMeter().count()
+                    //        , sstable.getBloomFilterFalsePositiveCount()
+                    //        , sstable.getBloomFilterTruePositiveCount()
+                    //        , iter.getColumnFamily()
+                    //        );
+                }
+
                 if (iter.getColumnFamily() != null)
                 {
                     ColumnFamily cf = iter.getColumnFamily();

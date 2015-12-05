@@ -1794,6 +1794,13 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             // records from erasure coded SSTables.
             if (isRowCacheEnabled())
             {
+                //boolean mtdb_trace = (
+                //        filter.getColumnFamilyName().equals("table1")
+                //        || filter.getColumnFamilyName().equals("standard1"));
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB:");
+                //}
+
                 assert !isIndex(); // CASSANDRA-5732
                 UUID cfId = metadata.cfId;
 
@@ -1803,14 +1810,18 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
                     logger.trace("cached row is empty");
                     return null;
                 }
+                //if (mtdb_trace) {
+                //    logger.warn("MTDB:");
+                //}
 
                 result = cached;
             }
             else
             {
                 //boolean mtdb_trace = (
-                //        filter.getColumnFamilyName().equals("mtdb1")
+                //        filter.getColumnFamilyName().equals("table1")
                 //        || filter.getColumnFamilyName().equals("standard1"));
+
                 //if (mtdb_trace) {
                 //    logger.warn("MTDB: {}", filter);
                 //}

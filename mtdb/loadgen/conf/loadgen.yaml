@@ -2,7 +2,7 @@
 
 # Global options
 global:
-  simulated_time_in_year: 5
+  simulated_time_in_year: 8
 
   # Simulation time. You can specify a fraction of minutes, e.g., 0.5.
   simulation_time_in_min: 1

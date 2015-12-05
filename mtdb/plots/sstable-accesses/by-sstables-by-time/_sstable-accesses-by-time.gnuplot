@@ -26,10 +26,10 @@ set output FN_OUT
 #set rmargin at screen 0.940
 
 set print "-"
-print sprintf("SSTableMaxAccesses=%d", Y_MAX)
+print sprintf("Y-axis normalized. Max SSTable accesses=%d", Y_MAX)
 
 set xlabel "Time (year)" offset 0,0.3
-set ylabel "Normalized # of accesses\nper sec by SSTables" offset 1.6,0
+set ylabel "# of SSTable accesses" offset 2,0
 
 set border (1 + 2) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080"

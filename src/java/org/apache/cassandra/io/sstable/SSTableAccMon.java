@@ -1,8 +1,11 @@
 package org.apache.cassandra.io.sstable;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.cassandra.io.sstable.format.SSTableReader;
 
@@ -11,12 +14,11 @@ import org.slf4j.LoggerFactory;
 
 public class SSTableAccMon
 {
-    // Map<sstable_generation, value>
-    private static Map<Long, Value> map = new ConcurrentHashMap();
+    private static Map<Descriptor, Value> _map = new ConcurrentHashMap();
 
     private static long tsLastOutput = 0L;
     private static boolean updatedSinceLastOutput = false;
-    private static Thread outThread = null;
+    private static Thread _outThread = null;
     private static final Logger logger = LoggerFactory.getLogger(SSTableAccMon.class);
 
     private static class Value {
@@ -50,54 +52,70 @@ public class SSTableAccMon
     }
 
     static {
-        outThread = new Thread(new MessageLoop());
-        outThread.start();
-        // TODO: Clean up outThread when Cassandra closes. Do you need a join?
+        _outThread = new Thread(new OutputThread());
+        _outThread.start();
+        // TODO: join() and clean up _outThread when Cassandra closes.
     }
 
     public static void Update(SSTableReader r) {
-        long key = r.descriptor.generation;
+        //long key = r.descriptor.generation;
+        Descriptor key = r.descriptor;
         Value value = new Value(r.getReadMeter().count()
                 , r.getBloomFilterFalsePositiveCount()
                 , r.getBloomFilterTruePositiveCount());
 
-        if (! map.containsKey(key)) {
-            map.put(key, value);
+        if (! _map.containsKey(key)) {
+            _map.put(key, value);
             updatedSinceLastOutput = true;
         } else {
-            if (value.equals(map.get(key))) {
+            if (value.equals(_map.get(key))) {
                 // No changes. Do nothing.
             } else {
-                map.put(key, value);
+                _map.put(key, value);
                 updatedSinceLastOutput = true;
             }
         }
     }
 
-    private static class MessageLoop implements Runnable {
+    private static class OutputThread implements Runnable {
         public void run() {
             try {
                 while (true) {
                     Thread.sleep(1000);
-                    // a practical (not a strict) serialization for low contention
+                    // a practical (not a strict) serialization for a low overhead
                     if (! updatedSinceLastOutput)
                         continue;
                     updatedSinceLastOutput = false;
 
-                    StringBuilder sb = new StringBuilder(1000);
-                    Iterator it = map.entrySet().iterator();
+                    List<String> items = new ArrayList();
+                    Iterator it = _map.entrySet().iterator();
                     while (it.hasNext()) {
                         Map.Entry pair = (Map.Entry) it.next();
-
-                        if (sb.length() > 0)
-                            sb.append(" ");
-                        sb.append(pair.getKey()).append(":").append(pair.getValue().toString());
+                        Descriptor d = (Descriptor) pair.getKey();
+                        items.add(String.format("%s-%02d:%s"
+                                , d.cfname.substring(0, 2)
+                                , d.generation
+                                , pair.getValue().toString()));
                         // TODO: remove when a SSTable is removed
                         //it.remove(); // avoids a ConcurrentModificationException
                     }
 
-                    if (sb.length() > 0)
-                        logger.warn("MTDB: {}", sb.toString());
+                    if (items.size() == 0)
+                        continue;
+                    Collections.sort(items);
+
+                    StringBuilder sb = new StringBuilder(1000);
+                    boolean first = true;
+                    for (String i: items) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append(" ");
+                        }
+                        sb.append(i);
+                    }
+
+                    logger.warn("MTDB: {}", sb.toString());
                 }
             } catch (InterruptedException e) {
                 logger.warn("MTDB: {}", e);

@@ -115,7 +115,7 @@ public class SSTableAccMon
                         sb.append(i);
                     }
 
-                    logger.warn("MTDB: {}", sb.toString());
+                    logger.warn("MTDB: SstAccess {}", sb.toString());
                 }
             } catch (InterruptedException e) {
                 logger.warn("MTDB: {}", e);

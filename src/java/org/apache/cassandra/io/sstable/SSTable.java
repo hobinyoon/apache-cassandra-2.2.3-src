@@ -91,7 +91,7 @@ public abstract class SSTable
 
         if (descriptor.baseFilename().contains("/mtdb1/")
                 || descriptor.baseFilename().contains("/keyspace1/"))
-            logger.warn("MTDB: {}", descriptor);
+            logger.warn("MTDB: SstCreate {}", descriptor);
     }
 
     /**

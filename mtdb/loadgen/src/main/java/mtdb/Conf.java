@@ -16,28 +16,12 @@ import org.yaml.snakeyaml.Yaml;
 public class Conf
 {
 	// Command line options
-	private static final OptionParser _opt_parser = new OptionParser() {{
-		accepts("help", "Show this help message");
-		accepts("writes", "Number of writes")
-			.withRequiredArg().ofType(Integer.class);
-		accepts("test_num_reads_per_obj", "Test number of reads per obj. Specify a file name to dump data.")
-			.withRequiredArg();
-		accepts("test_obj_ages", "Test obj ages when accessed. Specify a file name to dump data.")
-			.withRequiredArg();
-		accepts("dump_wr", "Dump all WRs to a file. Specify a file name.")
-			.withRequiredArg();
-		accepts("db", "Issue requests to the database server.")
-			.withRequiredArg();
-		accepts("db_threads", "Number of client threads that make requests to the database server.")
-			.withRequiredArg().ofType(Integer.class);
-		accepts("sim_time", "Simulation time in minutes.")
-			.withRequiredArg().ofType(Double.class);
-	}};
+	private static OptionParser _opt_parser = null;
 
 	public static class Global {
-		String fn_test_num_reads_per_obj;
-		String fn_test_obj_ages;
-		String fn_dump_wrs;
+		String fn_test_num_reads_per_obj = "";
+		String fn_test_obj_ages = "";
+		String fn_dump_wrs = "";
 
 		int simulated_time_in_year;
 		double simulation_time_in_min;
@@ -151,6 +135,24 @@ public class Conf
 		if (args == null)
 			return;
 
+		_opt_parser = new OptionParser() {{
+			accepts("help", "Show this help message");
+			accepts("writes", "Number of writes")
+				.withRequiredArg().ofType(Integer.class).defaultsTo(global.writes);
+			accepts("test_num_reads_per_obj", "Test number of reads per obj. Specify a file name to dump data.")
+				.withRequiredArg().ofType(String.class).defaultsTo(global.fn_test_num_reads_per_obj);
+			accepts("test_obj_ages", "When a file name is specified, loadgen dumps all obj ages when accessed.")
+				.withRequiredArg().ofType(String.class).defaultsTo(global.fn_test_obj_ages);
+			accepts("dump_wr", "When a file name is specified, loadgen dumps all WRs to the file.")
+				.withRequiredArg().ofType(String.class).defaultsTo(global.fn_dump_wrs);
+			accepts("db", "Issue requests to the database server.")
+				.withRequiredArg().ofType(Boolean.class).defaultsTo(db.requests);
+			accepts("db_threads", "Number of client threads that make requests to the database server.")
+				.withRequiredArg().ofType(Integer.class).defaultsTo(db.num_threads);
+			accepts("sim_time", "Simulation time in minutes.")
+				.withRequiredArg().ofType(Double.class).defaultsTo(global.simulation_time_in_min);
+		}};
+
 		OptionSet options = _opt_parser.parse(args);
 		if (options.has("help")) {
 			_PrintHelp();
@@ -162,33 +164,16 @@ public class Conf
 			System.exit(1);
 		}
 
-		if (options.has("writes"))
-			global.writes = (int) options.valueOf("writes");
+		global.writes = (int) options.valueOf("writes");
 		if (global.writes <= 0)
 			throw new RuntimeException("Unexpected global.writes=" + global.writes);
 
-		if (options.has("test_num_reads_per_obj"))
-			global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
-		else
-			global.fn_test_num_reads_per_obj = "";
-
-		if (options.has("test_obj_ages"))
-			global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");
-		else
-			global.fn_test_obj_ages = "";
-
-		if (options.has("dump_wr"))
-			global.fn_dump_wrs = (String) options.valueOf("dump_wr");
-		else
-			global.fn_dump_wrs = "";
-
-		if (options.has("db"))
-			db.requests = Boolean.parseBoolean((String) options.valueOf("db"));
-		if (options.has("db_threads"))
-			db.num_threads = (int) options.valueOf("db_threads");
-
-		if (options.has("sim_time"))
-			global.simulation_time_in_min = (double) options.valueOf("sim_time");
+		global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
+		global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");
+		global.fn_dump_wrs = (String) options.valueOf("dump_wr");
+		db.requests = (boolean) options.valueOf("db");
+		db.num_threads = (int) options.valueOf("db_threads");
+		global.simulation_time_in_min = (double) options.valueOf("sim_time");
 	}
 
 	public static void Init(String[] args)

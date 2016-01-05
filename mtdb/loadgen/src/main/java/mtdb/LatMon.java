@@ -77,6 +77,8 @@ class LatMon {
 		long _90;
 		long _95;
 		long _99;
+		long _995;
+		long _999;
 
 		// Note: values are sorted
 		Stat(List<Long> values) {
@@ -89,6 +91,8 @@ class LatMon {
 			boolean set_90 = false;
 			boolean set_95 = false;
 			boolean set_99 = false;
+			boolean set_995 = false;
+			boolean set_999 = false;
 			long sum = 0;
 			cnt = 0;
 			int v_size = values.size();
@@ -97,17 +101,25 @@ class LatMon {
 					_50 = values.get(i);
 					set_50 = true;
 				}
-				if ((set_90 == false) && (i >= 0.5 * v_size)) {
+				if ((set_90 == false) && (i >= 0.9 * v_size)) {
 					_90 = values.get(i);
 					set_90 = true;
 				}
-				if ((set_95 == false) && (i >= 0.5 * v_size)) {
+				if ((set_95 == false) && (i >= 0.95 * v_size)) {
 					_95 = values.get(i);
 					set_95 = true;
 				}
-				if ((set_99 == false) && (i >= 0.5 * v_size)) {
+				if ((set_99 == false) && (i >= 0.99 * v_size)) {
 					_99 = values.get(i);
 					set_99 = true;
+				}
+				if ((set_995 == false) && (i >= 0.995 * v_size)) {
+					_995 = values.get(i);
+					set_995 = true;
+				}
+				if ((set_999 == false) && (i >= 0.999 * v_size)) {
+					_999 = values.get(i);
+					set_999 = true;
 				}
 				sum += values.get(i);
 				cnt ++;

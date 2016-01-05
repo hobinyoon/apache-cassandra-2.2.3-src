@@ -81,6 +81,8 @@ class ProgMon {
 				//   Total # of writes
 				//   Total # of reads
 				//   # of reads / write: min, max, avg, 50, 90, 95, and 99-th percentiles.
+				//     min can be 0, because towards the end of the simulation period,
+				//     some Ws don't have corresponding Rs.
 				//
 				//   Read/write latency: min, max, avg, 50, 90, 95, and 99-th percentiles.
 
@@ -92,7 +94,7 @@ class ProgMon {
 				Cons.P(String.format("# # of reads : %d", rStat.cnt));
 				Reqs.NumReadsPerWriteStat nrpwStat = Reqs.GetNumReadsPerWriteStat();
 				Cons.P(String.format("# # reads / write:"));
-				Cons.P(String.format("#   avg=%4.2f min=%4d max=%4d 50=%4d 90=%4d 95=%4d 99=%4d"
+				Cons.P(String.format("#   avg=%6.3f min=%5d max=%4d 50=%4d 90=%4d 95=%4d 99=%4d 995=%4d 999=%4d"
 							, nrpwStat.avg
 							, nrpwStat.min
 							, nrpwStat.max
@@ -100,27 +102,33 @@ class ProgMon {
 							, nrpwStat._90
 							, nrpwStat._95
 							, nrpwStat._99
+							, nrpwStat._995
+							, nrpwStat._999
 							));
 				Cons.P(String.format("#"));
 				Cons.P(String.format("# Write latency:"));
-				Cons.P(String.format("#   avg=%4d min=%4d max=%4d 50=%4d 90=%4d 95=%4d 99=%4d"
-							, wStat.avg / 1000000
-							, wStat.min / 1000000
-							, wStat.max / 1000000
-							, wStat._50 / 1000000
-							, wStat._90 / 1000000
-							, wStat._95 / 1000000
-							, wStat._99 / 1000000
+				Cons.P(String.format("#   avg=%6.3f min=%5.3f max=%4d 50=%4d 90=%4d 95=%4d 99=%4d 995=%4d 999=%4d"
+							, wStat.avg  / 1000000.0
+							, wStat.min  / 1000000.0
+							, wStat.max  / 1000000
+							, wStat._50  / 1000000
+							, wStat._90  / 1000000
+							, wStat._95  / 1000000
+							, wStat._99  / 1000000
+							, wStat._995 / 1000000
+							, wStat._999 / 1000000
 							));
 				Cons.P(String.format("# Read latency:"));
-				Cons.P(String.format("#   avg=%4d min=%4d max=%4d 50=%4d 90=%4d 95=%4d 99=%4d"
-							, rStat.avg / 1000000
-							, rStat.min / 1000000
-							, rStat.max / 1000000
-							, rStat._50 / 1000000
-							, rStat._90 / 1000000
-							, rStat._95 / 1000000
-							, rStat._99 / 1000000
+				Cons.P(String.format("#   avg=%6.3f min=%5.3f max=%4d 50=%4d 90=%4d 95=%4d 99=%4d 995=%4d 999=%4d"
+							, rStat.avg  / 1000000.0
+							, rStat.min  / 1000000.0
+							, rStat.max  / 1000000
+							, rStat._50  / 1000000
+							, rStat._90  / 1000000
+							, rStat._95  / 1000000
+							, rStat._99  / 1000000
+							, rStat._995 / 1000000
+							, rStat._999 / 1000000
 							));
 			} catch (Exception e) {
 				System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));

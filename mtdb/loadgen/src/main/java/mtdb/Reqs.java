@@ -40,6 +40,7 @@ public class Reqs
 				rEpochSecs.add(r);
 			}
 			Collections.sort(rEpochSecs);
+			//Cons.P(String.format("rEpochSecs.size()=%d", rEpochSecs.size()));
 		}
 
 		@Override
@@ -144,6 +145,8 @@ public class Reqs
 		int _90;
 		int _95;
 		int _99;
+		int _995;
+		int _999;
 
 		NumReadsPerWriteStat() {
 			List<Integer> numReadsPerWrite = new ArrayList();
@@ -158,6 +161,8 @@ public class Reqs
 			boolean set_90 = false;
 			boolean set_95 = false;
 			boolean set_99 = false;
+			boolean set_995 = false;
+			boolean set_999 = false;
 			int sum = 0;
 			cnt = 0;
 			int v_size = numReadsPerWrite.size();
@@ -166,17 +171,25 @@ public class Reqs
 					_50 = numReadsPerWrite.get(i);
 					set_50 = true;
 				}
-				if ((set_90 == false) && (i >= 0.5 * v_size)) {
+				if ((set_90 == false) && (i >= 0.90 * v_size)) {
 					_90 = numReadsPerWrite.get(i);
 					set_90 = true;
 				}
-				if ((set_95 == false) && (i >= 0.5 * v_size)) {
+				if ((set_95 == false) && (i >= 0.95 * v_size)) {
 					_95 = numReadsPerWrite.get(i);
 					set_95 = true;
 				}
-				if ((set_99 == false) && (i >= 0.5 * v_size)) {
+				if ((set_99 == false) && (i >= 0.99 * v_size)) {
 					_99 = numReadsPerWrite.get(i);
 					set_99 = true;
+				}
+				if ((set_995 == false) && (i >= 0.995 * v_size)) {
+					_995 = numReadsPerWrite.get(i);
+					set_995 = true;
+				}
+				if ((set_999 == false) && (i >= 0.999 * v_size)) {
+					_999 = numReadsPerWrite.get(i);
+					set_999 = true;
 				}
 				sum += numReadsPerWrite.get(i);
 				cnt ++;

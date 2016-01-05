@@ -134,4 +134,59 @@ public class Reqs
 		writer.close();
 		Cons.P(String.format("Created file %s %d", fn, Util.getFileSize(fn)));
 	}
+
+	public static class NumReadsPerWriteStat {
+		int cnt;
+		int min;
+		int max;
+		double avg;
+		int _50;
+		int _90;
+		int _95;
+		int _99;
+
+		NumReadsPerWriteStat() {
+			List<Integer> numReadsPerWrite = new ArrayList();
+			for (WRs wrs: _WRs)
+				numReadsPerWrite.add(wrs.rEpochSecs.size());
+
+			Collections.sort(numReadsPerWrite);
+			min = numReadsPerWrite.get(0);
+			max = numReadsPerWrite.get(numReadsPerWrite.size() - 1);
+
+			boolean set_50 = false;
+			boolean set_90 = false;
+			boolean set_95 = false;
+			boolean set_99 = false;
+			int sum = 0;
+			cnt = 0;
+			int v_size = numReadsPerWrite.size();
+			for (int i = 0; i < v_size; i ++) {
+				if ((set_50 == false) && (i >= 0.5 * v_size)) {
+					_50 = numReadsPerWrite.get(i);
+					set_50 = true;
+				}
+				if ((set_90 == false) && (i >= 0.5 * v_size)) {
+					_90 = numReadsPerWrite.get(i);
+					set_90 = true;
+				}
+				if ((set_95 == false) && (i >= 0.5 * v_size)) {
+					_95 = numReadsPerWrite.get(i);
+					set_95 = true;
+				}
+				if ((set_99 == false) && (i >= 0.5 * v_size)) {
+					_99 = numReadsPerWrite.get(i);
+					set_99 = true;
+				}
+				sum += numReadsPerWrite.get(i);
+				cnt ++;
+			}
+			avg = (cnt == 0) ? 0 : ((double) sum / cnt);
+		}
+	}
+
+	public static NumReadsPerWriteStat GetNumReadsPerWriteStat() {
+		NumReadsPerWriteStat stat = new NumReadsPerWriteStat();
+		return stat;
+	}
 }

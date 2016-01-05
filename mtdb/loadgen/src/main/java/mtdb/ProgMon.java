@@ -76,7 +76,52 @@ class ProgMon {
 
 					//System.out.flush();
 				}
-				//System.out.printf("\n");
+
+				// Overall stat
+				//   Total # of writes
+				//   Total # of reads
+				//   # of reads / write: min, max, avg, 50, 90, 95, and 99-th percentiles.
+				//
+				//   Read/write latency: min, max, avg, 50, 90, 95, and 99-th percentiles.
+
+				LatMon.Stat wStat = LatMon.GetWriteStat();
+				LatMon.Stat rStat = LatMon.GetReadStat();
+
+				Cons.P(String.format("#"));
+				Cons.P(String.format("# # of writes: %d", Reqs._WRs.size()));
+				Cons.P(String.format("# # of reads : %d", rStat.cnt));
+				Reqs.NumReadsPerWriteStat nrpwStat = Reqs.GetNumReadsPerWriteStat();
+				Cons.P(String.format("# # reads / write:"));
+				Cons.P(String.format("#   avg=%4.2f min=%4d max=%4d 50=%4d 90=%4d 95=%4d 99=%4d"
+							, nrpwStat.avg
+							, nrpwStat.min
+							, nrpwStat.max
+							, nrpwStat._50
+							, nrpwStat._90
+							, nrpwStat._95
+							, nrpwStat._99
+							));
+				Cons.P(String.format("#"));
+				Cons.P(String.format("# Write latency:"));
+				Cons.P(String.format("#   avg=%4d min=%4d max=%4d 50=%4d 90=%4d 95=%4d 99=%4d"
+							, wStat.avg / 1000000
+							, wStat.min / 1000000
+							, wStat.max / 1000000
+							, wStat._50 / 1000000
+							, wStat._90 / 1000000
+							, wStat._95 / 1000000
+							, wStat._99 / 1000000
+							));
+				Cons.P(String.format("# Read latency:"));
+				Cons.P(String.format("#   avg=%4d min=%4d max=%4d 50=%4d 90=%4d 95=%4d 99=%4d"
+							, rStat.avg / 1000000
+							, rStat.min / 1000000
+							, rStat.max / 1000000
+							, rStat._50 / 1000000
+							, rStat._90 / 1000000
+							, rStat._95 / 1000000
+							, rStat._99 / 1000000
+							));
 			} catch (Exception e) {
 				System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
 			}

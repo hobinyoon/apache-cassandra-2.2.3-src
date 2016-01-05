@@ -12,10 +12,16 @@ if [ ! -f $FN_DATA_SORTED ];
 then
 	echo "Generating data ..."
 	../../loadgen --test_num_reads_per_obj=plot/num-reads-per-obj/$FN_DATA | sed 's/^/  /'
+	if [ "${PIPESTATUS[0]}" -ne "0" ]; then
+		exit 1
+	fi
 	echo
 
 	echo "Sorting ..."
-	time sort -n < $FN_DATA > $FN_DATA_SORTED
+	sort -n < $FN_DATA > $FN_DATA_SORTED | sed 's/^/  /'
+	if [ "${PIPESTATUS[0]}" -ne "0" ]; then
+		exit 1
+	fi
 	echo
 fi
 
@@ -23,5 +29,8 @@ fi
 echo "Plotting ..."
 export FN_IN=$SRC_DIR/$FN_DATA_SORTED
 export FN_OUT=$SRC_DIR/num-reads-per-obj.pdf
-time gnuplot $SRC_DIR/_num-reads-per-obj.gnuplot
-echo "Created "$FN_OUT
+gnuplot $SRC_DIR/_num-reads-per-obj.gnuplot | sed 's/^/  /'
+if [ "${PIPESTATUS[0]}" -ne "0" ]; then
+	exit 1
+fi
+printf "  Created %s %d\n" $FN_OUT `wc -c < $FN_OUT`

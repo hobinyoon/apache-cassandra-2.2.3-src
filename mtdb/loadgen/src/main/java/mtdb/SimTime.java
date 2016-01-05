@@ -58,6 +58,10 @@ class SimTime {
 		return _simulatedTimeDurEs;
 	}
 
+	public static long SimulationTimeBeginNano() {
+		return _simulationTimeBegin;
+	}
+
 	public static void StartSimulation() {
 		_simulationTimeDur = (long) (Conf.global.simulation_time_in_min * 60 * 1000000000);
 		_simulationTimeBegin = System.nanoTime();

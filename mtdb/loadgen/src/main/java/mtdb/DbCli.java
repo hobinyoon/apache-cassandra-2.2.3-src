@@ -91,7 +91,7 @@ public class DbCli
 
 					if (op instanceof OpW) {
 						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
-						dbCli.DbWrite(op);
+						dbCli.DbWriteMeasureTime(op);
 
 						// Reads operations of the object are enqueued after the write to
 						// make sure the records are returned from the database server.
@@ -110,7 +110,7 @@ public class DbCli
 						}
 					} else if (op instanceof OpR) {
 						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
-						dbCli.DbRead(op);
+						dbCli.DbReadMeasureTime(op);
 					} else if (op instanceof OpEndmarkW) {
 						for (int i = 0; i < Conf.db.num_threads; i ++) {
 							dbCli._q.put(new OpEndmarkR());
@@ -215,6 +215,20 @@ public class DbCli
 	}
 
 	protected void DbClose() {
+	}
+
+	protected void DbReadMeasureTime(Op op) throws InterruptedException {
+		long begin = System.nanoTime();
+		DbRead(op);
+		long end = System.nanoTime();
+		LatMon.Read(end - begin);
+	}
+
+	protected void DbWriteMeasureTime(Op op) throws InterruptedException {
+		long begin = System.nanoTime();
+		DbWrite(op);
+		long end = System.nanoTime();
+		LatMon.Write(end - begin);
 	}
 
 	protected void DbWrite(Op op) throws InterruptedException {

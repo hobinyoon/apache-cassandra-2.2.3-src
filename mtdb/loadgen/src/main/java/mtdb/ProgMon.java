@@ -17,8 +17,9 @@ class ProgMon {
 			try {
 				int w_total = Reqs._WRs.size();
 				int w_prev = 0;
-				String fmt = "%7d %5.1f %5d %5d %8d %5d %8d";
+				String fmt = "%7d %7d %5.1f %5d %5d %8d %5d %8d %4d %4d %4d %4d";
 				Cons.P(Util.BuildHeader(fmt, 0
+							, "simulation_time_ms"
 							, "num_OpW_requested"
 							, "percent_completed"
 							, "OpW_per_sec"
@@ -26,6 +27,10 @@ class ProgMon {
 							, "running_on_time_sleep_avg_in_ms"
 							, "running_behind_cnt"
 							, "running_behind_avg_in_ms"
+							, "write_latency_ms"
+							, "read_latency_ms"
+							, "write_cnt"
+							, "read_cnt"
 							));
 				while (true) {
 					try {
@@ -44,7 +49,10 @@ class ProgMon {
 					int extraSleepRunningBehindCnt = _extraSleepRunningBehindCnt.get();
 					long extraSleepRunningBehindAvg = (extraSleepRunningBehindCnt == 0) ?
 						0 : (_extraSleepRunningBehindSum.get() / extraSleepRunningBehindCnt / 1000000);
+					LatMon.Result latency = LatMon.GetAndReset();
+
 					Cons.P(String.format(fmt
+								, (System.nanoTime() - SimTime.SimulationTimeBeginNano()) / 1000000
 								, w
 								, 100.0 * w / w_total
 								, w - w_prev
@@ -52,6 +60,10 @@ class ProgMon {
 								, extraSleepRunningOnTimeAvg
 								, extraSleepRunningBehindCnt
 								, extraSleepRunningBehindAvg
+								, latency.avgWriteTime / 1000000
+								, latency.avgReadTime / 1000000
+								, latency.writeCnt
+								, latency.readCnt
 								));
 					if (w == w_total)
 						break;

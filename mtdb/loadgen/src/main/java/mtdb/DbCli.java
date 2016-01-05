@@ -185,11 +185,12 @@ public class DbCli
 	public void Run() throws InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime(
 					String.format("Making %d WRs requests ...", Reqs._WRs.size()))) {
-			// TODO: These two can be done in parallel
 			for (Reqs.WRs wrs: Reqs._WRs)
 				_q.put(new OpW(wrs));
 			_q.put(new OpEndmarkW());
 
+			// This can run in parallel with the conf init process, saving 200 ms.
+			// Not worth the effort for now.
 			DbInit();
 
 			SimTime.StartSimulation();
@@ -204,15 +205,10 @@ public class DbCli
 		}
 	}
 
-	protected static final Integer _mutex = new Integer(0);
+	protected static final Integer _instance_mutex = new Integer(0);
 	protected static DbCli _instance = null;
 
-	public DbCli() {
-		synchronized (_mutex) {
-			if (_instance == null) {
-				_instance = this;
-			}
-		}
+	protected DbCli() {
 	}
 
 	protected void DbInit() {

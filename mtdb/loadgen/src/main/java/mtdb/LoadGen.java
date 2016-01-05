@@ -24,7 +24,7 @@ public class LoadGen
 				Reqs.DumpWRsForPlot();
 			}
 			if (Conf.db.requests) {
-				DbCli dbCli = new CassCli();
+				DbCli dbCli = CassCli.GetInstance();
 				dbCli.Run();
 			}
 		} catch (Exception e) {

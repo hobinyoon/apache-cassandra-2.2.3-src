@@ -10,12 +10,19 @@ import com.datastax.driver.core.Session;
 
 public class CassCli extends DbCli
 {
-	private String _c0;
+	private CassCli() {
+	}
 
-	public CassCli() {
-		synchronized (_mutex) {
+	public static DbCli GetInstance() {
+		if (_instance != null)
+			return _instance;
+
+		synchronized (_instance_mutex) {
 			if (_instance == null) {
-				_instance = this;
+				_instance = new CassCli();
+				return _instance;
+			} else {
+				return _instance;
 			}
 		}
 	}

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+set -e
+set -u
+
+ARGC=$#  # Number of args, not counting $0
+
+if [ $ARGC -lt 2 ] || [ $((ARGC%2)) -eq 1 ]; then
+	echo "Usage: "$0" [ipaddr delay_in_ms ]+"
+	echo " e.g.: "$0" 130.207.110.227 5 130.207.110.130 100"
+	exit 1
+fi
+
+if [ "$EUID" -ne 0 ]; then
+	echo "Please run as root"
+	exit 1
+fi
+
+NUM_HOST=$((ARGC/2))
+IP=()
+DELAY=()
+i=0
+for arg in "$@"; do
+	if [ $((i%2)) -eq 0 ]; then
+		IP+=($arg)
+	else
+		DELAY+=($arg)
+	fi
+	i=$[$i+1]
+done
+
+# Clean up any qdisc(s)
+tc qdisc del dev eth0 root || true
+
+tc qdisc add dev eth0 root handle 1: prio bands 16
+
+for ((i=0; i<$NUM_HOST; i++)); do
+	#echo ${IP[$i]} ${DELAY[$i]} $flowid
+	# start from flowid 1:3. 1:2 seems to affect all packets.
+	flowid="1:"$((i+3))
+	tc filter add dev eth0 parent 1:0 protocol ip prio 10 u32 match ip dst ${IP[$i]} flowid $flowid
+	tc qdisc add dev eth0 parent $flowid netem delay ${DELAY[$i]}"ms"
+done
+
+# check
+tc qdisc
+tc -s filter ls dev eth0

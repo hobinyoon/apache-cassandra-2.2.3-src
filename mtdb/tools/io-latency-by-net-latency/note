@@ -1,0 +1,135 @@
+ioping gives more convincing result. The effect of the extra network latency is direct.
+
+
+Interesting how fast the 2nd drive is. Like 30x faster with 4k random IOs.
+  $ df -h
+  Filesystem                          Size  Used Avail Use% Mounted on
+  /dev/xvda1                          9.8G  5.1G  4.2G  56% /
+  /dev/xvdb                            50G   11G   39G  21% /mnt/data
+  130.207.110.227:/cass-cold-storage   50G   44G  3.1G  94% /mnt/s5-cass-cold-storage
+
+  hobin@mts7:/mnt/data/work/apache-cassandra-2.2.3-src/mtdb/tools/net-latency$ ioping -c 3 ~/
+    min/avg/max/mdev = 4.62 ms / 6.79 ms / 8.55 ms / 1.63 ms
+  hobin@mts7:/mnt/data/work/apache-cassandra-2.2.3-src/mtdb/tools/net-latency$ ioping -c 3 .
+    min/avg/max/mdev = 247 us / 268 us / 281 us / 15 us
+
+
+Interesting how iozone 4k random read test doesn't get affected with a 100 ms latency
+  mts7 accessing mts5. Without extra latency:
+    4 KB random read test ...
+      iozone -r 4k -s 1m -R /home/hobin
+      iozone -r 4k -s 1m -R /mnt/s5-cass-cold-storage
+      iozone -r 4k -s 1m -R -I /home/hobin
+      iozone -r 4k -s 1m -R -I /mnt/s5-cass-cold-storage
+      Regular:
+        Local: 3194.92 MB/s
+        NFS  : 3380.31 MB/s   105.80% of localFS
+      Direct:
+        Local:  17.96 MB/s
+        NFS  :  18.94 MB/s   105.49% of localFS
+    160 MB write test ...
+      dd if=/dev/zero of=/home/hobin/dd-160MB-write-test bs=160M count=1
+      dd if=/dev/zero of=/mnt/s5-cass-cold-storage/dd-160MB-write-test bs=160M count=1
+      dd if=/dev/zero of=/home/hobin/dd-160MB-write-test bs=160M oflag=direct count=1
+      dd if=/dev/zero of=/mnt/s5-cass-cold-storage/dd-160MB-write-test bs=160M oflag=direct count=1
+      Regular:
+        Local: 525.53 MB/s
+        NFS  :  88.12 MB/s    16.77% of localFS
+      Direct:
+        Local: 134.11 MB/s
+        NFS  :  99.99 MB/s    74.56% of localFS
+
+  Without 100ms latency:
+    hobin@mts7:/mnt/data/work/apache-cassandra-2.2.3-src/mtdb/tools/net-latency$ ./check-disk-io-perf.py
+    4 KB random read test ...
+      iozone -r 4k -s 1m -R /home/hobin
+      iozone -r 4k -s 1m -R /mnt/s5-cass-cold-storage
+      iozone -r 4k -s 1m -R -I /home/hobin
+      iozone -r 4k -s 1m -R -I /mnt/s5-cass-cold-storage
+      Regular:
+        Local: 3380.31 MB/s
+        NFS  : 3391.24 MB/s   100.32% of localFS
+      Direct:
+        Local:  18.04 MB/s
+        NFS  :  17.81 MB/s    98.71% of localFS
+    160 MB write test ...
+      dd if=/dev/zero of=/home/hobin/dd-160MB-write-test bs=160M count=1
+      dd if=/dev/zero of=/mnt/s5-cass-cold-storage/dd-160MB-write-test bs=160M count=1
+      dd if=/dev/zero of=/home/hobin/dd-160MB-write-test bs=160M oflag=direct count=1
+      dd if=/dev/zero of=/mnt/s5-cass-cold-storage/dd-160MB-write-test bs=160M oflag=direct count=1
+      Regular:
+        Local: 526.16 MB/s
+        NFS  :  13.67 MB/s     2.60% of localFS
+      Direct:
+        Local: 138.02 MB/s
+        NFS  :  14.26 MB/s    10.34% of localFS
+
+
+160 MB write
+	LocalFS
+		hobin@mts7:~$ dd if=/dev/zero of=aaa bs=160M count=1
+			167772160 bytes (168 MB) copied, 0.303459 s, 553 MB/s
+		hobin@mts7:~$ dd if=/dev/zero of=aaa bs=160M count=1 oflag=direct
+			167772160 bytes (168 MB) copied, 1.1954 s, 140 MB/s (28.44% faster than NFS)
+	NFS
+		hobin@mts7:/mnt/s5-cass-cold-storage$ dd if=/dev/zero of=aaa bs=160M count=1
+			167772160 bytes (168 MB) copied, 1.7252 s, 97.2 MB/s
+		hobin@mts7:/mnt/s5-cass-cold-storage$ dd if=/dev/zero of=aaa bs=160M count=1 oflag=direct
+			167772160 bytes (168 MB) copied, 1.54037 s, 109 MB/s
+
+4 KB read (kB/s)
+	Local FS
+		hobin@mts7:/mnt/s5-cass-cold-storage$ time iozone -r 4k -s 1m ~/
+			2918161
+		hobin@mts7:/mnt/s5-cass-cold-storage$ time iozone -r 4k -s 1m -I ~/
+			O_DIRECT feature enabled
+			8815 (6.87% faster than NFS)
+	NFS
+		hobin@mts7:/mnt/s5-cass-cold-storage$ time iozone -r 4k -s 1m .
+			2716948
+		hobin@mts7:/mnt/s5-cass-cold-storage$ time iozone -r 4k -s 1m -I .
+			O_DIRECT feature enabled
+			8248
+
+dd numbers kind of agree with iozone numbers with 16 MB direct write test
+	hobin@mts7:/mnt/s5-cass-cold-storage$ time iozone -r 16m -s 16m -I ~/
+		109904 kB/s = 107.33 MB/s
+	hobin@mts7:~$ dd if=/dev/zero of=aaa bs=16M count=1 oflag=direct
+		16777216 bytes (17 MB) copied, 0.134562 s, 125 MB/s
+
+---
+
+Full log for the record.
+
+hobin@mts7:/mnt/s5-cass-cold-storage$ time iozone -r 4k -s 1m -I .
+	Iozone: Performance Test of File I/O
+	        Version $Revision: 3.429 $
+		Compiled for 64 bit mode.
+		Build: linux-AMD64
+
+	Contributors:William Norcott, Don Capps, Isom Crawford, Kirby Collins
+	             Al Slater, Scott Rhine, Mike Wisner, Ken Goss
+	             Steve Landherr, Brad Smith, Mark Kelly, Dr. Alain CYR,
+	             Randy Dunlap, Mark Montague, Dan Million, Gavin Brebner,
+	             Jean-Marc Zucconi, Jeff Blomberg, Benny Halevy, Dave Boone,
+	             Erik Habbinga, Kris Strecker, Walter Wong, Joshua Root,
+	             Fabrice Bacchella, Zhenghua Xue, Qin Li, Darren Sawyer,
+	             Vangel Bojaxhi, Ben England, Vikentsi Lapa.
+
+	Run began: Wed Jan  6 14:24:33 2016
+
+	Record Size 4 kB
+	File size set to 1024 kB
+	O_DIRECT feature enabled
+	Command line used: iozone -r 4k -s 1m -I .
+	Output is in kBytes/sec
+	Time Resolution = 0.000001 seconds.
+	Processor cache size set to 1024 kBytes.
+	Processor cache line size set to 32 bytes.
+	File stride size set to 17 * record size.
+                                                              random    random     bkwd    record    stride
+              kB  reclen    write  rewrite    read    reread    read     write     read   rewrite      read   fwrite frewrite    fread  freread
+            1024       4     7548     7650     8954     8240     8248     7691     8087      7798      8300   824558  1141426  3291652  3544270
+
+iozone test complete.
+

@@ -71,6 +71,7 @@ import org.apache.cassandra.io.sstable.*;
 import org.apache.cassandra.io.sstable.format.*;
 import org.apache.cassandra.io.sstable.metadata.CompactionMetadata;
 import org.apache.cassandra.io.sstable.metadata.MetadataType;
+import org.apache.cassandra.io.sstable.SSTableAccMon;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.metrics.ColumnFamilyMetrics;
 import org.apache.cassandra.metrics.ColumnFamilyMetrics.Sampler;
@@ -380,6 +381,9 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         sampleLatencyNanos = DatabaseDescriptor.getReadRpcTimeout() / 2;
 
         logger.info("Initializing {}.{}", keyspace.getName(), name);
+
+        if (keyspace.getName().equals("mtdb1") && name.equals("table1"))
+            SSTableAccMon.Clear();
 
         // scan for sstables corresponding to this cf and load them
         data = new Tracker(this, loadSSTables);
@@ -1818,17 +1822,14 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             }
             else
             {
-                //boolean mtdb_trace = (
-                //        filter.getColumnFamilyName().equals("table1")
-                //        || filter.getColumnFamilyName().equals("standard1"));
-
-                //if (mtdb_trace) {
-                //    logger.warn("MTDB: {}", filter);
-                //}
-                ColumnFamily cf = getTopLevelColumns(filter, gcBefore);
-                //if (mtdb_trace) {
-                //    logger.warn("MTDB: {}", cf);
-                //}
+                boolean mtdb_trace = (
+                        filter.getColumnFamilyName().equals("table1")
+                        || filter.getColumnFamilyName().equals("standard1"));
+                //if (mtdb_trace)
+                //    logger.warn("MTDB: filter={}", filter);
+                ColumnFamily cf = getTopLevelColumns(filter, gcBefore, mtdb_trace);
+                //if (mtdb_trace)
+                //    logger.warn("MTDB: cf={}", cf);
 
                 if (cf == null)
                     return null;
@@ -2040,12 +2041,17 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
 
     public ColumnFamily getTopLevelColumns(QueryFilter filter, int gcBefore)
     {
+        return getTopLevelColumns(filter, gcBefore, false);
+    }
+
+    public ColumnFamily getTopLevelColumns(QueryFilter filter, int gcBefore, boolean mtdb_trace)
+    {
         Tracing.trace("Executing single-partition query on {}", name);
         CollationController controller = new CollationController(this, filter, gcBefore);
         ColumnFamily columns;
         try (OpOrder.Group op = readOrdering.start())
         {
-            columns = controller.getTopLevelColumns(Memtable.MEMORY_POOL.needToCopyOnHeap());
+            columns = controller.getTopLevelColumns(Memtable.MEMORY_POOL.needToCopyOnHeap(), mtdb_trace);
         }
         if (columns != null)
             metric.samplers.get(Sampler.READS).addSample(filter.key.getKey(), filter.key.hashCode(), 1);

@@ -89,6 +89,7 @@ public abstract class SSTable
         this.metadata = metadata;
         this.partitioner = partitioner;
 
+        // TODO: how do you know this is where a SSTable is created?
         if (descriptor.baseFilename().contains("/mtdb1/")
                 || descriptor.baseFilename().contains("/keyspace1/"))
             logger.warn("MTDB: SstCreate {}", descriptor);
@@ -120,6 +121,9 @@ public abstract class SSTable
         FileUtils.delete(desc.filenameFor(Component.SUMMARY));
 
         logger.trace("Deleted {}", desc);
+        if (desc.baseFilename().contains("/mtdb1/")
+                || desc.baseFilename().contains("/keyspace1/"))
+            logger.warn("MTDB: SstDeleted {}", desc);
         return true;
     }
 

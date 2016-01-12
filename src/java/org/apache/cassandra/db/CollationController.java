@@ -62,12 +62,15 @@ public class CollationController
         this.gcBefore = gcBefore;
     }
 
-    public ColumnFamily getTopLevelColumns(boolean copyOnHeap)
+    public ColumnFamily getTopLevelColumns(boolean copyOnHeap, boolean mtdb_trace)
     {
+        //if (mtdb_trace)
+        //    logger.warn("MTDB:");
+
         return filter.filter instanceof NamesQueryFilter
                && cfs.metadata.getDefaultValidator() != CounterColumnType.instance
-               ? collectTimeOrderedData(copyOnHeap)
-               : collectAllData(copyOnHeap);
+               ? collectTimeOrderedData(copyOnHeap, mtdb_trace)
+               : collectAllData(copyOnHeap, mtdb_trace);
     }
 
     /**
@@ -75,14 +78,11 @@ public class CollationController
      * Once we have data for all requests columns that is newer than the newest remaining maxtimestamp,
      * we stop.
      */
-    private ColumnFamily collectTimeOrderedData(boolean copyOnHeap)
+    private ColumnFamily collectTimeOrderedData(boolean copyOnHeap, boolean mtdb_trace)
     {
-        boolean mtdb_trace = (
-                filter.getColumnFamilyName().equals("table1")
-                || filter.getColumnFamilyName().equals("standard1"));
         final ColumnFamily container = ArrayBackedSortedColumns.factory.create(cfs.metadata, filter.filter.isReversed());
         if (mtdb_trace) {
-            logger.warn("MTDB: {} {}", container, container.deletionInfo());
+            logger.warn("MTDB: container={} container.deletionInfo={}", container, container.deletionInfo());
         }
         List<OnDiskAtomIterator> iterators = new ArrayList<>();
         boolean isEmpty = true;
@@ -274,14 +274,10 @@ public class CollationController
      * Collects data the brute-force way: gets an iterator for the filter in question
      * from every memtable and sstable, then merges them together.
      */
-    private ColumnFamily collectAllData(boolean copyOnHeap)
+    private ColumnFamily collectAllData(boolean copyOnHeap, boolean mtdb_trace)
     {
-        boolean mtdb_trace = (
-                filter.getColumnFamilyName().equals("table1")
-                || filter.getColumnFamilyName().equals("standard1"));
-        //if (mtdb_trace) {
+        //if (mtdb_trace)
         //    logger.warn("MTDB:");
-        //}
 
         Tracing.trace("Acquiring sstable references");
         ColumnFamilyStore.ViewFragment view = cfs.select(cfs.viewFilter(filter.key), mtdb_trace);
@@ -295,14 +291,21 @@ public class CollationController
             Tracing.trace("Merging memtable tombstones");
             for (Memtable memtable : view.memtables)
             {
-                //if (mtdb_trace) {
-                //    logger.warn("MTDB: memtable={}", memtable);
-                //}
+                // I wonder why
+                //   select * from table1 where key=0; takes this path, but
+                //   select * from table1; doesn't.
                 final ColumnFamily cf = memtable.getColumnFamily(filter.key);
+                if (mtdb_trace) {
+                    //logger.warn("MTDB: memtable={} filter.key={}", memtable, filter.key);
+                    SSTableAccMon.Update(memtable, cf);
+                }
                 if (cf != null)
                 {
                     filter.delete(returnDeletionInfo, cf);
                     Iterator<Cell> iter = filter.getIterator(cf);
+                    //if (mtdb_trace) {
+                    //    logger.warn("MTDB: cf={} filter={} iter={} copyOnHeap={}", cf, filter, iter, copyOnHeap);
+                    //}
                     if (copyOnHeap)
                     {
                         iter = Iterators.transform(iter, new Function<Cell, Cell>()
@@ -336,14 +339,17 @@ public class CollationController
 
             for (SSTableReader sstable : view.sstables)
             {
-                //if (mtdb_trace) {
-                //    logger.warn("MTDB: sstable={}", sstable);
-                //}
                 minTimestamp = Math.min(minTimestamp, sstable.getMinTimestamp());
                 // if we've already seen a row tombstone with a timestamp greater
                 // than the most recent update to this sstable, we can skip it
-                if (sstable.getMaxTimestamp() < returnDeletionInfo.getTopLevelDeletion().markedForDeleteAt)
+                if (sstable.getMaxTimestamp() < returnDeletionInfo.getTopLevelDeletion().markedForDeleteAt) {
+                    //if (mtdb_trace)
+                    //    logger.warn("MTDB: sstable={}", sstable);
                     break;
+                } else {
+                    //if (mtdb_trace)
+                    //    logger.warn("MTDB: sstable={}", sstable);
+                }
 
                 if (!filter.shouldInclude(sstable))
                 {
@@ -363,7 +369,6 @@ public class CollationController
                 iterators.add(iter);
 
                 if (mtdb_trace) {
-                    //SSTableAccMon.Update(this, readMeter.count());
                     SSTableAccMon.Update(sstable);
 
                     // iter.getColumnFamily() == null means the sstable doesn't

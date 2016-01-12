@@ -69,19 +69,21 @@ class LatMon {
 	}
 
 	public static class Stat {
-		long cnt;
-		long min;
-		long max;
-		long avg;
-		long _50;
-		long _90;
-		long _95;
-		long _99;
-		long _995;
-		long _999;
+		long cnt = -1;
+		long min = -1;
+		long max = -1;
+		long avg = -1;
+		long _50 = -1;
+		long _90 = -1;
+		long _95 = -1;
+		long _99 = -1;
+		long _995 = -1;
+		long _999 = -1;
 
 		// Note: values are sorted
 		Stat(List<Long> values) {
+			if (values.size() == 0)
+				return;
 
 			Collections.sort(values);
 			min = values.get(0);

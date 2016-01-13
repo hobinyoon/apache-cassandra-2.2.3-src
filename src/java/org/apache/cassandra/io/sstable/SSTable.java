@@ -91,7 +91,8 @@ public abstract class SSTable
         this.metadata = metadata;
         this.partitioner = partitioner;
 
-        // TODO: Not sure if this is the right place for SSTableCreated event. Keep digging.
+        // TODO MTDB: Not sure if this is the right place for SSTableCreated
+        // event. Keep digging.
         if (getKeyspaceName().equals("mtdb1") && getColumnFamilyName().equals("table1")) {
             mtdbTable = true;
             logger.warn("MTDB: SstCreate {}", descriptor);
@@ -126,8 +127,8 @@ public abstract class SSTable
         FileUtils.delete(desc.filenameFor(Component.SUMMARY));
 
         logger.trace("Deleted {}", desc);
-        // TODO: Not sure if this is the right place for the delete events. It
-        // is a static function. Keep digging.
+        // TODO MTDB: Not sure if this is the right place for the delete
+        // events. It is a static function. Keep digging.
         //    logger.warn("MTDB: SstDeleted {}", desc);
         return true;
     }

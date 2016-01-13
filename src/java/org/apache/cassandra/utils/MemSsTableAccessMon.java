@@ -55,7 +55,7 @@ public class MemSsTableAccessMon
         long bf_fp_cnt;
         // bf_negative can be calculated
 
-        // TODO: Update the plot script. The order of tp and fp has changed.
+        // TODO MTDB: Update the plot script. The order of tp and fp has changed.
         public _SSTableAccCnt(long read_cnt, long bf_tp_cnt, long bf_fp_cnt) {
             this.read_cnt = read_cnt;
             this.bf_tp_cnt = bf_tp_cnt;
@@ -85,7 +85,7 @@ public class MemSsTableAccessMon
     static {
         _outThread = new Thread(new OutputThread());
         _outThread.start();
-        // TODO: join() and clean up _outThread when Cassandra closes.
+        // TODO MTDB: join() and clean up _outThread when Cassandra closes.
     }
 
     public static void Clear() {
@@ -132,16 +132,16 @@ public class MemSsTableAccessMon
 
     public static void Discard(Memtable m) {
         logger.warn("MTDB: MemtableDiscard {}", m);
-        // TODO: implement
+        // TODO MTDB: implement
     }
 
-    // TODO: may want to have a SSTable removed event.
+    // TODO MTDB: may want to have a SSTable removed event.
 
     private static class OutputThread implements Runnable {
         public void run() {
             try {
                 while (true) {
-                    // TODO: make it configurable
+                    // TODO MTDB: make it configurable
                     Thread.sleep(500);
                     // a non-strict but low-overhead serialization
                     if (! updatedSinceLastOutput)
@@ -153,7 +153,7 @@ public class MemSsTableAccessMon
                         Map.Entry pair = (Map.Entry) it.next();
                         Memtable m = (Memtable) pair.getKey();
                         outEntries.add(String.format("%s-%s"
-                                    // TODO: more compact?
+                                    // TODO MTDB: more compact?
                                     , m.toString()
                                     , pair.getValue().toString()));
                     }
@@ -173,7 +173,7 @@ public class MemSsTableAccessMon
                     if (outEntries.size() == 0)
                         continue;
 
-                    // TODO: let memtable accesses go first
+                    // TODO MTDB: let memtable accesses go first
                     Collections.sort(outEntries);
 
                     StringBuilder sb = new StringBuilder(1000);

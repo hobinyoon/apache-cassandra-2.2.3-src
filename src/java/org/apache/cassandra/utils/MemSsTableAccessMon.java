@@ -1,4 +1,4 @@
-package org.apache.cassandra.io.sstable;
+package org.apache.cassandra.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,13 +10,13 @@ import java.util.List;
 
 import org.apache.cassandra.db.Memtable;
 import org.apache.cassandra.db.ColumnFamily;
+import org.apache.cassandra.io.sstable.Descriptor;
 import org.apache.cassandra.io.sstable.format.SSTableReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO: MemSsTableAccessMonitor
-public class SSTableAccMon
+public class MemSsTableAccessMon
 {
     private static Map<Memtable, _MemTableAccCnt> _memTableAccCnt = new ConcurrentHashMap();
     private static Map<Descriptor, _SSTableAccCnt> _ssTableAccCnt = new ConcurrentHashMap();
@@ -24,7 +24,7 @@ public class SSTableAccMon
     private static long tsLastOutput = 0L;
     private static boolean updatedSinceLastOutput = false;
     private static Thread _outThread = null;
-    private static final Logger logger = LoggerFactory.getLogger(SSTableAccMon.class);
+    private static final Logger logger = LoggerFactory.getLogger(MemSsTableAccessMon.class);
 
     private static class _MemTableAccCnt {
         private AtomicLong accesses;
@@ -127,6 +127,12 @@ public class SSTableAccMon
                 updatedSinceLastOutput = true;
             }
         }
+    }
+
+
+    public static void Discard(Memtable m) {
+        logger.warn("MTDB: MemtableDiscard {}", m);
+        // TODO: implement
     }
 
     // TODO: may want to have a SSTable removed event.

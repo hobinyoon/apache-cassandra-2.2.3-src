@@ -37,7 +37,6 @@ import org.apache.cassandra.stress.settings.StressSettings;
 import org.apache.cassandra.stress.util.JavaDriverClient;
 import org.apache.cassandra.stress.util.ThriftClient;
 import org.apache.cassandra.stress.util.Timer;
-import org.apache.cassandra.stress.util.Tracer;
 import org.apache.cassandra.thrift.Compression;
 import org.apache.cassandra.thrift.CqlResult;
 import org.apache.cassandra.thrift.CqlRow;
@@ -45,6 +44,7 @@ import org.apache.cassandra.thrift.ThriftConversion;
 import org.apache.cassandra.transport.SimpleClient;
 import org.apache.cassandra.transport.messages.ResultMessage;
 import org.apache.cassandra.utils.ByteBufferUtil;
+import org.apache.cassandra.utils.Tracer;
 import org.apache.thrift.TException;
 
 import org.apache.logging.log4j.LogManager;

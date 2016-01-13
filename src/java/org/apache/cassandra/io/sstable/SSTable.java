@@ -69,6 +69,8 @@ public abstract class SSTable
     public DecoratedKey first;
     public DecoratedKey last;
 
+    private final boolean mtdbTable;
+
     protected SSTable(Descriptor descriptor, CFMetaData metadata, IPartitioner partitioner)
     {
         this(descriptor, new HashSet<Component>(), metadata, partitioner);
@@ -89,10 +91,13 @@ public abstract class SSTable
         this.metadata = metadata;
         this.partitioner = partitioner;
 
-        // TODO: how do you know this is where a SSTable is created?
-        if (descriptor.baseFilename().contains("/mtdb1/")
-                || descriptor.baseFilename().contains("/keyspace1/"))
+        // TODO: Not sure if this is the right place for SSTableCreated event. Keep digging.
+        if (getKeyspaceName().equals("mtdb1") && getColumnFamilyName().equals("table1")) {
+            mtdbTable = true;
             logger.warn("MTDB: SstCreate {}", descriptor);
+        } else {
+            mtdbTable = false;
+        }
     }
 
     /**
@@ -121,9 +126,9 @@ public abstract class SSTable
         FileUtils.delete(desc.filenameFor(Component.SUMMARY));
 
         logger.trace("Deleted {}", desc);
-        if (desc.baseFilename().contains("/mtdb1/")
-                || desc.baseFilename().contains("/keyspace1/"))
-            logger.warn("MTDB: SstDeleted {}", desc);
+        // TODO: Not sure if this is the right place for the delete events. It
+        // is a static function. Keep digging.
+        //    logger.warn("MTDB: SstDeleted {}", desc);
         return true;
     }
 

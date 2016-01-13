@@ -36,11 +36,11 @@ import org.apache.cassandra.db.filter.NamesQueryFilter;
 import org.apache.cassandra.db.filter.QueryFilter;
 import org.apache.cassandra.db.marshal.CounterColumnType;
 import org.apache.cassandra.io.sstable.format.SSTableReader;
-import org.apache.cassandra.io.sstable.SSTableAccMon;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.tracing.Tracing;
 import org.apache.cassandra.utils.SearchIterator;
 import org.apache.cassandra.utils.memory.HeapAllocator;
+import org.apache.cassandra.utils.MemSsTableAccessMon;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +60,11 @@ public class CollationController
         this.cfs = cfs;
         this.filter = filter;
         this.gcBefore = gcBefore;
+    }
+
+    public ColumnFamily getTopLevelColumns(boolean copyOnHeap)
+    {
+        return getTopLevelColumns(copyOnHeap, false);
     }
 
     public ColumnFamily getTopLevelColumns(boolean copyOnHeap, boolean mtdb_trace)
@@ -176,8 +181,8 @@ public class CollationController
                 iterators.add(iter);
                 isEmpty = false;
                 if (mtdb_trace) {
-                    //SSTableAccMon.Update(this, readMeter.count());
-                    SSTableAccMon.Update(sstable);
+                    //MemSsTableAccessMon.Update(this, readMeter.count());
+                    MemSsTableAccessMon.Update(sstable);
 
                     // iter.getColumnFamily() == null means the sstable doesn't
                     // have the requested data. and probably by the bloom
@@ -297,7 +302,7 @@ public class CollationController
                 final ColumnFamily cf = memtable.getColumnFamily(filter.key);
                 if (mtdb_trace) {
                     //logger.warn("MTDB: memtable={} filter.key={}", memtable, filter.key);
-                    SSTableAccMon.Update(memtable, cf);
+                    MemSsTableAccessMon.Update(memtable, cf);
                 }
                 if (cf != null)
                 {
@@ -369,7 +374,7 @@ public class CollationController
                 iterators.add(iter);
 
                 if (mtdb_trace) {
-                    SSTableAccMon.Update(sstable);
+                    MemSsTableAccessMon.Update(sstable);
 
                     // iter.getColumnFamily() == null means the sstable doesn't
                     // have the requested data. and probably by the bloom

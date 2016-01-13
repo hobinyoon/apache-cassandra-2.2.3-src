@@ -71,7 +71,6 @@ import org.apache.cassandra.io.sstable.*;
 import org.apache.cassandra.io.sstable.format.*;
 import org.apache.cassandra.io.sstable.metadata.CompactionMetadata;
 import org.apache.cassandra.io.sstable.metadata.MetadataType;
-import org.apache.cassandra.io.sstable.SSTableAccMon;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.metrics.ColumnFamilyMetrics;
 import org.apache.cassandra.metrics.ColumnFamilyMetrics.Sampler;
@@ -83,6 +82,7 @@ import org.apache.cassandra.utils.*;
 import org.apache.cassandra.utils.concurrent.*;
 import org.apache.cassandra.utils.TopKSampler.SamplerResult;
 import org.apache.cassandra.utils.memory.MemtableAllocator;
+import org.apache.cassandra.utils.MemSsTableAccessMon;
 
 import com.clearspring.analytics.stream.Counter;
 
@@ -182,6 +182,8 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
     public final ColumnFamilyMetrics metric;
     public volatile long sampleLatencyNanos;
     private final ScheduledFuture<?> latencyCalculator;
+
+    private final boolean mtdbTable;
 
     public static void shutdownPostFlushExecutor() throws InterruptedException
     {
@@ -382,8 +384,12 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
 
         logger.info("Initializing {}.{}", keyspace.getName(), name);
 
-        if (keyspace.getName().equals("mtdb1") && name.equals("table1"))
-            SSTableAccMon.Clear();
+        if (keyspace.getName().equals("mtdb1") && name.equals("table1")) {
+            mtdbTable = true;
+            MemSsTableAccessMon.Clear();
+        } else {
+            mtdbTable = false;
+        }
 
         // scan for sstables corresponding to this cf and load them
         data = new Tracker(this, loadSSTables);
@@ -1154,6 +1160,9 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
                 {
                     readBarrier.await();
                     memtable.setDiscarded();
+
+                    if (memtable.cfs.mtdbTable)
+                        MemSsTableAccessMon.Discard(memtable);
                 }
             });
         }
@@ -1798,10 +1807,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             // records from erasure coded SSTables.
             if (isRowCacheEnabled())
             {
-                //boolean mtdb_trace = (
-                //        filter.getColumnFamilyName().equals("table1")
-                //        || filter.getColumnFamilyName().equals("standard1"));
-                //if (mtdb_trace) {
+                //if (mtdbTable) {
                 //    logger.warn("MTDB:");
                 //}
 
@@ -1814,7 +1820,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
                     logger.trace("cached row is empty");
                     return null;
                 }
-                //if (mtdb_trace) {
+                //if (mtdbTable) {
                 //    logger.warn("MTDB:");
                 //}
 
@@ -1822,13 +1828,10 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             }
             else
             {
-                boolean mtdb_trace = (
-                        filter.getColumnFamilyName().equals("table1")
-                        || filter.getColumnFamilyName().equals("standard1"));
-                //if (mtdb_trace)
+                //if (mtdbTable)
                 //    logger.warn("MTDB: filter={}", filter);
-                ColumnFamily cf = getTopLevelColumns(filter, gcBefore, mtdb_trace);
-                //if (mtdb_trace)
+                ColumnFamily cf = getTopLevelColumns(filter, gcBefore, mtdbTable);
+                //if (mtdbTable)
                 //    logger.warn("MTDB: cf={}", cf);
 
                 if (cf == null)
@@ -1902,7 +1905,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         long failingSince = -1L;
         while (true)
         {
-            ViewFragment view = select(filter, false);
+            ViewFragment view = select(filter);
             Refs<SSTableReader> refs = Refs.tryRef(view.sstables);
             if (refs != null)
                 return new RefViewFragment(view.sstables, view.memtables, refs);
@@ -1921,6 +1924,11 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
                 failingSince = System.nanoTime();
             }
         }
+    }
+
+    public ViewFragment select(Function<View, List<SSTableReader>> filter)
+    {
+        return select(filter, false);
     }
 
     public ViewFragment select(Function<View, List<SSTableReader>> filter, boolean mtdb_trace)
@@ -2029,7 +2037,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
         try (OpOrder.Group op = readOrdering.start())
         {
             List<String> files = new ArrayList<>();
-            for (SSTableReader sstr : select(viewFilter(dk), false).sstables)
+            for (SSTableReader sstr : select(viewFilter(dk)).sstables)
             {
                 // check if the key actually exists in this sstable, without updating cache and stats
                 if (sstr.getPosition(dk, SSTableReader.Operator.EQ, false) != null)
@@ -2126,7 +2134,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
     {
         assert !(range.keyRange() instanceof Range) || !((Range<?>)range.keyRange()).isWrapAround() || range.keyRange().right.isMinimum() : range.keyRange();
 
-        final ViewFragment view = select(viewFilter(range.keyRange()), false);
+        final ViewFragment view = select(viewFilter(range.keyRange()));
         Tracing.trace("Executing seq scan across {} sstables for {}", view.sstables.size(), range.keyRange().getString(metadata.getKeyValidator()));
 
         final CloseableIterator<Row> iterator = RowIteratorFactory.getIterator(view.memtables, view.sstables, range, this, now);

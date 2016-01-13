@@ -12,7 +12,8 @@ CREATE TABLE table1 (
 		PRIMARY KEY (key)
 		)
 	WITH compression = { 'sstable_compression' : '' }
-	AND compaction = {'class' : 'SizeTieredCompactionStrategy'
-		, 'min_threshold' : 1000
-			, 'max_threshold' : 1000
-	};
+	;
+--	AND compaction = {'class' : 'SizeTieredCompactionStrategy'
+--		, 'min_threshold' : 1000
+--			, 'max_threshold' : 1000
+--	}

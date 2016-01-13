@@ -21,14 +21,15 @@ public class MemSsTableAccessMon
     private static Map<Memtable, _MemTableAccCnt> _memTableAccCnt = new ConcurrentHashMap();
     private static Map<Descriptor, _SSTableAccCnt> _ssTableAccCnt = new ConcurrentHashMap();
 
-    private static long tsLastOutput = 0L;
-    private static boolean updatedSinceLastOutput = false;
+    private static boolean _updatedSinceLastOutput = false;
     private static Thread _outThread = null;
     private static final Logger logger = LoggerFactory.getLogger(MemSsTableAccessMon.class);
 
     private static class _MemTableAccCnt {
         private AtomicLong accesses;
         private AtomicLong hits;
+        private boolean discarded = false;
+        private boolean loggedAfterDiscarded = false;
 
         public _MemTableAccCnt(boolean hit) {
             this.accesses = new AtomicLong(1);
@@ -103,7 +104,7 @@ public class MemSsTableAccessMon
         } else {
             _memTableAccCnt.put(m, new _MemTableAccCnt(cf != null));
         }
-        updatedSinceLastOutput = true;
+        _updatedSinceLastOutput = true;
     }
 
 
@@ -118,13 +119,13 @@ public class MemSsTableAccessMon
         // updates) here is harmless and better for performance.
         if (! _ssTableAccCnt.containsKey(key)) {
             _ssTableAccCnt.put(key, value);
-            updatedSinceLastOutput = true;
+            _updatedSinceLastOutput = true;
         } else {
             if (value.equals(_ssTableAccCnt.get(key))) {
                 // No changes. Do nothing.
             } else {
                 _ssTableAccCnt.put(key, value);
-                updatedSinceLastOutput = true;
+                _updatedSinceLastOutput = true;
             }
         }
     }
@@ -132,7 +133,14 @@ public class MemSsTableAccessMon
 
     public static void Discard(Memtable m) {
         logger.warn("MTDB: MemtableDiscard {}", m);
-        // TODO MTDB: implement
+
+        _MemTableAccCnt v = _memTableAccCnt.get(m);
+        if (v == null) {
+            // Can a memtable be discarded without being accessed at all? I'm
+            // not sure, but let's not throw an exception.
+            return;
+        }
+        v.discarded = true;
     }
 
     // TODO MTDB: may want to have a SSTable removed event.
@@ -144,9 +152,25 @@ public class MemSsTableAccessMon
                     // TODO MTDB: make it configurable
                     Thread.sleep(500);
                     // a non-strict but low-overhead serialization
-                    if (! updatedSinceLastOutput)
+                    if (! _updatedSinceLastOutput)
                         continue;
-                    updatedSinceLastOutput = false;
+                    _updatedSinceLastOutput = false;
+
+                    // Remove discarded MemTables after logging for the last time
+                    for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                        Map.Entry pair = (Map.Entry) it.next();
+                        _MemTableAccCnt v = (_MemTableAccCnt) pair.getValue();
+                        if (v.loggedAfterDiscarded)
+                            it.remove();
+                    }
+                    for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                        Map.Entry pair = (Map.Entry) it.next();
+                        _MemTableAccCnt v = (_MemTableAccCnt) pair.getValue();
+                        if (v.discarded)
+                            v.loggedAfterDiscarded = true;
+                    }
+
+                    // TODO: remove discarded SSTables too
 
                     List<String> outEntries = new ArrayList();
                     for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
@@ -166,9 +190,6 @@ public class MemSsTableAccessMon
                                     , d.generation
                                     , pair.getValue().toString()));
                     }
-
-                    // A SSTable removal can be done somewhere around here. It
-                    // can't be run concurrently with the above loop.
 
                     if (outEntries.size() == 0)
                         continue;

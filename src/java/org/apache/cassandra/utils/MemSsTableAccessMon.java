@@ -55,6 +55,8 @@ public class MemSsTableAccessMon
         long bf_tp_cnt;
         long bf_fp_cnt;
         // bf_negative can be calculated
+        private boolean discarded = false;
+        private boolean loggedAfterDiscarded = false;
 
         // TODO MTDB: Update the plot script. The order of tp and fp has changed.
         public _SSTableAccCnt(long read_cnt, long bf_tp_cnt, long bf_fp_cnt) {
@@ -130,7 +132,7 @@ public class MemSsTableAccessMon
         }
     }
 
-
+    // Discard a MemTable
     public static void Discard(Memtable m) {
         logger.warn("MTDB: MemtableDiscard {}", m);
 
@@ -143,7 +145,17 @@ public class MemSsTableAccessMon
         v.discarded = true;
     }
 
-    // TODO MTDB: may want to have a SSTable removed event.
+    // Delete a SSTable
+    public static void Delete(Descriptor d) {
+        logger.warn("MTDB: SstDeleted {}", d);
+
+        _SSTableAccCnt v = _ssTableAccCnt.get(d);
+        if (v == null) {
+            // Again, do not throw an exception.
+            return;
+        }
+        v.discarded = true;
+    }
 
     private static class OutputThread implements Runnable {
         public void run() {
@@ -170,14 +182,25 @@ public class MemSsTableAccessMon
                             v.loggedAfterDiscarded = true;
                     }
 
-                    // TODO: remove discarded SSTables too
+                    // Remove deleted SSTables in the same way
+                    for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                        Map.Entry pair = (Map.Entry) it.next();
+                        _SSTableAccCnt v = (_SSTableAccCnt) pair.getValue();
+                        if (v.loggedAfterDiscarded)
+                            it.remove();
+                    }
+                    for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                        Map.Entry pair = (Map.Entry) it.next();
+                        _SSTableAccCnt v = (_SSTableAccCnt) pair.getValue();
+                        if (v.discarded)
+                            v.loggedAfterDiscarded = true;
+                    }
 
                     List<String> outEntries = new ArrayList();
                     for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
                         Map.Entry pair = (Map.Entry) it.next();
                         Memtable m = (Memtable) pair.getKey();
                         outEntries.add(String.format("%s-%s"
-                                    // TODO MTDB: more compact?
                                     , m.toString()
                                     , pair.getValue().toString()));
                     }

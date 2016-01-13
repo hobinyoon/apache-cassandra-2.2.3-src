@@ -69,6 +69,8 @@ public class Descriptor
     public final SSTableFormat.Type formatType;
     private final int hashCode;
 
+    public final boolean mtdbTable;
+
     /**
      * A descriptor that assumes CURRENT_VERSION.
      */
@@ -99,6 +101,8 @@ public class Descriptor
         this.formatType = formatType;
 
         hashCode = Objects.hashCode(version, directory, generation, ksname, cfname, temp, formatType);
+
+        mtdbTable = (ksname.equals("mtdb1") && cfname.equals("table1"));
     }
 
     public Descriptor withGeneration(int newGeneration)

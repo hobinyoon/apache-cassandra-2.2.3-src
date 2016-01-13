@@ -40,6 +40,7 @@ import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.cassandra.utils.concurrent.RefCounted;
 import org.apache.cassandra.utils.memory.HeapAllocator;
+import org.apache.cassandra.utils.MemSsTableAccessMon;
 import org.apache.cassandra.utils.Pair;
 
 /**
@@ -69,8 +70,6 @@ public abstract class SSTable
     public DecoratedKey first;
     public DecoratedKey last;
 
-    private final boolean mtdbTable;
-
     protected SSTable(Descriptor descriptor, CFMetaData metadata, IPartitioner partitioner)
     {
         this(descriptor, new HashSet<Component>(), metadata, partitioner);
@@ -91,14 +90,10 @@ public abstract class SSTable
         this.metadata = metadata;
         this.partitioner = partitioner;
 
-        // TODO MTDB: Not sure if this is the right place for SSTableCreated
-        // event. Keep digging.
-        if (getKeyspaceName().equals("mtdb1") && getColumnFamilyName().equals("table1")) {
-            mtdbTable = true;
+        // Hobin: Not sure if this is the right place for SSTableCreated event.
+        // Most probably.
+        if (descriptor.mtdbTable)
             logger.warn("MTDB: SstCreate {}", descriptor);
-        } else {
-            mtdbTable = false;
-        }
     }
 
     /**
@@ -127,9 +122,9 @@ public abstract class SSTable
         FileUtils.delete(desc.filenameFor(Component.SUMMARY));
 
         logger.trace("Deleted {}", desc);
-        // TODO MTDB: Not sure if this is the right place for the delete
-        // events. It is a static function. Keep digging.
-        //    logger.warn("MTDB: SstDeleted {}", desc);
+        if (desc.mtdbTable)
+            MemSsTableAccessMon.Delete(desc);
+
         return true;
     }
 

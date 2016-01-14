@@ -2,6 +2,7 @@ package org.apache.cassandra.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,36 +52,27 @@ public class MemSsTableAccessMon
     }
 
     private static class _SSTableAccCnt {
-        long read_cnt;
-        long bf_tp_cnt;
-        long bf_fp_cnt;
-        // bf_negative can be calculated
+        private SSTableReader _sstr;
+        private long _bytesOnDisk = -1;
         private boolean discarded = false;
         private boolean loggedAfterDiscarded = false;
 
-        // TODO MTDB: Update the plot script. The order of tp and fp has changed.
-        public _SSTableAccCnt(long read_cnt, long bf_tp_cnt, long bf_fp_cnt) {
-            this.read_cnt = read_cnt;
-            this.bf_tp_cnt = bf_tp_cnt;
-            this.bf_fp_cnt = bf_fp_cnt;
-        }
-
-        public boolean equals(_SSTableAccCnt v) {
-            if (this == v)
-                return true;
-            if (read_cnt != v.read_cnt)
-                return false;
-            if (bf_tp_cnt != v.bf_tp_cnt)
-                return false;
-            if (bf_fp_cnt != v.bf_fp_cnt)
-                return false;
-            return true;
+        public _SSTableAccCnt(SSTableReader sstr) {
+            _sstr = sstr;
         }
 
         @Override
         public String toString() {
+            if (_bytesOnDisk == -1)
+                _bytesOnDisk = _sstr.bytesOnDisk();
+
             StringBuilder sb = new StringBuilder(40);
-            sb.append(read_cnt).append(",").append(bf_tp_cnt).append(",").append(bf_fp_cnt);
+            // TODO MTDB: Update the plot script. The order has changed.
+            sb.append(_bytesOnDisk)
+                .append(",").append(_sstr.getReadMeter().count())
+                .append(",").append(_sstr.getBloomFilterTruePositiveCount())
+                .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
+                ;
             return sb.toString();
         }
     }
@@ -111,25 +103,14 @@ public class MemSsTableAccessMon
 
 
     public static void Update(SSTableReader r) {
-        //long key = r.descriptor.generation;
         Descriptor key = r.descriptor;
-        _SSTableAccCnt value = new _SSTableAccCnt(r.getReadMeter().count()
-                , r.getBloomFilterTruePositiveCount()
-                , r.getBloomFilterFalsePositiveCount());
 
-        // The race condition (time of check and modify. causes multiple
-        // updates) here is harmless and better for performance.
-        if (! _ssTableAccCnt.containsKey(key)) {
-            _ssTableAccCnt.put(key, value);
-            _updatedSinceLastOutput = true;
-        } else {
-            if (value.equals(_ssTableAccCnt.get(key))) {
-                // No changes. Do nothing.
-            } else {
-                _ssTableAccCnt.put(key, value);
-                _updatedSinceLastOutput = true;
-            }
-        }
+        // The race condition (time of check and modify) that may overwrite the
+        // first put() is harmless. It avoids an expensive locking.
+        if (_ssTableAccCnt.get(key) == null)
+            _ssTableAccCnt.put(key, new _SSTableAccCnt(r));
+
+        _updatedSinceLastOutput = true;
     }
 
     // Discard a MemTable
@@ -143,6 +124,8 @@ public class MemSsTableAccessMon
             return;
         }
         v.discarded = true;
+
+        _updatedSinceLastOutput = true;
     }
 
     // Delete a SSTable
@@ -151,14 +134,39 @@ public class MemSsTableAccessMon
 
         _SSTableAccCnt v = _ssTableAccCnt.get(d);
         if (v == null) {
-            // Again, do not throw an exception.
+            // A SSTable can be deleted without having been accessed by
+            // starting Cassandra, dropping an existing keyspace.
             return;
         }
         v.discarded = true;
+
+        _updatedSinceLastOutput = true;
     }
 
     private static class OutputThread implements Runnable {
         public void run() {
+
+            // Sort lexicographcally with Memtables go first
+            class OutputComparator implements Comparator<String> {
+                @Override
+                public int compare(String s1, String s2) {
+                    if (s1.startsWith("Memtable-")) {
+                        if (s2.startsWith("Memtable-")) {
+                            return s1.compareTo(s2);
+                        } else {
+                            return -1;
+                        }
+                    } else {
+                        if (s2.startsWith("Memtable-")) {
+                            return 1;
+                        } else {
+                            return s1.compareTo(s2);
+                        }
+                    }
+                }
+            }
+            OutputComparator oc = new OutputComparator();
+
             try {
                 while (true) {
                     // TODO MTDB: make it configurable
@@ -208,8 +216,8 @@ public class MemSsTableAccessMon
                     for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
                         Map.Entry pair = (Map.Entry) it.next();
                         Descriptor d = (Descriptor) pair.getKey();
-                        outEntries.add(String.format("%s-%02d:%s"
-                                    , d.cfname.substring(0, 2)
+                        outEntries.add(String.format("%02d:%s"
+                                    //, d.cfname.substring(0, 2)
                                     , d.generation
                                     , pair.getValue().toString()));
                     }
@@ -217,8 +225,7 @@ public class MemSsTableAccessMon
                     if (outEntries.size() == 0)
                         continue;
 
-                    // TODO MTDB: let memtable accesses go first
-                    Collections.sort(outEntries);
+                    Collections.sort(outEntries, oc);
 
                     StringBuilder sb = new StringBuilder(1000);
                     boolean first = true;

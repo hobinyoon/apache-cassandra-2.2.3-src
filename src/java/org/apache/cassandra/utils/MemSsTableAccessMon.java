@@ -22,7 +22,8 @@ public class MemSsTableAccessMon
     private static Map<Memtable, _MemTableAccCnt> _memTableAccCnt = new ConcurrentHashMap();
     private static Map<Descriptor, _SSTableAccCnt> _ssTableAccCnt = new ConcurrentHashMap();
 
-    private static boolean _updatedSinceLastOutput = false;
+    private static volatile boolean _updatedSinceLastOutput = false;
+    private static OutputRunnable _or = null;
     private static Thread _outThread = null;
     private static final Logger logger = LoggerFactory.getLogger(MemSsTableAccessMon.class);
 
@@ -54,7 +55,7 @@ public class MemSsTableAccessMon
     private static class _SSTableAccCnt {
         private SSTableReader _sstr;
         private long _bytesOnDisk = -1;
-        private boolean discarded = false;
+        private boolean deleted = false;
         private boolean loggedAfterDiscarded = false;
 
         public _SSTableAccCnt(SSTableReader sstr) {
@@ -78,7 +79,8 @@ public class MemSsTableAccessMon
     }
 
     static {
-        _outThread = new Thread(new OutputThread());
+        _or = new OutputRunnable();
+        _outThread = new Thread(_or);
         _outThread.start();
         // TODO MTDB: join() and clean up _outThread when Cassandra closes.
     }
@@ -115,8 +117,6 @@ public class MemSsTableAccessMon
 
     // Discard a MemTable
     public static void Discard(Memtable m) {
-        logger.warn("MTDB: MemtableDiscard {}", m);
-
         _MemTableAccCnt v = _memTableAccCnt.get(m);
         if (v == null) {
             // Can a memtable be discarded without being accessed at all? I'm
@@ -126,26 +126,35 @@ public class MemSsTableAccessMon
         v.discarded = true;
 
         _updatedSinceLastOutput = true;
+        logger.warn("MTDB: MemtableDiscard {}", m);
+        _or.Wakeup();
     }
 
     // Delete a SSTable
     public static void Delete(Descriptor d) {
-        logger.warn("MTDB: SstDeleted {}", d);
-
         _SSTableAccCnt v = _ssTableAccCnt.get(d);
         if (v == null) {
             // A SSTable can be deleted without having been accessed by
             // starting Cassandra, dropping an existing keyspace.
             return;
         }
-        v.discarded = true;
+        v.deleted = true;
 
         _updatedSinceLastOutput = true;
+        logger.warn("MTDB: SstDeleted {}", d);
+        _or.Wakeup();
     }
 
-    private static class OutputThread implements Runnable {
-        public void run() {
+    private static class OutputRunnable implements Runnable {
+        private final Object _sleepLock = new Object();
 
+        void Wakeup() {
+            synchronized (_sleepLock) {
+                _sleepLock.notify();
+            }
+        }
+
+        public void run() {
             // Sort lexicographcally with Memtables go first
             class OutputComparator implements Comparator<String> {
                 @Override
@@ -167,81 +176,85 @@ public class MemSsTableAccessMon
             }
             OutputComparator oc = new OutputComparator();
 
-            try {
-                while (true) {
-                    // TODO MTDB: make it configurable
-                    Thread.sleep(500);
-                    // a non-strict but low-overhead serialization
-                    if (! _updatedSinceLastOutput)
-                        continue;
-                    _updatedSinceLastOutput = false;
-
-                    // Remove discarded MemTables after logging for the last time
-                    for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry pair = (Map.Entry) it.next();
-                        _MemTableAccCnt v = (_MemTableAccCnt) pair.getValue();
-                        if (v.loggedAfterDiscarded)
-                            it.remove();
+            while (true) {
+                synchronized (_sleepLock) {
+                    try {
+                        // TODO MTDB: make it configurable
+                        _sleepLock.wait(500);
+                    } catch(InterruptedException e) {
+                        // It can wake up early to process Memtable /
+                        // SSTable deletion events
                     }
-                    for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry pair = (Map.Entry) it.next();
-                        _MemTableAccCnt v = (_MemTableAccCnt) pair.getValue();
-                        if (v.discarded)
-                            v.loggedAfterDiscarded = true;
-                    }
-
-                    // Remove deleted SSTables in the same way
-                    for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry pair = (Map.Entry) it.next();
-                        _SSTableAccCnt v = (_SSTableAccCnt) pair.getValue();
-                        if (v.loggedAfterDiscarded)
-                            it.remove();
-                    }
-                    for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry pair = (Map.Entry) it.next();
-                        _SSTableAccCnt v = (_SSTableAccCnt) pair.getValue();
-                        if (v.discarded)
-                            v.loggedAfterDiscarded = true;
-                    }
-
-                    List<String> outEntries = new ArrayList();
-                    for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry pair = (Map.Entry) it.next();
-                        Memtable m = (Memtable) pair.getKey();
-                        outEntries.add(String.format("%s-%s"
-                                    , m.toString()
-                                    , pair.getValue().toString()));
-                    }
-
-                    for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry pair = (Map.Entry) it.next();
-                        Descriptor d = (Descriptor) pair.getKey();
-                        outEntries.add(String.format("%02d:%s"
-                                    //, d.cfname.substring(0, 2)
-                                    , d.generation
-                                    , pair.getValue().toString()));
-                    }
-
-                    if (outEntries.size() == 0)
-                        continue;
-
-                    Collections.sort(outEntries, oc);
-
-                    StringBuilder sb = new StringBuilder(1000);
-                    boolean first = true;
-                    for (String i: outEntries) {
-                        if (first) {
-                            first = false;
-                        } else {
-                            sb.append(" ");
-                        }
-                        sb.append(i);
-                    }
-
-                    logger.warn("MTDB: TabletAccessStat {}", sb.toString());
                 }
-            } catch (InterruptedException e) {
-                logger.warn("MTDB: {}", e);
+
+                // a non-strict but low-overhead serialization
+                if (! _updatedSinceLastOutput)
+                    continue;
+                _updatedSinceLastOutput = false;
+
+                // Remove discarded MemTables and SSTables after logging for the last time
+                for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry pair = (Map.Entry) it.next();
+                    _MemTableAccCnt v = (_MemTableAccCnt) pair.getValue();
+                    if (v.discarded)
+                        v.loggedAfterDiscarded = true;
+                }
+                // Remove deleted SSTables in the same way
+                for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry pair = (Map.Entry) it.next();
+                    _SSTableAccCnt v = (_SSTableAccCnt) pair.getValue();
+                    if (v.deleted)
+                        v.loggedAfterDiscarded = true;
+                }
+
+                List<String> outEntries = new ArrayList();
+                for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry pair = (Map.Entry) it.next();
+                    Memtable m = (Memtable) pair.getKey();
+                    outEntries.add(String.format("%s-%s"
+                                , m.toString()
+                                , pair.getValue().toString()));
+                }
+                for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry pair = (Map.Entry) it.next();
+                    Descriptor d = (Descriptor) pair.getKey();
+                    outEntries.add(String.format("%02d:%s"
+                                //, d.cfname.substring(0, 2)
+                                , d.generation
+                                , pair.getValue().toString()));
+                }
+
+                // Remove Memtables and SSTables that are discarded and written to logs
+                for (Iterator it = _memTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry pair = (Map.Entry) it.next();
+                    _MemTableAccCnt v = (_MemTableAccCnt) pair.getValue();
+                    if (v.loggedAfterDiscarded)
+                        it.remove();
+                }
+                for (Iterator it = _ssTableAccCnt.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry pair = (Map.Entry) it.next();
+                    _SSTableAccCnt v = (_SSTableAccCnt) pair.getValue();
+                    if (v.loggedAfterDiscarded)
+                        it.remove();
+                }
+
+                if (outEntries.size() == 0)
+                    continue;
+
+                Collections.sort(outEntries, oc);
+
+                StringBuilder sb = new StringBuilder(1000);
+                boolean first = true;
+                for (String i: outEntries) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(" ");
+                    }
+                    sb.append(i);
+                }
+
+                logger.warn("MTDB: TabletAccessStat {}", sb.toString());
             }
         }
     }

@@ -183,7 +183,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
     public volatile long sampleLatencyNanos;
     private final ScheduledFuture<?> latencyCalculator;
 
-    private final boolean mtdbTable;
+    public final boolean mtdbTable;
 
     public static void shutdownPostFlushExecutor() throws InterruptedException
     {

@@ -98,6 +98,9 @@ public class Memtable implements Comparable<Memtable>
         this.allocator = MEMORY_POOL.newAllocator();
         this.initialComparator = cfs.metadata.comparator;
         this.cfs.scheduleFlush();
+
+        if (cfs.mtdbTable)
+            logger.warn("MTDB: CreateMemtable {}", this);
     }
 
     // ONLY to be used for testing, to create a mock Memtable

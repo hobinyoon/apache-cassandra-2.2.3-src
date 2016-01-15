@@ -89,11 +89,6 @@ public abstract class SSTable
         this.components = new CopyOnWriteArraySet<>(dataComponents);
         this.metadata = metadata;
         this.partitioner = partitioner;
-
-        // Hobin: Not sure if this is the right place for SSTableCreated event.
-        // Most probably.
-        if (descriptor.mtdbTable)
-            logger.warn("MTDB: SstCreate {}", descriptor);
     }
 
     /**

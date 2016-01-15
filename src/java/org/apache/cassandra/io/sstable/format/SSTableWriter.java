@@ -37,6 +37,9 @@ import org.apache.cassandra.io.sstable.metadata.StatsMetadata;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.utils.concurrent.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
@@ -52,6 +55,8 @@ import java.util.Set;
  */
 public abstract class SSTableWriter extends SSTable implements Transactional
 {
+    static final Logger logger = LoggerFactory.getLogger(SSTableWriter.class);
+
     protected long repairedAt;
     protected long maxDataAge = -1;
     protected final long keyCount;
@@ -76,6 +81,11 @@ public abstract class SSTableWriter extends SSTable implements Transactional
         this.repairedAt = repairedAt;
         this.metadataCollector = metadataCollector;
         this.rowIndexEntrySerializer = descriptor.version.getSSTableFormat().getIndexSerializer(metadata);
+
+        // Only tmp SSTables are created here. They are moved to regular
+        // SSTables later on.
+        if (descriptor.mtdbTable)
+            logger.warn("MTDB: SstCreated {}", descriptor);
     }
 
     public static SSTableWriter create(Descriptor descriptor, Long keyCount, Long repairedAt, CFMetaData metadata,  IPartitioner partitioner, MetadataCollector metadataCollector)

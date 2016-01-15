@@ -629,6 +629,7 @@ public class StorageService extends NotificationBroadcasterSupport implements IE
             @Override
             public void runMayThrow() throws InterruptedException
             {
+                //logger.error("MTDB:");
                 inShutdownHook = true;
                 ExecutorService counterMutationStage = StageManager.getStage(Stage.COUNTER_MUTATION);
                 ExecutorService mutationStage = StageManager.getStage(Stage.MUTATION);
@@ -724,6 +725,8 @@ public class StorageService extends NotificationBroadcasterSupport implements IE
      */
     public void removeShutdownHook()
     {
+        //logger.error("MTDB:");
+
         if (drainOnShutdown != null)
             Runtime.getRuntime().removeShutdownHook(drainOnShutdown);
 

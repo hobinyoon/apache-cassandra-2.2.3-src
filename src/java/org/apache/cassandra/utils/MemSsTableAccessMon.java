@@ -82,7 +82,9 @@ public class MemSsTableAccessMon
         _or = new OutputRunnable();
         _outThread = new Thread(_or);
         _outThread.start();
-        // TODO MTDB: join() and clean up _outThread when Cassandra closes.
+        // Not sure where Cassandra handles SIGINT or SIGTERM, where I can
+        // join() and clean up _outThread. It might be a crash only software
+        // design.
     }
 
     public static void Clear() {

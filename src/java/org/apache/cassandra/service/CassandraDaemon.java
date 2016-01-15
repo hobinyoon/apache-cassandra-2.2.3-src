@@ -443,6 +443,8 @@ public class CassandraDaemon
      */
     public void stop()
     {
+        //logger.error("MTDB:");
+
         // On linux, this doesn't entirely shut down Cassandra, just the RPC server.
         // jsvc takes care of taking the rest down
         logger.info("Cassandra shutting down...");
@@ -473,7 +475,9 @@ public class CassandraDaemon
      * is a hook for JSVC.
      */
     public void destroy()
-    {}
+    {
+        //logger.error("MTDB:");
+    }
 
     /**
      * A convenience method to initialize and start the daemon in one shot.
@@ -560,6 +564,9 @@ public class CassandraDaemon
     {
         stop();
         destroy();
+
+        //logger.error("MTDB:");
+
         // completely shut down cassandra
         if(!runManaged) {
             System.exit(0);
@@ -614,19 +621,27 @@ public class CassandraDaemon
 
     public static void stop(String[] args)
     {
+        //logger.error("MTDB:");
+
         instance.deactivate();
     }
 
     public static void main(String[] args)
     {
+        //logger.error("MTDB:");
+
         instance.activate();
     }
 
     private void exitOrFail(int code, String message) {
+        //logger.error("MTDB:");
+
         exitOrFail(code, message, null);
     }
 
     private void exitOrFail(int code, String message, Throwable cause) {
+        //logger.error("MTDB:");
+
             if(runManaged) {
                 RuntimeException t = cause!=null ? new RuntimeException(message, cause) : new RuntimeException(message);
                 throw t;

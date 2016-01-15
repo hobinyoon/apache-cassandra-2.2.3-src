@@ -103,6 +103,7 @@ public class YamlConfigurationLoader implements ConfigurationLoader
 
             logConfig(configBytes);
 
+            // This is where the magic configuration loading happens.
             org.yaml.snakeyaml.constructor.Constructor constructor = new org.yaml.snakeyaml.constructor.Constructor(Config.class);
             TypeDescription seedDesc = new TypeDescription(ParameterizedClass.class);
             seedDesc.putMapPropertyType("parameters", String.class, String.class);

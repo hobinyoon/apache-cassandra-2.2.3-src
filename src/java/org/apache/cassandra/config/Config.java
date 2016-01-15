@@ -264,6 +264,8 @@ public class Config
 
     public int windows_timer_interval = 0;
 
+    public MutantsOptions mutants_options = new MutantsOptions();
+
     public boolean enable_user_defined_functions = false;
 
     public static boolean getOutboundBindAny()

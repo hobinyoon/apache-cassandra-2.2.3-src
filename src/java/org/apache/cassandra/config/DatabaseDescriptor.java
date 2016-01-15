@@ -1781,4 +1781,8 @@ public class DatabaseDescriptor
         return conf.gc_warn_threshold_in_ms;
     }
 
+    public static MutantsOptions getMutantsOptions()
+    {
+        return conf.mutants_options;
+    }
 }

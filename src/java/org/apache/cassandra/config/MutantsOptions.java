@@ -2,5 +2,5 @@ package org.apache.cassandra.config;
 
 public class MutantsOptions
 {
-    public String aaa;
+    public long access_mon_report_interval_ms;
 }

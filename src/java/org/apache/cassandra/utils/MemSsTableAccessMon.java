@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.db.Memtable;
 import org.apache.cassandra.db.ColumnFamily;
 import org.apache.cassandra.io.sstable.Descriptor;
@@ -157,6 +158,8 @@ public class MemSsTableAccessMon
         }
 
         public void run() {
+            long report_interval_ms = DatabaseDescriptor.getMutantsOptions().access_mon_report_interval_ms;
+
             // Sort lexicographcally with Memtables go first
             class OutputComparator implements Comparator<String> {
                 @Override
@@ -181,8 +184,7 @@ public class MemSsTableAccessMon
             while (true) {
                 synchronized (_sleepLock) {
                     try {
-                        // TODO MTDB: make it configurable
-                        _sleepLock.wait(500);
+                        _sleepLock.wait(report_interval_ms);
                     } catch(InterruptedException e) {
                         // It can wake up early to process Memtable /
                         // SSTable deletion events

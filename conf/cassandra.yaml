@@ -875,4 +875,4 @@ enable_user_defined_functions: false
 windows_timer_interval: 1
 
 mutants_options:
-    aaa: bbb1
+    access_mon_report_interval_ms: 500

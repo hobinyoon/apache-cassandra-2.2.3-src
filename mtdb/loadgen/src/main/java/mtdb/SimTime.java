@@ -1,8 +1,10 @@
 package mtdb;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
@@ -74,6 +76,30 @@ class SimTime {
 					, _simulationTimeEnd
 					, _simulationTimeDur
 					));
+	}
+
+	public static String GetCurSimulatedTime() {
+		return GetSimulatedTime(System.nanoTime());
+	}
+
+	// https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html
+	private static SimpleDateFormat _sdf = new SimpleDateFormat("yyMMdd-HHmmss.SSS");
+
+	// yymmdd-HHMMSS.SSS
+	// 01234567890123456
+	public static String GetSimulatedTime(long curTimeInNs) {
+		// curSimulationTime - _simulationTimeBegin : _simulationTimeDur
+		// 	= curSimulatedTime - _simulatedTimeBegin : _simulatedTimeDur
+		//
+		// curSimulatedTime = (curSimulationTime - _simulationTimeBegin)
+		//   * _simulatedTimeDur / _simulationTimeDur + _simulatedTimeBegin
+
+		// In epoch sec
+		double curSimulatedTimeEs = (double) (curTimeInNs - _simulationTimeBegin)
+			* _simulatedTimeDurEs / _simulationTimeDur + _simulatedTimeBeginEs;
+
+		Date d0 = new Date((long)(curSimulatedTimeEs * 1000));
+		return _sdf.format(d0);
 	}
 
 	// Average Thread.sleep(0, 1) time is 1.1 ms on a 8 core Xeon E5420 @ 2.50GHz

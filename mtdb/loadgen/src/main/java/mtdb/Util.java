@@ -127,8 +127,9 @@ class Util
 		//for (StringBuilder hli: headerLineIndices)
 		//	System.out.printf("  %s\n", hli);
 
-		StringBuilder header = new StringBuilder(colmneNamesFlat);
-		header.append("\n#");
+		StringBuilder header = new StringBuilder();
+		//header.append(colmneNamesFlat);
+		//header.append("\n#");
 
 		for (StringBuilder l: headerLines)
 			header.append("\n").append(l);

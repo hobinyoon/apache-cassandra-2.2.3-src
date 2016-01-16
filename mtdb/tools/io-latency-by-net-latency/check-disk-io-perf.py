@@ -5,6 +5,8 @@ import re
 import subprocess
 import sys
 import time
+
+sys.path.insert(0, "../../util/python")
 import Cons
 
 

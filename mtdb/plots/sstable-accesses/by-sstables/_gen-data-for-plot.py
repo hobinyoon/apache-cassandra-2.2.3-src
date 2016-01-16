@@ -4,7 +4,7 @@ import os
 import string
 import sys
 
-sys.path.insert(0, "../..")
+sys.path.insert(0, "../../../util/python")
 import Util
 
 fn_in = None

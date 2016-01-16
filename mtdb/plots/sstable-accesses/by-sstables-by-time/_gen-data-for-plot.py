@@ -5,7 +5,7 @@ import string
 import sys
 import datetime
 
-sys.path.insert(0, "../..")
+sys.path.insert(0, "../../../util/python")
 import Util
 
 _fn_in = None

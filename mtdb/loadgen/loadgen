@@ -13,7 +13,9 @@ if [ ! -f $DEF_CLASS_PATH_FILE ]; then
 	BUILD_DEP=true
 fi
 
-# Check if the target jar exists
+FN_LOG=$SRC_DIR"/logs/"`date +"%y%m%d-%H%M%S"`
+
+# Check if the target jar file exists
 find target -maxdepth 1 -name "loadgen-*.jar" > /dev/null || BUILD_PKG=true
 
 # Check modification times
@@ -58,7 +60,8 @@ fi
 
 time java \
 	-cp target/loadgen-0.1.jar:`cat $DEF_CLASS_PATH_FILE` \
-	mtdb.LoadGen "${@:1}"
+	mtdb.LoadGen "${@:1}" \
+	| tee $FN_LOG
 
 # Not necessary since this is executed in a subprocess. Leave it.
 popd > /dev/null

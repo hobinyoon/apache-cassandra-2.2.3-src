@@ -17,9 +17,10 @@ class ProgMon {
 			try {
 				int w_total = Reqs._WRs.size();
 				int w_prev = 0;
-				String fmt = "%7d %17s %7d %5.1f %5d %5d %8d %5d %8d %4d %4d %4d %4d";
+				String fmt = "%7d %17s %17s %7d %5.1f %5d %5d %8d %5d %8d %4d %4d %4d %4d";
 				Cons.P(Util.BuildHeader(fmt, 0
-							, "simulation_time_ms"
+							, "simulation_time_dur_ms"
+							, "simulation_time"
 							, "simulated_time"
 							, "num_OpW_requested"
 							, "percent_completed"
@@ -52,10 +53,11 @@ class ProgMon {
 						0 : (_extraSleepRunningBehindSum.get() / extraSleepRunningBehindCnt / 1000000);
 					LatMon.Result latency = LatMon.GetAndReset();
 
-					long curTime = System.nanoTime();
+					long curTimeNs = System.nanoTime();
 					Cons.P(String.format(fmt
-								, (curTime - SimTime.SimulationTimeBeginNano()) / 1000000
-								, SimTime.GetSimulatedTime(curTime)
+								, (curTimeNs - SimTime.SimulationTimeBeginNano()) / 1000000
+								, SimTime.GetSimulationTime(curTimeNs)
+								, SimTime.GetSimulatedTime(curTimeNs)
 								, w
 								, 100.0 * w / w_total
 								, w - w_prev

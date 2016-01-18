@@ -22,10 +22,12 @@ class SimTime {
 
 	private static ZoneId _zoneId;
 
-	// In nano seconds
-	private static long _simulationTimeBegin;
-	private static long _simulationTimeEnd;
-	private static long _simulationTimeDur;
+	// Simulation time in nano seconds. These are relative numbers.
+	private static long _simulationTimeBeginNano;
+	private static long _simulationTimeEndNano;
+	private static long _simulationTimeDurNano;
+	// This is an absolute number, which can be used to build a Date() object.
+	private static long _simulationTimeBeginMilli;
 
 	public static void Init() {
 		_simulatedTimeBegin = LocalDateTime.of(2010, 1, 1, 0, 0);
@@ -61,20 +63,21 @@ class SimTime {
 	}
 
 	public static long SimulationTimeBeginNano() {
-		return _simulationTimeBegin;
+		return _simulationTimeBeginNano;
 	}
 
 	public static void StartSimulation() {
-		_simulationTimeDur = (long) (Conf.global.simulation_time_in_min * 60 * 1000000000);
-		_simulationTimeBegin = System.nanoTime();
-		_simulationTimeEnd = _simulationTimeBegin + _simulationTimeDur;
+		_simulationTimeDurNano = (long) (Conf.global.simulation_time_in_min * 60 * 1000000000);
+		_simulationTimeBeginNano = System.nanoTime();
+		_simulationTimeBeginMilli = System.currentTimeMillis();
+		_simulationTimeEndNano = _simulationTimeBeginNano + _simulationTimeDurNano;
 		Cons.P(String.format("Simulation time:"
 					+ "\n  begin: %16d"
 					+ "\n  end:   %16d"
 					+ "\n  dur:   %16d"
-					, _simulationTimeBegin
-					, _simulationTimeEnd
-					, _simulationTimeDur
+					, _simulationTimeBeginNano
+					, _simulationTimeEndNano
+					, _simulationTimeDurNano
 					));
 	}
 
@@ -88,17 +91,22 @@ class SimTime {
 	// yymmdd-HHMMSS.SSS
 	// 01234567890123456
 	public static String GetSimulatedTime(long curTimeInNs) {
-		// curSimulationTime - _simulationTimeBegin : _simulationTimeDur
+		// curSimulationTime - _simulationTimeBeginNano : _simulationTimeDurNano
 		// 	= curSimulatedTime - _simulatedTimeBegin : _simulatedTimeDur
 		//
-		// curSimulatedTime = (curSimulationTime - _simulationTimeBegin)
-		//   * _simulatedTimeDur / _simulationTimeDur + _simulatedTimeBegin
+		// curSimulatedTime = (curSimulationTime - _simulationTimeBeginNano)
+		//   * _simulatedTimeDur / _simulationTimeDurNano + _simulatedTimeBegin
 
 		// In epoch sec
-		double curSimulatedTimeEs = (double) (curTimeInNs - _simulationTimeBegin)
-			* _simulatedTimeDurEs / _simulationTimeDur + _simulatedTimeBeginEs;
+		double curSimulatedTimeEs = (double) (curTimeInNs - _simulationTimeBeginNano)
+			* _simulatedTimeDurEs / _simulationTimeDurNano + _simulatedTimeBeginEs;
 
 		Date d0 = new Date((long)(curSimulatedTimeEs * 1000));
+		return _sdf.format(d0);
+	}
+
+	public static String GetSimulationTime(long curTimeInNs) {
+		Date d0 = new Date(_simulationTimeBeginMilli + (curTimeInNs - _simulationTimeBeginNano) / 1000000);
 		return _sdf.format(d0);
 	}
 
@@ -109,17 +117,17 @@ class SimTime {
 	public static void SleepUntilSimulatedTime(long simulatedTimeEs) throws InterruptedException {
 		long durSinceSimulatedTimeBegin = simulatedTimeEs - _simulatedTimeBeginEs;
 
-		// _simulationTimeDur : _simulatedTimeDurEs
+		// _simulationTimeDurNano : _simulatedTimeDurEs
 		//   = targetDurSinceSimulationTimeBegin : durSinceSimulatedTimeBegin
 		//
-		// targetDurSinceSimulationTimeBegin = (targetSimulationTime - _simulationTimeBegin)
+		// targetDurSinceSimulationTimeBegin = (targetSimulationTime - _simulationTimeBeginNano)
 		//
 		// sleep for (targetSimulationTime - curTime)
 
-		//targetDurSinceSimulationTimeBegin = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs;
-		//(targetSimulationTime - _simulationTimeBegin) = _simulationTimeDur * durSinceSimulatedTimeBegin / _simulatedTimeDurEs;
-		long targetSimulationTime = (long) (((double) _simulationTimeDur) * durSinceSimulatedTimeBegin
-				/ _simulatedTimeDurEs + _simulationTimeBegin);
+		//targetDurSinceSimulationTimeBegin = _simulationTimeDurNano * durSinceSimulatedTimeBegin / _simulatedTimeDurEs;
+		//(targetSimulationTime - _simulationTimeBeginNano) = _simulationTimeDurNano * durSinceSimulatedTimeBegin / _simulatedTimeDurEs;
+		long targetSimulationTime = (long) (((double) _simulationTimeDurNano) * durSinceSimulatedTimeBegin
+				/ _simulatedTimeDurEs + _simulationTimeBeginNano);
 		long curTime = System.nanoTime();
 		long extraSleep = targetSimulationTime - curTime;
 		//Cons.P(String.format("extraSleep: %10d %4d %7d"

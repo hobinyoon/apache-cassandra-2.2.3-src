@@ -159,6 +159,7 @@ public class MemSsTableAccessMon
 
         public void run() {
             long report_interval_ms = DatabaseDescriptor.getMutantsOptions().access_mon_report_interval_ms;
+            logger.warn("MTDB: report_interval_ms {}", report_interval_ms);
 
             // Sort lexicographcally with Memtables go first
             class OutputComparator implements Comparator<String> {

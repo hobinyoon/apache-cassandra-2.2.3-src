@@ -487,6 +487,8 @@ public class CassandraDaemon
         // Do not put any references to DatabaseDescriptor above the forceStaticInitialization call.
         try
         {
+            logger.warn("MTDB: CassActivate");
+
             try
             {
                 DatabaseDescriptor.forceStaticInitialization();

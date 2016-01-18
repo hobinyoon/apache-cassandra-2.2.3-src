@@ -23,10 +23,10 @@ public class Tracer {
     }
 
     public static String Indent(String in, int ind) {
-        StringBuilder sb = new StringBuilder(10);
+        StringBuilder indStr = new StringBuilder(10);
         for (int i = 0; i < ind; i ++)
-            sb.append(" ");
-        return in.replaceAll("(?m)^", sb.toString());
+            indStr.append(" ");
+        return in.replaceAll("(?m)^", indStr.toString());
     }
 
     public static String toHex(ByteBuffer bb) {

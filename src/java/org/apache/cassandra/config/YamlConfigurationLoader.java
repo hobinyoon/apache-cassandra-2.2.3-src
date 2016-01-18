@@ -34,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.cassandra.exceptions.ConfigurationException;
+import org.apache.cassandra.utils.Tracer;
+
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -90,6 +92,8 @@ public class YamlConfigurationLoader implements ConfigurationLoader
         try
         {
             logger.info("Loading settings from {}", url);
+            //logger.warn("MTDB: Loading settings from {}\n{}", url, Tracer.GetCallStack());
+
             byte[] configBytes;
             try (InputStream is = url.openStream())
             {

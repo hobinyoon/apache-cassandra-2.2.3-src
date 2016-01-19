@@ -59,37 +59,23 @@ public class MemSsTableAccessMon
         private boolean deleted = false;
         private boolean loggedAfterDiscarded = false;
 
-        public _SSTableAccCnt() {
-            _sstr = null;
-        }
-
         public _SSTableAccCnt(SSTableReader sstr) {
             _sstr = sstr;
         }
 
         @Override
         public String toString() {
-            if (_sstr == null) {
-                StringBuilder sb = new StringBuilder(40);
-                sb.append(0)
-                    .append(",").append(0)
-                    .append(",").append(0)
-                    .append(",").append(0)
-                    ;
-                return sb.toString();
-            } else {
-                if (_bytesOnDisk == -1)
-                    _bytesOnDisk = _sstr.bytesOnDisk();
+            if (_bytesOnDisk == -1)
+                _bytesOnDisk = _sstr.bytesOnDisk();
 
-                StringBuilder sb = new StringBuilder(40);
-                // TODO MTDB: Update the plot script. The order has changed.
-                sb.append(_bytesOnDisk)
-                    .append(",").append(_sstr.getReadMeter().count())
-                    .append(",").append(_sstr.getBloomFilterTruePositiveCount())
-                    .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
-                    ;
-                return sb.toString();
-            }
+            StringBuilder sb = new StringBuilder(40);
+            // TODO MTDB: Update the plot script. The order has changed.
+            sb.append(_bytesOnDisk)
+                .append(",").append(_sstr.getReadMeter().count())
+                .append(",").append(_sstr.getBloomFilterTruePositiveCount())
+                .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
+                ;
+            return sb.toString();
         }
     }
 
@@ -144,8 +130,8 @@ public class MemSsTableAccessMon
     // SSTable created
     public static void Created(Descriptor d) {
         logger.warn("MTDB: SstCreated {}", d);
-        if (_ssTableAccCnt.get(d) == null)
-            _ssTableAccCnt.put(d, new _SSTableAccCnt());
+        // We log creations of SSTables, but don't keep track of access stats
+        // to them.
         _or.Wakeup();
     }
 

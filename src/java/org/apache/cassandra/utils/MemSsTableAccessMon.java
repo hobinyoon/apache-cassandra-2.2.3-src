@@ -82,6 +82,7 @@ public class MemSsTableAccessMon
     static {
         _or = new OutputRunnable();
         _outThread = new Thread(_or);
+        _outThread.setName("MemSsTAccMon");
         _outThread.start();
         // Not sure where Cassandra handles SIGINT or SIGTERM, where I can
         // join() and clean up _outThread. It might be a crash only software

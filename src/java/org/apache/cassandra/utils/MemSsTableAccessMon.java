@@ -34,9 +34,9 @@ public class MemSsTableAccessMon
         private boolean discarded = false;
         private boolean loggedAfterDiscarded = false;
 
-        public _MemTableAccCnt(boolean hit) {
-            this.accesses = new AtomicLong(1);
-            this.hits = new AtomicLong(hit ? 1 : 0);
+        public _MemTableAccCnt(long accesses, long hits) {
+            this.accesses = new AtomicLong(accesses);
+            this.hits = new AtomicLong(hits);
         }
 
         public void Increment(boolean hit) {
@@ -59,23 +59,37 @@ public class MemSsTableAccessMon
         private boolean deleted = false;
         private boolean loggedAfterDiscarded = false;
 
+        public _SSTableAccCnt() {
+            _sstr = null;
+        }
+
         public _SSTableAccCnt(SSTableReader sstr) {
             _sstr = sstr;
         }
 
         @Override
         public String toString() {
-            if (_bytesOnDisk == -1)
-                _bytesOnDisk = _sstr.bytesOnDisk();
+            if (_sstr == null) {
+                StringBuilder sb = new StringBuilder(40);
+                sb.append(0)
+                    .append(",").append(0)
+                    .append(",").append(0)
+                    .append(",").append(0)
+                    ;
+                return sb.toString();
+            } else {
+                if (_bytesOnDisk == -1)
+                    _bytesOnDisk = _sstr.bytesOnDisk();
 
-            StringBuilder sb = new StringBuilder(40);
-            // TODO MTDB: Update the plot script. The order has changed.
-            sb.append(_bytesOnDisk)
-                .append(",").append(_sstr.getReadMeter().count())
-                .append(",").append(_sstr.getBloomFilterTruePositiveCount())
-                .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
-                ;
-            return sb.toString();
+                StringBuilder sb = new StringBuilder(40);
+                // TODO MTDB: Update the plot script. The order has changed.
+                sb.append(_bytesOnDisk)
+                    .append(",").append(_sstr.getReadMeter().count())
+                    .append(",").append(_sstr.getBloomFilterTruePositiveCount())
+                    .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
+                    ;
+                return sb.toString();
+            }
         }
     }
 
@@ -102,7 +116,7 @@ public class MemSsTableAccessMon
         if (v != null) {
             v.Increment(cf != null);
         } else {
-            _memTableAccCnt.put(m, new _MemTableAccCnt(cf != null));
+            _memTableAccCnt.put(m, new _MemTableAccCnt(1, (cf == null) ? 0 : 1));
         }
         _updatedSinceLastOutput = true;
     }
@@ -119,8 +133,24 @@ public class MemSsTableAccessMon
         _updatedSinceLastOutput = true;
     }
 
-    // Discard a MemTable
-    public static void Discard(Memtable m) {
+    // MemTable created
+    public static void Created(Memtable m) {
+        logger.warn("MTDB: CreateMemtable {}", m);
+        if (_memTableAccCnt.get(m) == null)
+            _memTableAccCnt.put(m, new _MemTableAccCnt(0, 0));
+        _or.Wakeup();
+    }
+
+    // SSTable created
+    public static void Created(Descriptor d) {
+        logger.warn("MTDB: SstCreated {}", d);
+        if (_ssTableAccCnt.get(d) == null)
+            _ssTableAccCnt.put(d, new _SSTableAccCnt());
+        _or.Wakeup();
+    }
+
+    // MemTable discarded
+    public static void Discarded(Memtable m) {
         _MemTableAccCnt v = _memTableAccCnt.get(m);
         if (v == null) {
             // Can a memtable be discarded without being accessed at all? I'm
@@ -134,8 +164,8 @@ public class MemSsTableAccessMon
         _or.Wakeup();
     }
 
-    // Delete a SSTable
-    public static void Delete(Descriptor d) {
+    // SSTable discarded
+    public static void Deleted(Descriptor d) {
         _SSTableAccCnt v = _ssTableAccCnt.get(d);
         if (v == null) {
             // A SSTable can be deleted without having been accessed by

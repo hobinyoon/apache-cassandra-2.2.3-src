@@ -118,7 +118,7 @@ public abstract class SSTable
 
         logger.trace("Deleted {}", desc);
         if (desc.mtdbTable)
-            MemSsTableAccessMon.Delete(desc);
+            MemSsTableAccessMon.Deleted(desc);
 
         return true;
     }

@@ -48,6 +48,7 @@ import org.apache.cassandra.service.ActiveRepairService;
 import org.apache.cassandra.utils.*;
 import org.apache.cassandra.utils.concurrent.OpOrder;
 import org.apache.cassandra.utils.memory.*;
+import org.apache.cassandra.utils.MemSsTableAccessMon;
 
 public class Memtable implements Comparable<Memtable>
 {
@@ -100,7 +101,7 @@ public class Memtable implements Comparable<Memtable>
         this.cfs.scheduleFlush();
 
         if (cfs.mtdbTable)
-            logger.warn("MTDB: CreateMemtable {}", this);
+            MemSsTableAccessMon.Created(this);
     }
 
     // ONLY to be used for testing, to create a mock Memtable

@@ -1162,7 +1162,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
                     memtable.setDiscarded();
 
                     if (memtable.cfs.mtdbTable)
-                        MemSsTableAccessMon.Discard(memtable);
+                        MemSsTableAccessMon.Discarded(memtable);
                 }
             });
         }

@@ -55,7 +55,6 @@ public class MemSsTableAccessMon
 
     private static class _SSTableAccCnt {
         private SSTableReader _sstr;
-        private long _bytesOnDisk = -1;
         private boolean deleted = false;
         private boolean loggedAfterDiscarded = false;
 
@@ -65,12 +64,9 @@ public class MemSsTableAccessMon
 
         @Override
         public String toString() {
-            if (_bytesOnDisk == -1)
-                _bytesOnDisk = _sstr.bytesOnDisk();
-
             StringBuilder sb = new StringBuilder(40);
             // TODO MTDB: Update the plot script. The order has changed.
-            sb.append(_bytesOnDisk)
+            sb.append(_sstr.bytesOnDisk())
                 .append(",").append(_sstr.getReadMeter().count())
                 .append(",").append(_sstr.getBloomFilterTruePositiveCount())
                 .append(",").append(_sstr.getBloomFilterFalsePositiveCount())

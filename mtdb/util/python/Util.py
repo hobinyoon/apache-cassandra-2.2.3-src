@@ -129,7 +129,8 @@ def BuildHeader(fmt, desc):
 		l += (" " + idxstr)
 		ilines.append(l)
 
-	header = names_flat
+	header = ""
+	#header = names_flat
 	for l in lines:
 		header += (l + "\n")
 	for l in ilines:

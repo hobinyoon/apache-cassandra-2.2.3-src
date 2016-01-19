@@ -254,8 +254,9 @@ def CalcCost():
 					if last_cost_print_time == None:
 						Cons.P("%26s %8f %8s" % (l.simulated_time, cost, "-"))
 					else:
-						Cons.P(fmt % (l.simulated_time, cost
-							, cost * 365.25 / 12 * 24.0 * 3600 / (l.simulated_time - last_cost_print_time).total_seconds()))
+						if l.simulated_time != last_cost_print_time:
+							Cons.P(fmt % (l.simulated_time, cost
+								, cost * 365.25 / 12 * 24.0 * 3600 / (l.simulated_time - last_cost_print_time).total_seconds()))
 					LastCostPrintTime.Set(l.simulated_time)
 
 				total_cost += cost

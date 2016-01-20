@@ -264,7 +264,7 @@ def CalcCost():
 	global _logs
 	with Cons.MeasureTime("Calculating cost ..."):
 		fmt = "%26s %8f %8f"
-		if Conf.print_cost_by_time:
+		if Conf.args.print_cost_by_time:
 			Cons.P(Util.BuildHeader(fmt,
 					"simulated_time(end_of_interval) cost cost_per_month"))
 		total_cost = 0.0
@@ -282,7 +282,7 @@ def CalcCost():
 						cost += c
 						SstLastCostCalcTime.Set(e.id_, l.simulated_time)
 
-				if Conf.print_cost_by_time:
+				if Conf.args.print_cost_by_time:
 					last_cost_print_time = LastCostPrintTime.Get()
 					if last_cost_print_time == None:
 						Cons.P("%26s %8f %8s" % (l.simulated_time, cost, "-"))

@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, "../util/python")
 import Cons
 
+import Conf
 import SimTime
 
 _fn_log = None
@@ -21,8 +22,13 @@ _progresses = []
 def Read():
 	global _raw_lines0, _raw_lines1, _raw_lines2
 	with Cons.MeasureTime("Reading Loadgen log ..."):
-		dn = os.path.dirname(__file__) + "/../logs/loadgen"
-		fn = _GetYoungestFn(dn)
+		fn = Conf.args.exp_datetime
+		if fn == None:
+			fn = _GetYoungestFn()
+		else:
+			global _fn_log
+			_fn_log = fn
+			fn = os.path.dirname(__file__) + "/../logs/loadgen/" + fn
 		Cons.P("fn=%s" % fn)
 		with open(fn) as fo:
 			parse_log_status = "before_monitor"
@@ -98,7 +104,8 @@ def _ParseProgMonLines():
 		_progresses.append(ProgressEntry(line))
 
 
-def _GetYoungestFn(dn):
+def _GetYoungestFn():
+	dn = os.path.dirname(__file__) + "/../logs/loadgen"
 	pattern = re.compile(r"\d\d\d\d\d\d-\d\d\d\d\d\d.*")
 	fns = []
 	for fn in os.listdir(dn):

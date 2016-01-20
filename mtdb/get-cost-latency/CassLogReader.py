@@ -9,6 +9,7 @@ import Cons
 import Util
 
 import Conf
+import LoadgenLogReader
 import SimTime
 import StgCost
 
@@ -61,7 +62,19 @@ def Read():
 		global _raw_lines
 		_raw_lines = lines
 
+		_WriteToFile()
+
 		_ParseLines()
+
+
+def _WriteToFile():
+	dn = os.path.dirname(__file__) + "/../logs/cassandra"
+	fn = dn + "/" + LoadgenLogReader.LogFilename()
+	Cons.P("Writing Cassandra MTDB log to file %s" % fn)
+	with open(fn, "w") as fo:
+		for line in _raw_lines:
+			fo.write(line)
+			fo.write("\n")
 
 
 class Event(object):

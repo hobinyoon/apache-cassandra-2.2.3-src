@@ -8,6 +8,8 @@ import Cons
 
 import SimTime
 
+_fn_log = None
+
 # _raw_lines0, 1, 2: lines before, in, after progress monitor
 _raw_lines0 = []
 _raw_lines1 = []
@@ -19,7 +21,7 @@ _progresses = []
 def Read():
 	global _raw_lines0, _raw_lines1, _raw_lines2
 	with Cons.MeasureTime("Reading Loadgen log ..."):
-		dn = os.path.dirname(__file__) + "/../loadgen/logs"
+		dn = os.path.dirname(__file__) + "/../logs/loadgen"
 		fn = _GetYoungestFn(dn)
 		Cons.P("fn=%s" % fn)
 		with open(fn) as fo:
@@ -106,4 +108,10 @@ def _GetYoungestFn(dn):
 	if len(fns) == 0:
 		raise RuntimeError("No log file in %s" % dn)
 	fns.sort()
+	global _fn_log
+	_fn_log = fns[-1]
 	return dn + "/" + fns[-1]
+
+
+def LogFilename():
+	return _fn_log

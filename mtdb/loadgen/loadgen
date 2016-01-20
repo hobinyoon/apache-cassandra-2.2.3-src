@@ -13,7 +13,7 @@ if [ ! -f $DEF_CLASS_PATH_FILE ]; then
 	BUILD_DEP=true
 fi
 
-FN_LOG=$SRC_DIR"/logs/"`date +"%y%m%d-%H%M%S"`
+FN_LOG=$SRC_DIR"/../logs/loadgen/"`date +"%y%m%d-%H%M%S"`
 
 # Check if the target jar file exists
 find target -maxdepth 1 -name "loadgen-*.jar" > /dev/null || BUILD_PKG=true

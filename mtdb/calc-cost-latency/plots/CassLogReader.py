@@ -4,7 +4,7 @@ import re
 import sys
 import zipfile
 
-sys.path.insert(0, "../../../util/python")
+sys.path.insert(0, "../../util/python")
 import Cons
 import Util
 
@@ -45,7 +45,7 @@ def _ReadStoredCassMtdbLog():
 
 
 def _StoredCassMtdbLogFilename():
-	dn = os.path.dirname(__file__) + "/../../../logs/cassandra"
+	dn = os.path.dirname(__file__) + "/../../logs/cassandra"
 	return dn + "/" + LoadgenLogReader.LogFilename()
 
 

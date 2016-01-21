@@ -3,14 +3,14 @@ import os
 import re
 import sys
 
-sys.path.insert(0, "../../../util/python")
+sys.path.insert(0, "../../util/python")
 import Cons
 import Util
 
 import Conf
 import SimTime
 
-_dn_log_loadgen = os.path.dirname(__file__) + "/../../../logs/loadgen"
+_dn_log_loadgen = os.path.dirname(__file__) + "/../../logs/loadgen"
 _fn_log = None
 _fn_plot_data = None
 

@@ -12,6 +12,7 @@ import SimTime
 
 _dn_log_loadgen = os.path.dirname(__file__) + "/../../../logs/loadgen"
 _fn_log = None
+_fn_plot_data = None
 
 # _raw_lines0, 1, 2: lines before, in, after progress monitor
 _raw_lines0 = []
@@ -122,14 +123,15 @@ def _GetYoungestFn():
 
 
 def LogFilename():
+	# In yymmdd-HHMMSS
 	return _fn_log
 
 
-def GenPlotData():
+def GenLatencyPlotData():
 	with Cons.MeasureTime("Generating plotting data ..."):
-		dn = os.path.dirname(__file__) + "/plot-data"
-		fn = dn + "/" + _fn_log
-		with open(fn, "w") as fo:
+		global _fn_plot_data
+		_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + _fn_log + "-latency-by-time"
+		with open(_fn_plot_data, "w") as fo:
 			fmt = "%20s %20s %20s %3d %3d"
 			fo.write("%s\n" % Util.BuildHeader(fmt,
 				"datetime_begin datetime_end datetime_mid write_latency_ms read_latency_ms"))
@@ -142,4 +144,4 @@ def GenPlotData():
 							, p.write_latency_ms
 							, p.read_latency_ms))
 				prev_simulated_time = p.simulated_time
-		Cons.P("Created file %s %d" % (fn, os.path.getsize(fn)))
+		Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

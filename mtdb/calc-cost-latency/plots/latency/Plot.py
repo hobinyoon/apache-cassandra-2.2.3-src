@@ -5,18 +5,29 @@ import sys
 sys.path.insert(0, "../../../util/python")
 import Cons
 
+import CassLogReader
 import LoadgenLogReader
 
 
-def Plot():
-	with Cons.MeasureTime("Plotting ..."):
-		fn_in = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename()
-		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-latency.pdf"
+def Latency():
+	with Cons.MeasureTime("Plotting latency by time ..."):
+		fn_in = LoadgenLogReader._fn_plot_data
+		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-latency-by-time.pdf"
 		env = os.environ.copy()
 		env["FN_IN"] = fn_in
 		env["FN_OUT"] = fn_out
-		#Cons.P(fn_out)
 		_RunSubp("gnuplot %s/latency-by-time.gnuplot" % os.path.dirname(__file__), env)
+		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+
+
+def StorageSize():
+	with Cons.MeasureTime("Plotting storage size by time ..."):
+		fn_in = CassLogReader._fn_plot_data
+		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-storage-size-by-time.pdf"
+		env = os.environ.copy()
+		env["FN_IN"] = fn_in
+		env["FN_OUT"] = fn_out
+		_RunSubp("gnuplot %s/storage-size-by-time.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

@@ -131,10 +131,15 @@ def BuildHeader(fmt, desc):
 
 	header = ""
 	#header = names_flat
+	first = True
 	for l in lines:
-		header += (l + "\n")
+		if first:
+			header += l
+			first = False
+		else:
+			header += ("\n" + l)
 	for l in ilines:
-		header += (l + "\n")
+		header += ("\n" + l)
 	return header
 
 

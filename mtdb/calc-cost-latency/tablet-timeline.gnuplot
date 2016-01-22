@@ -17,9 +17,15 @@ Y_MAX=GPVAL_DATA_Y_MAX
 set terminal pdfcairo enhanced size 12in, 4in
 set output FN_OUT
 
-set border (1 + 2) back lc rgb "#808080"
+set ylabel "Size (MB)" offset 2,0
+
+set border (1 + 2) front lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080"
-set ytics nomirror scale 0.5,0 tc rgb "#808080" (0, "10 MB" 10*1024*1024)
+set ytics nomirror scale 0.5,0 tc rgb "#808080" ( \
+"0"   0, \
+"50"  50*1024*1024, \
+"100" 100*1024*1024)
+set tics front
 
 set xdata time
 set timefmt "%y%m%d-%H%M%S"

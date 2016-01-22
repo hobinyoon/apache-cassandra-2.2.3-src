@@ -5,11 +5,14 @@ import sys
 
 sys.path.insert(0, "../util/python")
 import Cons
+import Util
 
 import Conf
 import SimTime
 
+_dn_log_loadgen = os.path.dirname(__file__) + "/../logs/loadgen"
 _fn_log = None
+_fn_plot_data = None
 
 # _raw_lines0, 1, 2: lines before, in, after progress monitor
 _raw_lines0 = []
@@ -18,17 +21,17 @@ _raw_lines2 = []
 
 _progresses = []
 
-# If not specified, read the latest one
 def Read():
 	global _raw_lines0, _raw_lines1, _raw_lines2
 	with Cons.MeasureTime("Reading Loadgen log ..."):
 		fn = Conf.args.exp_datetime
 		if fn == None:
+			# If not specified, read the latest one
 			fn = _GetYoungestFn()
 		else:
 			global _fn_log
 			_fn_log = fn
-			fn = os.path.dirname(__file__) + "/../logs/loadgen/" + fn
+			fn = _dn_log_loadgen + "/" + fn
 		Cons.P("fn=%s" % fn)
 		with open(fn) as fo:
 			parse_log_status = "before_monitor"
@@ -105,20 +108,40 @@ def _ParseProgMonLines():
 
 
 def _GetYoungestFn():
-	dn = os.path.dirname(__file__) + "/../logs/loadgen"
 	pattern = re.compile(r"\d\d\d\d\d\d-\d\d\d\d\d\d.*")
 	fns = []
-	for fn in os.listdir(dn):
+	for fn in os.listdir(_dn_log_loadgen):
 		#print "[%s] [%s]" % (fn, pattern.match(fn))
 		if pattern.match(fn) != None:
 			fns.append(fn)
 	if len(fns) == 0:
-		raise RuntimeError("No log file in %s" % dn)
+		raise RuntimeError("No log file in %s" % _dn_log_loadgen)
 	fns.sort()
 	global _fn_log
 	_fn_log = fns[-1]
-	return dn + "/" + fns[-1]
+	return _dn_log_loadgen + "/" + fns[-1]
 
 
 def LogFilename():
+	# In yymmdd-HHMMSS
 	return _fn_log
+
+
+def GenLatencyPlotData():
+	with Cons.MeasureTime("Generating plotting data ..."):
+		global _fn_plot_data
+		_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + _fn_log + "-latency-by-time"
+		with open(_fn_plot_data, "w") as fo:
+			fmt = "%20s %20s %20s %3d %3d"
+			fo.write("%s\n" % Util.BuildHeader(fmt,
+				"datetime_begin datetime_end datetime_mid write_latency_ms read_latency_ms"))
+			prev_simulated_time = SimTime._simulated_time_begin
+			for p in _progresses:
+				fo.write((fmt + "\n") %
+						(prev_simulated_time.strftime("%y%m%d-%H%M%S.%f")
+							, p.simulated_time.strftime("%y%m%d-%H%M%S.%f")
+							, (prev_simulated_time + datetime.timedelta(seconds = (p.simulated_time - prev_simulated_time).total_seconds() * 0.5)).strftime("%y%m%d-%H%M%S.%f")
+							, p.write_latency_ms
+							, p.read_latency_ms))
+				prev_simulated_time = p.simulated_time
+		Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

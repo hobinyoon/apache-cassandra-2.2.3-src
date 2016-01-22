@@ -17,6 +17,7 @@ _raw_lines = []
 _logs = []
 
 _report_interval_ms = None
+_fn_plot_data = None
 
 
 def Read():
@@ -247,52 +248,43 @@ class SstLastCostCalcTime(object):
 		return r
 
 
-class LastCostPrintTime(object):
-	time = None
-
-	@staticmethod
-	def Set(time):
-		LastCostPrintTime.time = time
-
-	@staticmethod
-	def Get():
-		# Returns None, if it hasn't been set before
-		return LastCostPrintTime.time
-
-
-def CalcCost():
+def GenStorageSizePlotData():
 	global _logs
-	with Cons.MeasureTime("Calculating cost ..."):
-		fmt = "%26s %8f %8f"
-		if Conf.args.print_cost_by_time:
-			Cons.P(Util.BuildHeader(fmt,
-					"simulated_time(end_of_interval) cost cost_per_month"))
-		total_cost = 0.0
-		for l in _logs:
-			#Cons.P(l)
-			if l.op == "TabletAccessStat":
-				#Cons.P(l)
-				cost = 0.0
-				for e in l.event.entries:
-					if type(e) is EventAccessStat.SstAccStat:
-						#Cons.P(e)
-						# Find the last logging time of the same sstable and calculate cost.
-						c = StgCost.InstStore(e.size, l.simulated_time - SstLastCostCalcTime.Get(e.id_))
-						#Cons.P(c)
-						cost += c
-						SstLastCostCalcTime.Set(e.id_, l.simulated_time)
+	with Cons.MeasureTime("Generating storage size plot data ..."):
+		global _fn_plot_data
+		_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-storage-size-by-time"
+		with open(_fn_plot_data, "w") as fo:
+			fmt = "%20s %20s %20s %20s %10d %8f"
+			fo.write("%s\n" % Util.BuildHeader(fmt,
+					"simulation_time_end simulated_time_begin simulated_time_end simulated_time_mid stg_size_bytes cost_in_the_simulated_time_segment"))
+			total_cost = 0.0
+			last_cost_print_time = SimTime._simulated_time_begin
+			for l in _logs:
+				if l.op == "TabletAccessStat":
+					cost = 0.0
+					stg_size = 0
+					for e in l.event.entries:
+						if type(e) is EventAccessStat.SstAccStat:
+							stg_size += e.size
+							# Find the last logging time of the same sstable and calculate cost.
+							c = StgCost.InstStore(e.size, l.simulated_time - SstLastCostCalcTime.Get(e.id_))
+							cost += c
+							SstLastCostCalcTime.Set(e.id_, l.simulated_time)
 
-				if Conf.args.print_cost_by_time:
-					last_cost_print_time = LastCostPrintTime.Get()
-					if last_cost_print_time == None:
-						Cons.P("%26s %8f %8s" % (l.simulated_time, cost, "-"))
-					else:
-						if l.simulated_time != last_cost_print_time:
-							Cons.P(fmt % (l.simulated_time, cost
-								, cost * 365.25 / 12 * 24.0 * 3600 / (l.simulated_time - last_cost_print_time).total_seconds()))
-					LastCostPrintTime.Set(l.simulated_time)
+					if l.simulated_time != last_cost_print_time:
+						fo.write((fmt + "\n") %
+								(l.simulation_time.strftime("%y%m%d-%H%M%S.%f")
+									, last_cost_print_time.strftime("%y%m%d-%H%M%S.%f")
+									, l.simulated_time.strftime("%y%m%d-%H%M%S.%f")
+									, (last_cost_print_time + datetime.timedelta(seconds = (l.simulated_time - last_cost_print_time).total_seconds() * 0.5)).strftime("%y%m%d-%H%M%S.%f")
+									, stg_size
+									, cost))
+					last_cost_print_time = l.simulated_time
 
-				total_cost += cost
-			elif l.op == "SstCreated":
-				SstLastCostCalcTime.Set(l.event.sst_gen, l.simulated_time)
-		Cons.P("total cost ($): %f" % total_cost)
+					total_cost += cost
+				elif l.op == "SstCreated":
+					SstLastCostCalcTime.Set(l.event.sst_gen, l.simulated_time)
+			msg = "total cost ($): %f" % total_cost
+			fo.write("# %s\n" % msg)
+			Cons.P(msg)
+		Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

@@ -517,7 +517,7 @@ public class Schema
         assert getCFMetaData(cfm.ksName, cfm.cfName) == null;
         KSMetaData ksm = getKSMetaData(cfm.ksName).cloneWithTableAdded(cfm);
 
-        logger.info("MTDB: Loading {}", cfm);
+        logger.info("Loading {}", cfm);
 
         load(cfm);
 

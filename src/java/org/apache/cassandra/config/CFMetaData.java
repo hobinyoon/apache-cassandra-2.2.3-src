@@ -172,6 +172,7 @@ public final class CFMetaData
     public final byte[] ksAndCFBytes;
     public final ColumnFamilyType cfType;             // standard, super
     public volatile CellNameType comparator;          // bytes, long, timeuuid, utf8, etc.
+    public final boolean mtdbTable;
 
     //OPTIONAL
     private volatile String comment = "";
@@ -269,6 +270,8 @@ public final class CFMetaData
 
         cfType = type;
         comparator = comp;
+
+        mtdbTable = (ksName.equals("mtdb1") && cfName.equals("table1"));
     }
 
     public static CFMetaData denseCFMetaData(String keyspace, String name, AbstractType<?> comp, AbstractType<?> subcc)
@@ -1470,6 +1473,7 @@ public final class CFMetaData
             .append("cfName", cfName)
             .append("cfType", cfType)
             .append("comparator", comparator)
+            .append("mtdbTable", mtdbTable)
             .append("comment", comment)
             .append("readRepairChance", readRepairChance)
             .append("dcLocalReadRepairChance", dcLocalReadRepairChance)

@@ -100,7 +100,7 @@ public class Memtable implements Comparable<Memtable>
         this.initialComparator = cfs.metadata.comparator;
         this.cfs.scheduleFlush();
 
-        if (cfs.mtdbTable)
+        if (cfs.metadata.mtdbTable)
             MemSsTableAccessMon.Created(this);
     }
 

@@ -183,8 +183,6 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
     public volatile long sampleLatencyNanos;
     private final ScheduledFuture<?> latencyCalculator;
 
-    public final boolean mtdbTable;
-
     public static void shutdownPostFlushExecutor() throws InterruptedException
     {
         postFlushExecutor.shutdown();
@@ -384,11 +382,9 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
 
         logger.info("Initializing {}.{}", keyspace.getName(), name);
 
-        if (keyspace.getName().equals("mtdb1") && name.equals("table1")) {
-            mtdbTable = true;
+        if (metadata.mtdbTable) {
             MemSsTableAccessMon.Clear();
-        } else {
-            mtdbTable = false;
+            logger.warn("MTDB: metadata={}", metadata);
         }
 
         // scan for sstables corresponding to this cf and load them
@@ -1161,7 +1157,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
                     readBarrier.await();
                     memtable.setDiscarded();
 
-                    if (memtable.cfs.mtdbTable)
+                    if (memtable.cfs.metadata.mtdbTable)
                         MemSsTableAccessMon.Discarded(memtable);
                 }
             });
@@ -1807,7 +1803,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             // records from erasure coded SSTables.
             if (isRowCacheEnabled())
             {
-                //if (mtdbTable) {
+                //if (metadata.mtdbTable) {
                 //    logger.warn("MTDB:");
                 //}
 
@@ -1820,7 +1816,7 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
                     logger.trace("cached row is empty");
                     return null;
                 }
-                //if (mtdbTable) {
+                //if (metadata.mtdbTable) {
                 //    logger.warn("MTDB:");
                 //}
 
@@ -1828,10 +1824,10 @@ public class ColumnFamilyStore implements ColumnFamilyStoreMBean
             }
             else
             {
-                //if (mtdbTable)
+                //if (metadata.mtdbTable)
                 //    logger.warn("MTDB: filter={}", filter);
-                ColumnFamily cf = getTopLevelColumns(filter, gcBefore, mtdbTable);
-                //if (mtdbTable)
+                ColumnFamily cf = getTopLevelColumns(filter, gcBefore, metadata.mtdbTable);
+                //if (metadata.mtdbTable)
                 //    logger.warn("MTDB: cf={}", cf);
 
                 if (cf == null)

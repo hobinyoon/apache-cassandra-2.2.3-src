@@ -3,6 +3,22 @@
 FN_IN = system("echo $FN_IN")
 FN_OUT = system("echo $FN_OUT")
 
+# Get min and max values
+set terminal unknown
+
+set xdata time
+set timefmt "%y%m%d-%H%M%S"
+set format x "'%y"
+
+plot \
+FN_IN u 3:4 w lines, \
+""    u 3:5 w lines
+
+X_MIN=GPVAL_DATA_X_MIN
+X_MAX=GPVAL_DATA_X_MAX
+Y_MIN=GPVAL_DATA_Y_MIN
+Y_MAX=GPVAL_DATA_Y_MAX
+
 set terminal pdfcairo enhanced size 3in, 2in
 set output FN_OUT
 
@@ -26,6 +42,9 @@ set format x "'%y"
 set key top left #opaque
 
 set samples 1000
+
+set xrange [X_MIN:X_MAX]
+set yrange [Y_MIN:Y_MAX]
 
 #set pointsize 50000
 # points of linespoints are not noticeable. I wonder if they are not drawn when

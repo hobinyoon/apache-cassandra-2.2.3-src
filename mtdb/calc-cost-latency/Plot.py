@@ -38,11 +38,11 @@ def StorageSize():
 def TabletTimeline():
 	with Cons.MeasureTime("Plotting tablet timeline ..."):
 		fn_in = TabletTimelinePlotDataGenerator._fn_plot_data
-		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-memt-sst-timeline.pdf"
+		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-tablet-timeline.pdf"
 		env = os.environ.copy()
 		env["FN_IN"] = fn_in
 		env["FN_OUT"] = fn_out
-		_RunSubp("gnuplot %s/memt-sst-timeline.gnuplot" % os.path.dirname(__file__), env)
+		_RunSubp("gnuplot %s/tablet-timeline.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

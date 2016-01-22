@@ -17,6 +17,8 @@ _raw_lines = []
 _logs = []
 
 _report_interval_ms = None
+
+# TODO: may want to separate to a different file. This is data for storage-size-by-time plot
 _fn_plot_data = None
 
 
@@ -122,6 +124,15 @@ class EventSstCreated(Event):
 	def __str__(self):
 		return "EventSstCreated: " + ", ".join("%s: %s" % item for item in vars(self).items())
 
+class EventSstDeleted(Event):
+	def __init__(self, t):
+		t1 = t[8].split("/la-")
+		#Cons.P(t1)
+		self.sst_gen = int(t1[1].split("-")[0])
+
+	def __str__(self):
+		return "EventSstDeleted: " + ", ".join("%s: %s" % item for item in vars(self).items())
+
 class EventAccessStat(Event):
 	class AccStat(object):
 		def __init__(self):
@@ -218,6 +229,8 @@ class LogEntry(object):
 
 		if self.op == "SstCreated":
 			self.event = EventSstCreated(t)
+		elif self.op == "SstDeleted":
+			self.event = EventSstDeleted(t)
 		elif self.op == "report_interval_ms":
 			global _report_interval_ms
 			_report_interval_ms = int(t[8])

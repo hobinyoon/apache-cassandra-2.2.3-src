@@ -7,6 +7,7 @@ import Cons
 
 import CassLogReader
 import LoadgenLogReader
+import TabletTimelinePlotDataGenerator
 
 
 def Latency():
@@ -28,6 +29,20 @@ def StorageSize():
 		env["FN_IN"] = fn_in
 		env["FN_OUT"] = fn_out
 		_RunSubp("gnuplot %s/storage-size-by-time.gnuplot" % os.path.dirname(__file__), env)
+		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+
+
+# TODO: Created, deleted, accessed (with colors representing temperature)
+# Do created and deleted events of sstables first
+# Think about if you really need memtable diagrams
+def TabletTimeline():
+	with Cons.MeasureTime("Plotting tablet timeline ..."):
+		fn_in = TabletTimelinePlotDataGenerator._fn_plot_data
+		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-memt-sst-timeline.pdf"
+		env = os.environ.copy()
+		env["FN_IN"] = fn_in
+		env["FN_OUT"] = fn_out
+		_RunSubp("gnuplot %s/memt-sst-timeline.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

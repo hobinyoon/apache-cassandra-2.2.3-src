@@ -130,13 +130,14 @@ def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-timeline"
 	with open(_fn_plot_data, "w") as fo:
-		fmt = "%2s %20s %20s %20s %10d %10d"
-		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time box_plot_right_bound max_size y_cord"))
+		fmt = "%2s %20s %20s %20s %20s %10d %10d"
+		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot box_plot_right_bound max_size y_cord"))
 		# TODO: id can be m(number) or (number) for memtables and sstables
 		for id_, v in sorted(_id_events.iteritems()):
 			fo.write((fmt + "\n") % (id_
 				, v.created.simulated_time.strftime("%y%m%d-%H%M%S.%f")
 				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "-")
+				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "090101-000000.000000")
 				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else SimTime._simulated_time_end.strftime("%y%m%d-%H%M%S.%f"))
 				, v.size
 				, v.y_cord

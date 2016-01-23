@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# TODO: This will be obsoloted.
+
 import os
 import string
 import sys

@@ -97,10 +97,12 @@ public class MemSsTableAccessMon
         _MemTableAccCnt v = _memTableAccCnt.get(m);
         if (v != null) {
             v.Increment(cf != null);
+            _updatedSinceLastOutput = true;
         } else {
             _memTableAccCnt.put(m, new _MemTableAccCnt(1, (cf == null) ? 0 : 1));
+            _updatedSinceLastOutput = true;
+            _or.Wakeup();
         }
-        _updatedSinceLastOutput = true;
     }
 
 
@@ -109,10 +111,17 @@ public class MemSsTableAccessMon
 
         // The race condition (time of check and modify) that may overwrite the
         // first put() is harmless. It avoids an expensive locking.
-        if (_ssTableAccCnt.get(key) == null)
+        // Log right after the first access to a tablet, i.e., right after the
+        // creation of _SSTableAccCnt(). It will help visualize the gap between
+        // the creation of the tmp tablet and the first access to the regular
+        // tablet.
+        if (_ssTableAccCnt.get(key) == null) {
             _ssTableAccCnt.put(key, new _SSTableAccCnt(r));
-
-        _updatedSinceLastOutput = true;
+            _updatedSinceLastOutput = true;
+            _or.Wakeup();
+        } else {
+            _updatedSinceLastOutput = true;
+        }
     }
 
     // MemTable created

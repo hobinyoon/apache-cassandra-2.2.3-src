@@ -182,6 +182,7 @@ class EventAccessStat(Event):
 			self.num_reads = int(t1[1])
 			self.num_tp = int(t1[2])
 			self.num_fp = int(t1[3])
+			# number of negatives = num_reads - num_tp - num_fp
 
 		def __str__(self):
 			return "SstAccStat: " + super(EventAccessStat.SstAccStat, self).__str__()

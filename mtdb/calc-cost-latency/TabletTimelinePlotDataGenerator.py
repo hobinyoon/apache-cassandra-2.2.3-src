@@ -9,7 +9,10 @@ import CassLogReader
 import LoadgenLogReader
 import SimTime
 
+# TODO: change name
 _fn_plot_data = None
+_fn_plot_data_tablet_access_counts_by_time = None
+
 _id_events = {}
 
 
@@ -27,16 +30,18 @@ class Events:
 		self.deleted = None
 		self.size = -1
 		self.y_cord = -1
+		self.time_cnts = {}
 
-	def Add(self, e):
+	def AddCreatedDeleted(self, e):
 		if e.op == "SstCreated":
 			self.created = e
 		elif e.op == "SstDeleted":
 			self.deleted = e
-		# TODO: add other events too. Like what? Not sure
 
-	def SetSize(self, size):
-		self.size = max(self.size, size)
+	def AddAccStat(self, simulated_time, tablet_acc_stat):
+		# tablet_acc_stat is of type EventAccessStat.AccStat
+		self.time_cnts[simulated_time] = tablet_acc_stat
+		self.size = max(self.size, tablet_acc_stat.size)
 
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
@@ -46,7 +51,7 @@ def _BuildIdEventsMap(e):
 	if e.op == "SstCreated" or e.op == "SstDeleted":
 		if e.event.sst_gen not in _id_events:
 			_id_events[e.event.sst_gen] = Events()
-		_id_events[e.event.sst_gen].Add(e)
+		_id_events[e.event.sst_gen].AddCreatedDeleted(e)
 	elif e.op == "TabletAccessStat":
 		for e1 in e.event.entries:
 			if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
@@ -56,7 +61,7 @@ def _BuildIdEventsMap(e):
 				sst_gen = e1.id_
 				if sst_gen not in _id_events:
 					raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
-				_id_events[sst_gen].SetSize(e1.size)
+				_id_events[sst_gen].AddAccStat(e.simulated_time, e1)
 
 
 def _CalcTabletsYCords():
@@ -143,3 +148,27 @@ def _WriteToFile():
 				, v.y_cord
 				))
 	Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))
+
+	global _fn_plot_data_tablet_access_counts_by_time
+	_fn_plot_data_tablet_access_counts_by_time = os.path.dirname(__file__) \
+			+ "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-access-counts-by-time"
+	with open(_fn_plot_data_tablet_access_counts_by_time, "w") as fo:
+		fmt = "%2s %10d %20s %20s %7d %7d %7d %7d"
+		fo.write("%s\n" % Util.BuildHeader(fmt,
+			"id(sst_gen_memt_id_may_be_added_later) y_cord time_begin time_end "
+			"num_reads num_true_positives num_false_positives num_negatives"))
+		for id_, v in sorted(_id_events.iteritems()):
+			time_begin = v.created.simulated_time
+			for time_, cnts in sorted(v.time_cnts.iteritems()):
+				fo.write((fmt + "\n") % (id_
+					, v.y_cord
+					, time_begin.strftime("%y%m%d-%H%M%S.%f")
+					, time_.strftime("%y%m%d-%H%M%S.%f")
+					, cnts.num_reads
+					, cnts.num_tp
+					, cnts.num_fp
+					, cnts.num_reads - cnts.num_tp - cnts.num_fp
+					))
+				time_begin = time_
+			fo.write("\n")
+	Cons.P("Created file %s %d" % (_fn_plot_data_tablet_access_counts_by_time, os.path.getsize(_fn_plot_data_tablet_access_counts_by_time)))

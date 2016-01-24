@@ -67,8 +67,8 @@ y0 = (Y_MIN + Y_MAX) / 2.0
 y1 = y0 + AccessCountHeight(AC_MAX)
 y2 = y0 + 2 * AccessCountHeight(AC_MAX)
 set arrow from x0, y0 to x0, y1 lw 2 lc rgb "red" heads size graph 0.0015,90
-set label "0"                   at x0,y0 offset 0.8,0 tc rgb "red"
-set label sprintf("%d", AC_MAX) at x0,y1 offset 0.8,0 tc rgb "red"
+set label "0"                   at x0,y0 offset 0.8,0 tc rgb "red" font ",10"
+set label sprintf("%d", AC_MAX) at x0,y1 offset 0.8,0 tc rgb "red" font ",10"
 set label "# of accesses"       at x0,y2 offset -0.5,0.3 tc rgb "black"
 
 set style fill solid 0.02 noborder

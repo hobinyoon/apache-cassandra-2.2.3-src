@@ -9,8 +9,7 @@ import CassLogReader
 import LoadgenLogReader
 import SimTime
 
-# TODO: change name
-_fn_plot_data = None
+_fn_plot_data_tablet_timeline_created_deleted = None
 _fn_plot_data_tablet_access_counts_by_time = None
 
 _id_events = {}
@@ -132,9 +131,9 @@ def _CalcTabletsYCords():
 
 
 def _WriteToFile():
-	global _fn_plot_data
-	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-timeline"
-	with open(_fn_plot_data, "w") as fo:
+	global _fn_plot_data_tablet_timeline_created_deleted
+	_fn_plot_data_tablet_timeline_created_deleted = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-timeline"
+	with open(_fn_plot_data_tablet_timeline_created_deleted, "w") as fo:
 		fmt = "%2s %20s %20s %20s %20s %10d %10d"
 		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot box_plot_right_bound max_size y_cord"))
 		# TODO: id can be m(number) or (number) for memtables and sstables
@@ -147,28 +146,47 @@ def _WriteToFile():
 				, v.size
 				, v.y_cord
 				))
-	Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))
+	Cons.P("Created file %s %d" % (_fn_plot_data_tablet_timeline_created_deleted, os.path.getsize(_fn_plot_data_tablet_timeline_created_deleted)))
 
 	global _fn_plot_data_tablet_access_counts_by_time
 	_fn_plot_data_tablet_access_counts_by_time = os.path.dirname(__file__) \
 			+ "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-access-counts-by-time"
 	with open(_fn_plot_data_tablet_access_counts_by_time, "w") as fo:
-		fmt = "%2s %10d %20s %20s %7d %7d %7d %7d"
+		fmt = "%2s %10d %20s %20s %7.0f %7.0f %7.0f %7.0f"
 		fo.write("%s\n" % Util.BuildHeader(fmt,
 			"id(sst_gen_memt_id_may_be_added_later) y_cord time_begin time_end "
-			"num_reads num_true_positives num_false_positives num_negatives"))
+			"num_reads_per_day num_true_positives_per_day num_false_positives_per_day num_negatives_per_day"))
 		for id_, v in sorted(_id_events.iteritems()):
-			time_begin = v.created.simulated_time
+			time_prev = None
+			num_reads_prev = 0
+			num_tp_prev = 0
+			num_fp_prev = 0
+			num_negatives_prev = 0
 			for time_, cnts in sorted(v.time_cnts.iteritems()):
-				fo.write((fmt + "\n") % (id_
-					, v.y_cord
-					, time_begin.strftime("%y%m%d-%H%M%S.%f")
-					, time_.strftime("%y%m%d-%H%M%S.%f")
-					, cnts.num_reads
-					, cnts.num_tp
-					, cnts.num_fp
-					, cnts.num_reads - cnts.num_tp - cnts.num_fp
-					))
-				time_begin = time_
+				num_negatives = cnts.num_reads - cnts.num_tp - cnts.num_fp
+				if time_prev == None:
+					# We ignore the first time window, i.e., we don't print anything for
+					# it. There is a very small time window between the first access and
+					# it is logged.
+					pass
+				else:
+					if time_ == time_prev:
+						# It may happen.
+						raise RuntimeError("Unexpected: time_(%s) == time_prev" % time_)
+					time_dur_days = (time_ - time_prev).total_seconds() / (24.0 * 3600)
+					fo.write((fmt + "\n") % (id_
+						, v.y_cord
+						, time_prev.strftime("%y%m%d-%H%M%S.%f")
+						, time_.strftime("%y%m%d-%H%M%S.%f")
+						, (cnts.num_reads - num_reads_prev) / time_dur_days
+						, (cnts.num_tp - num_tp_prev) / time_dur_days
+						, (cnts.num_fp - num_fp_prev) / time_dur_days
+						, (num_negatives - num_negatives_prev) / time_dur_days
+						))
+				time_prev = time_
+				num_reads_prev = cnts.num_reads
+				num_tp_prev = cnts.num_tp
+				num_fp_prev = cnts.num_fp
+				num_negatives_prev = num_negatives
 			fo.write("\n")
 	Cons.P("Created file %s %d" % (_fn_plot_data_tablet_access_counts_by_time, os.path.getsize(_fn_plot_data_tablet_access_counts_by_time)))

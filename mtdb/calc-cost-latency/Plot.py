@@ -37,10 +37,12 @@ def StorageSize():
 # Think about if you really need memtable diagrams
 def TabletTimeline():
 	with Cons.MeasureTime("Plotting tablet timeline ..."):
-		fn_in = TabletTimelinePlotDataGenerator._fn_plot_data
+		fn_in_cd = TabletTimelinePlotDataGenerator._fn_plot_data_tablet_timeline_created_deleted
+		fn_in_ac = TabletTimelinePlotDataGenerator._fn_plot_data_tablet_access_counts_by_time
 		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-tablet-timeline.pdf"
 		env = os.environ.copy()
-		env["FN_IN"] = fn_in
+		env["FN_IN_CD"] = fn_in_cd
+		env["FN_IN_AC"] = fn_in_ac
 		env["FN_OUT"] = fn_out
 		_RunSubp("gnuplot %s/tablet-timeline.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))

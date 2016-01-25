@@ -75,7 +75,7 @@ set label "0"                   at x0,y0 offset 0.8,0 tc rgb "red" font ",10"
 set label sprintf("%d", AC_MAX) at x0,y1 offset 0.8,0 tc rgb "red" font ",10"
 set label "# of accesses (in log scale)" at x0,y2 offset -0.5,0.3 tc rgb "black"
 
-set style fill solid 0.02 noborder
+set style fill solid 0.06 noborder
 
 # x  y  xlow  xhigh  ylow  yhigh
 plot \

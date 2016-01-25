@@ -7,6 +7,7 @@ import Cons
 
 import CassLogReader
 import LoadgenLogReader
+import StorageSizeByTimePlotDataGenerator
 import TabletTimelinePlotDataGenerator
 
 
@@ -23,7 +24,7 @@ def Latency():
 
 def StorageSize():
 	with Cons.MeasureTime("Plotting storage size by time ..."):
-		fn_in = CassLogReader._fn_plot_data
+		fn_in = StorageSizeByTimePlotDataGenerator._fn_plot_data
 		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-storage-size-by-time.pdf"
 		env = os.environ.copy()
 		env["FN_IN"] = fn_in

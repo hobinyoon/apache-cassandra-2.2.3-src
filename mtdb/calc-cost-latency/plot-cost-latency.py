@@ -6,6 +6,7 @@ import Conf
 import CassLogReader
 import LoadgenLogReader
 import Plot
+import StorageSizeByTimePlotDataGenerator
 import TabletTimelinePlotDataGenerator
 
 
@@ -16,13 +17,12 @@ def main(argv):
 	LoadgenLogReader.GenLatencyPlotData()
 
 	CassLogReader.Read()
-	# TODO: I may want to parameterize some of these
-	#CassLogReader.GenStorageSizePlotData()
+	StorageSizeByTimePlotDataGenerator.Gen()
 	TabletTimelinePlotDataGenerator.Gen()
 
 	# TODO
 	#Plot.Latency()
-	#Plot.StorageSize()
+	Plot.StorageSize()
 	Plot.TabletTimeline()
 
 

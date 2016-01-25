@@ -27,7 +27,7 @@ class Events:
 	def __init__(self):
 		self.created = None
 		self.deleted = None
-		self.size = -1
+		self.max_size = -1
 		self.y_cord = -1
 		self.time_cnts = {}
 
@@ -40,7 +40,7 @@ class Events:
 	def AddAccStat(self, simulated_time, tablet_acc_stat):
 		# tablet_acc_stat is of type EventAccessStat.AccStat
 		self.time_cnts[simulated_time] = tablet_acc_stat
-		self.size = max(self.size, tablet_acc_stat.size)
+		self.max_size = max(self.max_size, tablet_acc_stat.size)
 
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
@@ -122,7 +122,7 @@ def _CalcTabletsYCords():
 
 		# Fit the current area (block) while avoiding overlapping with existing areas.
 		#a0 = Area(v.created, v.deleted, 0, v.size)
-		a0 = Area(v.deleted, 0, v.size)
+		a0 = Area(v.deleted, 0, v.max_size)
 		for a in areas:
 			if a.Overlaps(a0):
 				a0.Moveup(a.y1 + y_spacing)
@@ -143,7 +143,7 @@ def _WriteToFile():
 				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "-")
 				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "090101-000000.000000")
 				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else SimTime._simulated_time_end.strftime("%y%m%d-%H%M%S.%f"))
-				, v.size
+				, v.max_size
 				, v.y_cord
 				))
 	Cons.P("Created file %s %d" % (_fn_plot_data_tablet_timeline_created_deleted, os.path.getsize(_fn_plot_data_tablet_timeline_created_deleted)))

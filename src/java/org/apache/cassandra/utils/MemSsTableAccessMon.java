@@ -64,12 +64,13 @@ public class MemSsTableAccessMon
 
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder(40);
-            // TODO MTDB: Update the plot script. The order has changed.
+            StringBuilder sb = new StringBuilder(80);
             sb.append(_sstr.bytesOnDisk())
                 .append(",").append(_sstr.getReadMeter().count())
                 .append(",").append(_sstr.getBloomFilterTruePositiveCount())
                 .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
+                .append(",").append(_sstr.getMinTimestamp())
+                .append(",").append(_sstr.getMaxTimestamp())
                 ;
             return sb.toString();
         }
@@ -94,6 +95,9 @@ public class MemSsTableAccessMon
     public static void Update(Memtable m, ColumnFamily cf) {
         // There is a race condition here, but harmless.  It happens only when
         // m is not in the map yet, which is very rare.
+        //
+        // I wonder if you can get the min and max timestamp of records in the
+        // memtable? I don't see it from Memtable.
         _MemTableAccCnt v = _memTableAccCnt.get(m);
         if (v != null) {
             v.Increment(cf != null);
@@ -214,7 +218,7 @@ public class MemSsTableAccessMon
                     }
                 }
 
-                // a non-strict but low-overhead serialization
+                // A non-strict but low-overhead serialization
                 if (! _updatedSinceLastOutput)
                     continue;
                 _updatedSinceLastOutput = false;

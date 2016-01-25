@@ -177,14 +177,23 @@ class EventAccessStat(Event):
 			self.num_tp = int(t1[2])
 			self.num_fp = int(t1[3])
 			# number of negatives = num_reads - num_tp - num_fp
+			# no need to convert these to datetime objects
+			self.min_timestamp = datetime.datetime.strptime(t1[4], "%y%m%d-%H%M%S.%f")
+			self.max_timestamp = datetime.datetime.strptime(t1[5], "%y%m%d-%H%M%S.%f")
 
 		def __str__(self):
 			return "SstAccStat: " + super(EventAccessStat.SstAccStat, self).__str__()
 
 	# Memtable-table1@44994146(3.251MiB serialized bytes, 9768 ops, 15%/0% of on/off-heap limit)-17144,13881
 	pattern0 = re.compile(r"( )?Memtable-table1@\d+\(\d*\.*\d*\w* serialized bytes, \d* ops, \d*%\/\d*% of on\/off-heap limit\)-\d+,\d+")
-	# 02:7969822,107935,6688,0,1453734126016000,1453734136939001
-	pattern1 = re.compile(r"( )?\d+:\d+,\d+,\d+,\d+,\d+,\d+")
+	#                           09:47735174,124672,70,0,160125-125303.023,160125-125408.551
+	#                           09:47735174
+	#                                  ,124672
+	#                                      ,70
+	#                                          ,0
+	#                                              ,160125-125303.023
+	#                                                           ,160125-125408.551
+	pattern1 = re.compile(r"( )?\d+:\d+,\d+,\d+,\d+,\d+-\d+\.\d+,\d+-\d+\.\d+")
 
 	def __init__(self, t):
 		str0 = " ".join(t[8:])

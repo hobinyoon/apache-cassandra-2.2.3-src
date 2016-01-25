@@ -16,7 +16,7 @@ _id_events = {}
 
 
 def Gen():
-	with Cons.MeasureTime("Generating memtable sstable timeline plot data ..."):
+	with Cons.MeasureTime("Generating tablet accesses timeline plot data ..."):
 		for l in CassLogReader._logs:
 			_BuildIdEventsMap(l)
 		_CalcTabletsYCords()

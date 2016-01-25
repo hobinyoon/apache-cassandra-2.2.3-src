@@ -8,7 +8,8 @@ import Cons
 import CassLogReader
 import LoadgenLogReader
 import StorageSizeByTimePlotDataGenerator
-import TabletTimelinePlotDataGenerator
+import TabletAccessesTimelinePlotDataGenerator
+import TabletMinMaxTimestampsTimelinePlotDataGenerator
 
 
 def Latency():
@@ -33,16 +34,27 @@ def StorageSize():
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
-def TabletTimeline():
-	with Cons.MeasureTime("Plotting tablet timeline ..."):
-		fn_in_cd = TabletTimelinePlotDataGenerator._fn_plot_data_tablet_timeline_created_deleted
-		fn_in_ac = TabletTimelinePlotDataGenerator._fn_plot_data_tablet_access_counts_by_time
-		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-tablet-timeline-num-accesses.pdf"
+def TabletAccessesTimeline():
+	with Cons.MeasureTime("Plotting tablet accesses timeline ..."):
+		fn_in_cd = TabletAccessesTimelinePlotDataGenerator._fn_plot_data_tablet_timeline_created_deleted
+		fn_in_ac = TabletAccessesTimelinePlotDataGenerator._fn_plot_data_tablet_access_counts_by_time
+		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-tablet-accesses-timeline.pdf"
 		env = os.environ.copy()
 		env["FN_IN_CD"] = fn_in_cd
 		env["FN_IN_AC"] = fn_in_ac
 		env["FN_OUT"] = fn_out
-		_RunSubp("gnuplot %s/tablet-timeline-num-accesses.gnuplot" % os.path.dirname(__file__), env)
+		_RunSubp("gnuplot %s/tablet-accesses-timeline.gnuplot" % os.path.dirname(__file__), env)
+		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+
+
+def TabletMinMaxTimestampsTimeline():
+	with Cons.MeasureTime("Plotting tablet min/max timestamps timeline ..."):
+		fn_in = TabletMinMaxTimestampsTimelinePlotDataGenerator._fn_plot_data
+		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-tablet-min-max-timestamps-timeline.pdf"
+		env = os.environ.copy()
+		env["FN_IN"] = fn_in
+		env["FN_OUT"] = fn_out
+		_RunSubp("gnuplot %s/tablet-min-max-timestamps-timeline.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

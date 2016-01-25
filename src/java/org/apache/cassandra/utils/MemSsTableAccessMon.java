@@ -1,5 +1,7 @@
 package org.apache.cassandra.utils;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,6 +29,8 @@ public class MemSsTableAccessMon
     private static OutputRunnable _or = null;
     private static Thread _outThread = null;
     private static final Logger logger = LoggerFactory.getLogger(MemSsTableAccessMon.class);
+
+    private static SimpleDateFormat _simpleDateFormat = new SimpleDateFormat("yyMMdd-HHmmss.SSS");
 
     private static class _MemTableAccCnt {
         private AtomicLong accesses;
@@ -64,13 +68,15 @@ public class MemSsTableAccessMon
 
         @Override
         public String toString() {
+            Timestamp min_ts = new Timestamp(_sstr.getMinTimestamp() / 1000);
+            Timestamp max_ts = new Timestamp(_sstr.getMaxTimestamp() / 1000);
             StringBuilder sb = new StringBuilder(80);
             sb.append(_sstr.bytesOnDisk())
                 .append(",").append(_sstr.getReadMeter().count())
                 .append(",").append(_sstr.getBloomFilterTruePositiveCount())
                 .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
-                .append(",").append(_sstr.getMinTimestamp())
-                .append(",").append(_sstr.getMaxTimestamp())
+                .append(",").append(_simpleDateFormat.format(min_ts))
+                .append(",").append(_simpleDateFormat.format(max_ts))
                 ;
             return sb.toString();
         }

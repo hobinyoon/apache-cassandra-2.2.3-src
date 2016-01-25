@@ -1,3 +1,4 @@
+import datetime
 import os
 import sys
 
@@ -74,8 +75,9 @@ def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-min-max-timestamps-timeline"
 	with open(_fn_plot_data, "w") as fo:
-		fmt = "%2s %20s %20s %20s %20s %20s %20s"
-		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot box_plot_right_bound min_timestamp max_timestamp"))
+		fmt = "%2s %20s %20s %20s %20s %20s %20s %20s"
+		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot "
+			"box_plot_right_bound timestamp_min timestamp_max timestamp_mid"))
 		for id_, v in sorted(_id_events.iteritems()):
 			fo.write((fmt + "\n") % (id_
 				, v.created.simulated_time.strftime("%y%m%d-%H%M%S.%f")
@@ -84,5 +86,6 @@ def _WriteToFile():
 				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else SimTime._simulated_time_end.strftime("%y%m%d-%H%M%S.%f"))
 				, SimTime.SimulatedTime(v.min_timestamp).strftime("%y%m%d-%H%M%S.%f")
 				, SimTime.SimulatedTime(v.max_timestamp).strftime("%y%m%d-%H%M%S.%f")
+				, SimTime.SimulatedTime(v.min_timestamp + datetime.timedelta(seconds = (v.max_timestamp - v.min_timestamp).total_seconds()/2.0)).strftime("%y%m%d-%H%M%S.%f")
 				))
 	Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

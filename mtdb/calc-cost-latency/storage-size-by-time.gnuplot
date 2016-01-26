@@ -5,7 +5,6 @@ FN_OUT = system("echo $FN_OUT")
 
 # Get min and max values
 set terminal unknown
-
 set xdata time
 set timefmt "%y%m%d-%H%M%S"
 set format x "'%y"
@@ -28,11 +27,10 @@ set xlabel "Time (year)" offset 0,0.3
 set ylabel "Storage size (MB)" offset 1.3,0
 
 set border (1 + 2) lc rgb "#808080"
-set xtics nomirror scale 0.5,0 tc rgb "#808080"
+set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,(365.25*24*3600)
 set ytics nomirror scale 0.5,0 tc rgb "#808080"
 set tics front
 
-X_MAX="180101-120000.000000"
 set xrange [X_MIN:X_MAX]
 set yrange [Y_MIN:Y_MAX]
 

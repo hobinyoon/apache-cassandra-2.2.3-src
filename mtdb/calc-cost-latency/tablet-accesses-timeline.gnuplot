@@ -29,7 +29,7 @@ set terminal pdfcairo enhanced rounded size 12in, 4in
 set output FN_OUT
 
 set border (1) front lc rgb "#808080"
-set xtics nomirror scale 0.5,0 tc rgb "#808080"
+set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,(365.25*24*3600)
 unset ytics
 
 set format x "'%y"
@@ -56,7 +56,8 @@ set key top left
 AccessCountHeight(x)=(log(x+1)/log(AC_MAX+1))*10000000
 
 # Legend: Tablet size
-x0 = X_MIN + (365.25/12*0.7*24*3600)
+#x0 = X_MIN + (365.25/12*0.7*24*3600)
+x0 = X_MIN
 y0 = Y_MIN + (Y_MAX - Y_MIN) * 0.7
 _10MB = 10*1024*1024
 y1 = y0 + _10MB

@@ -5,15 +5,11 @@ FN_OUT = system("echo $FN_OUT")
 
 # Get min and max values
 set terminal unknown
-
 set xdata time
 set timefmt "%y%m%d-%H%M%S"
-set format x "'%y"
-
 plot \
 FN_IN u 3:4 w lines, \
 ""    u 3:5 w lines
-
 X_MIN=GPVAL_DATA_X_MIN
 X_MAX=GPVAL_DATA_X_MAX
 Y_MIN=GPVAL_DATA_Y_MIN
@@ -31,12 +27,10 @@ set xlabel "Time (year)" offset 0,0.3
 set ylabel "Latency (ms)" offset 1.3,0
 
 set border (1 + 2) lc rgb "#808080"
-set xtics nomirror scale 0.5,0 tc rgb "#808080"
+set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,(365.25*24*3600)
 set ytics nomirror scale 0.5,0 tc rgb "#808080"
 set tics front
 
-set xdata time
-set timefmt "%y%m%d-%H%M%S"
 set format x "'%y"
 
 set key top left #opaque

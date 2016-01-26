@@ -178,8 +178,8 @@ class EventAccessStat(Event):
 			self.num_fp = int(t1[3])
 			# number of negatives = num_reads - num_tp - num_fp
 			# no need to convert these to datetime objects
-			self.min_timestamp = datetime.datetime.strptime(t1[4], "%y%m%d-%H%M%S.%f")
-			self.max_timestamp = datetime.datetime.strptime(t1[5], "%y%m%d-%H%M%S.%f")
+			self.min_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[4], "%y%m%d-%H%M%S.%f"))
+			self.max_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[5], "%y%m%d-%H%M%S.%f"))
 
 		def __str__(self):
 			return "SstAccStat: " + super(EventAccessStat.SstAccStat, self).__str__()

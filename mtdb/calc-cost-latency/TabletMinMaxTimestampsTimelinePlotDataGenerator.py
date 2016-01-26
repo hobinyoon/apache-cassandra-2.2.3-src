@@ -75,17 +75,31 @@ def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-min-max-timestamps-timeline"
 	with open(_fn_plot_data, "w") as fo:
-		fmt = "%2s %20s %20s %20s %20s %20s %20s %20s"
-		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot "
-			"box_plot_right_bound timestamp_min timestamp_max timestamp_mid"))
+		fmt = "%2s %20s %20s %20s %20s %20s %20s %20s %10.0f %10.0f"
+		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time"
+			" deletion_time_for_plot box_plot_right_bound"
+			" timestamp_min timestamp_max timestamp_mid timestamp_dur_in_sec"
+			" tablet_lifespan_in_sec"
+			))
 		for id_, v in sorted(_id_events.iteritems()):
+			# If not defined, "-"
+			deleted_time0 = (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "-")
+			# If not defined, SimTime._simulated_time_end
+			deleted_time1_ = v.deleted.simulated_time if v.deleted != None else SimTime._simulated_time_end
+			deleted_time1 = deleted_time1_.strftime("%y%m%d-%H%M%S.%f")
+			# If not defined, "090101-000000.000000" (one out of the plot range)
+			deleted_time2 = (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None
+					else "090101-000000.000000")
+
 			fo.write((fmt + "\n") % (id_
 				, v.created.simulated_time.strftime("%y%m%d-%H%M%S.%f")
-				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "-")
-				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "090101-000000.000000")
-				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else SimTime._simulated_time_end.strftime("%y%m%d-%H%M%S.%f"))
-				, SimTime.SimulatedTime(v.min_timestamp).strftime("%y%m%d-%H%M%S.%f")
-				, SimTime.SimulatedTime(v.max_timestamp).strftime("%y%m%d-%H%M%S.%f")
-				, SimTime.SimulatedTime(v.min_timestamp + datetime.timedelta(seconds = (v.max_timestamp - v.min_timestamp).total_seconds()/2.0)).strftime("%y%m%d-%H%M%S.%f")
+				, deleted_time0
+				, deleted_time2
+				, deleted_time1
+				, v.min_timestamp.strftime("%y%m%d-%H%M%S.%f")
+				, v.max_timestamp.strftime("%y%m%d-%H%M%S.%f")
+				, (v.min_timestamp + datetime.timedelta(seconds = (v.max_timestamp - v.min_timestamp).total_seconds()/2.0)).strftime("%y%m%d-%H%M%S.%f")
+				, (v.max_timestamp - v.min_timestamp).total_seconds()
+				, (deleted_time1_ - v.created.simulated_time).total_seconds()
 				))
 	Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

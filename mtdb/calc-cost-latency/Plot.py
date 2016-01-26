@@ -8,8 +8,9 @@ import Cons
 import CassLogReader
 import LoadgenLogReader
 import StorageSizeByTimePlotDataGenerator
-import TabletAccessesTimelinePlotDataGenerator
+import TabletAccessesForTabletSizeTimelinePlotDataGenerator
 import TabletMinMaxTimestampsTimelinePlotDataGenerator
+import TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator
 
 
 def Latency():
@@ -36,8 +37,8 @@ def StorageSize():
 
 def TabletAccessesTimeline():
 	with Cons.MeasureTime("Plotting tablet accesses timeline ..."):
-		fn_in_cd = TabletAccessesTimelinePlotDataGenerator._fn_plot_data_tablet_timeline_created_deleted
-		fn_in_ac = TabletAccessesTimelinePlotDataGenerator._fn_plot_data_tablet_access_counts_by_time
+		fn_in_cd = TabletAccessesForTabletSizeTimelinePlotDataGenerator._fn_plot_data_tablet_timeline_created_deleted
+		fn_in_ac = TabletAccessesForTabletSizeTimelinePlotDataGenerator._fn_plot_data_tablet_access_counts_by_time
 		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-tablet-accesses-timeline.pdf"
 		env = os.environ.copy()
 		env["FN_IN_CD"] = fn_in_cd
@@ -49,11 +50,15 @@ def TabletAccessesTimeline():
 
 def TabletMinMaxTimestampsTimeline():
 	with Cons.MeasureTime("Plotting tablet min/max timestamps timeline ..."):
-		fn_in = TabletMinMaxTimestampsTimelinePlotDataGenerator._fn_plot_data
+		fn_in_ts = TabletMinMaxTimestampsTimelinePlotDataGenerator._fn_plot_data
+		fn_in_ac = TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator._fn_plot_data
 		fn_out = os.path.dirname(__file__) + "/" + LoadgenLogReader.LogFilename() + "-tablet-min-max-timestamps-timeline.pdf"
 		env = os.environ.copy()
-		env["FN_IN"] = fn_in
+		env["FN_IN_TS"] = fn_in_ts
+		env["FN_IN_AC"] = fn_in_ac
 		env["FN_OUT"] = fn_out
+		env["MAX_NUM_ACCESSES"] = str(int(TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator.NumToTime.max_num_tpfp_per_day))
+		env["MIN_TIMESTAMP_RANGE"] = str(int(TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator.NumToTime.min_timestamp_range.total_seconds()))
 		_RunSubp("gnuplot %s/tablet-min-max-timestamps-timeline.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 

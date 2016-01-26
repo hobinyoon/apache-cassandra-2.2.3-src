@@ -14,7 +14,6 @@ _fn_plot_data_tablet_access_counts_by_time = None
 
 _id_events = {}
 
-
 def Gen():
 	with Cons.MeasureTime("Generating tablet accesses timeline plot data ..."):
 		for l in CassLogReader._logs:
@@ -54,7 +53,7 @@ def _BuildIdEventsMap(e):
 	elif e.op == "TabletAccessStat":
 		for e1 in e.event.entries:
 			if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
-				# TODO: Plot memt too. Calculate y-cords separately. And merge them.
+				# We don't plot memtables for now
 				pass
 			elif type(e1) is CassLogReader.EventAccessStat.SstAccStat:
 				sst_gen = e1.id_
@@ -135,8 +134,9 @@ def _WriteToFile():
 	_fn_plot_data_tablet_timeline_created_deleted = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-timeline"
 	with open(_fn_plot_data_tablet_timeline_created_deleted, "w") as fo:
 		fmt = "%2s %20s %20s %20s %20s %10d %10d"
-		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot box_plot_right_bound max_size y_cord"))
-		# TODO: id can be m(number) or (number) for memtables and sstables
+		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot "
+			"box_plot_right_bound max_size y_cord_base"))
+		# Note: id can be m(number) or (number) for memtables and sstables
 		for id_, v in sorted(_id_events.iteritems()):
 			fo.write((fmt + "\n") % (id_
 				, v.created.simulated_time.strftime("%y%m%d-%H%M%S.%f")
@@ -154,8 +154,9 @@ def _WriteToFile():
 	with open(_fn_plot_data_tablet_access_counts_by_time, "w") as fo:
 		fmt = "%2s %10d %20s %20s %7.0f %7.0f %7.0f %7.0f"
 		fo.write("%s\n" % Util.BuildHeader(fmt,
-			"id(sst_gen_memt_id_may_be_added_later) y_cord time_begin time_end "
-			"num_reads_per_day num_true_positives_per_day num_false_positives_per_day num_negatives_per_day"))
+			"id(sst_gen_memt_id_may_be_added_later) y_cord_base_tablet_size_plot time_begin time_end"
+			" num_reads_per_day num_true_positives_per_day num_false_positives_per_day"
+			" num_negatives_per_day"))
 		for id_, v in sorted(_id_events.iteritems()):
 			time_prev = None
 			num_reads_prev = 0

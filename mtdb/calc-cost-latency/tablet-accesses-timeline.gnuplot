@@ -25,7 +25,7 @@ AC_MAX=GPVAL_DATA_Y_MAX
 set print "-"
 print sprintf("Max access count of all tablets: %d", AC_MAX)
 
-set terminal pdfcairo enhanced rounded size 12in, 4in
+set terminal pdfcairo enhanced rounded size 6, 3in
 set output FN_OUT
 
 set border (1) front lc rgb "#808080"
@@ -85,7 +85,7 @@ FN_IN_AC u 3:2:($2 + AccessCountHeight($6+$7)) w filledcurves lc rgb "red" not, 
 FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)) w steps lc rgb "red" t "# of accesses", \
 FN_IN_CD u 2:7:(0):6         w vectors nohead lw 2 lt 1 lc rgb "black" t "Created", \
 FN_IN_CD u 4:7:(0):6         w vectors nohead lw 2 lt 0 lc rgb "black" t "Deleted", \
-FN_IN_CD u 2:($7+$6/2.0):1   w labels right offset -0.5,0 font ",10" not
+FN_IN_CD u 2:($7+$6/2.0):1   w labels right offset -0.5,0 font ",8" not
 
 # This doesn't fill the exact same area as the steps, but was the closest thing
 # that I can find.

@@ -7,8 +7,9 @@ import CassLogReader
 import LoadgenLogReader
 import Plot
 import StorageSizeByTimePlotDataGenerator
-import TabletAccessesTimelinePlotDataGenerator
+import TabletAccessesForTabletSizeTimelinePlotDataGenerator
 import TabletMinMaxTimestampsTimelinePlotDataGenerator
+import TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator
 
 
 def main(argv):
@@ -19,8 +20,9 @@ def main(argv):
 
 	CassLogReader.Read()
 	StorageSizeByTimePlotDataGenerator.Gen()
-	TabletAccessesTimelinePlotDataGenerator.Gen()
+	TabletAccessesForTabletSizeTimelinePlotDataGenerator.Gen()
 	TabletMinMaxTimestampsTimelinePlotDataGenerator.Gen()
+	TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator.Gen()
 
 	Plot.Latency()
 	Plot.StorageSize()

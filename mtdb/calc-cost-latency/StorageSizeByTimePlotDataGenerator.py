@@ -7,7 +7,7 @@ import Cons
 import Util
 
 import CassLogReader
-import LoadgenLogReader
+import Desc
 import SimTime
 import StgCost
 
@@ -16,7 +16,7 @@ _fn_plot_data = None
 def Gen():
 	with Cons.MeasureTime("Generating storage size plot data ..."):
 		global _fn_plot_data
-		_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-storage-size-by-time"
+		_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-storage-size-by-time"
 		with open(_fn_plot_data, "w") as fo:
 			fmt = "%20s %20s %20s %20s %10d %8f"
 			fo.write("%s\n" % Util.BuildHeader(fmt,

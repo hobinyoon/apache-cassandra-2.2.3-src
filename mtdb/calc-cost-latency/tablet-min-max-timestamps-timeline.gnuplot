@@ -7,6 +7,7 @@ FN_IN_AC = system("echo $FN_IN_AC")
 FN_OUT = system("echo $FN_OUT")
 MAX_NUM_ACCESSES = system("echo $MAX_NUM_ACCESSES")
 MIN_TIMESTAMP_RANGE = system("echo $MIN_TIMESTAMP_RANGE")
+DESC = system("echo $DESC")
 
 set xdata time
 set ydata time
@@ -54,54 +55,61 @@ set samples 1000
 
 load "../conf/colorscheme.gnuplot"
 
+x1p = (X_MAX - X_MIN) / 100
+y1p = (Y_MAX - Y_MIN) / 100
+
+# Desc
+x_1 = X_MIN
+y_1 = Y_MAX - 3*y1p
+set label DESC at x_1, y_1 left tc rgb "black" font ",7"
+
 # Legend
-MONTH = 365.25/12*24*3600
-x0 = X_MIN + 2.5 * MONTH
-x1 = x0 + 4.0 * MONTH
-y1 = Y_MAX - 4.0 * MONTH
-y0 = y1 - 6.0 * MONTH
+x0 = X_MIN + 5*x1p
+x1 = x0 + 10*x1p
+y1 = y_1 - 15*y1p
+y0 = y1 - 15*y1p
 set object rect from x0, y0 to x1, y1 fc rgb "black" fs transparent solid 0.05 noborder
 set arrow from x0, y0 to x0, y1 lc rgb "black" nohead
 set arrow from x0, y1 to x1, y1 lc rgb "black" nohead
 
-y2 = y0 - 2.0 * MONTH
+y2 = y0 - 6*y1p
 set arrow from x0, y0 to x0, y2 lt 0 lc rgb "black" nohead
 set arrow from x1, y0 to x1, y2 lt 0 lc rgb "black" nohead
 
-y3 = y2 - 1.5 * MONTH
+y3 = y2 - 3*y1p
 set label "created" at x0, y3 center tc rgb "black" font ",8"
 set label "deleted" at x1, y3 center tc rgb "black" font ",8"
 
-x2 = x1 + MONTH
+x2 = x1 + 3*x1p
 set arrow from x1, y0 to x2, y0 lt 0 lc rgb "black" nohead
 set arrow from x1, y1 to x2, y1 lt 0 lc rgb "black" nohead
 
-x3 = x2 + 0.5 * MONTH
+x3 = x2 + x1p
 set label "max timestamp" at x3, y1 left tc rgb "black" font ",8"
 set label "min timestamp" at x3, y0 left tc rgb "black" font ",8"
 
 set label "sst gen" at x0, (y0 + y1) / 2 right offset -0.5, 0 tc rgb "black" font ",8"
 
 legendAccesses(x) = (x0 < x) && (x < x1) ? \
-										y0 + (y1 - y0) * (1 - sin((x - x0) / (x1 - x0) * pi / 2)) + sin(x / (x1 - x0) * pi * 20) * 0.15 * MONTH \
+										y0 + (y1 - y0) * (1 - sin((x - x0) / (x1 - x0) * pi / 2)) + sin(x / (x1 - x0) * pi * 20) * 0.5*y1p \
 										: 1 / 0
 
-x5 = x0 + 1.8 * MONTH
-x6 = x1 + 3.5 * MONTH
+x5 = x0 + 5*x1p
+x6 = x1 + 6*x1p
 y4 = (y0 + y1) / 2
 set arrow from x5, y4 to x6, y4 lt 0 lc rgb "black" nohead
 
-x7 = x6 + 0.5 * MONTH
+x7 = x6 + x1p
 set label "# of accesses" at x7, y4 left tc rgb "black" font ",8"
 
-x8 = x7 + 5.0 * MONTH
+x8 = x7 + 12*x1p
 y5 = y4 - MIN_TIMESTAMP_RANGE / 2.0
 y6 = y4 + MIN_TIMESTAMP_RANGE / 2.0
 set arrow from x8, y5 to x8, y6 lc rgb "black" nohead
-set arrow from x8 - 0.1 * MONTH, y5 to x8 + 0.1 * MONTH, y5 lc rgb "black" nohead
-set arrow from x8 - 0.1 * MONTH, y6 to x8 + 0.1 * MONTH, y6 lc rgb "black" nohead
-set label "0"              at x8, y5 left offset 0.5,0 tc rgb "black" font ",8"
-set label MAX_NUM_ACCESSES at x8, y6 left offset 0.5,0 tc rgb "black" font ",8"
+set arrow from x8 - 0.2*x1p, y5 to x8 + 0.2*x1p, y5 lc rgb "black" nohead
+set arrow from x8 - 0.2*x1p, y6 to x8 + 0.2*x1p, y6 lc rgb "black" nohead
+set label "0"              at x8, y5 left offset 0.4,0 tc rgb "black" font ",7"
+set label MAX_NUM_ACCESSES at x8, y6 left offset 0.4,0 tc rgb "black" font ",7"
 
 # gnuplot doesn't have a mod function
 #   http://www.macs.hw.ac.uk/~ml355/lore/gnuplot.htm

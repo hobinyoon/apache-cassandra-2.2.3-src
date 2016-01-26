@@ -7,7 +7,7 @@ import Cons
 import Util
 
 import CassLogReader
-import LoadgenLogReader
+import Desc
 import SimTime
 
 _fn_plot_data = None
@@ -73,7 +73,7 @@ def _BuildIdEventsMap(e):
 
 def _WriteToFile():
 	global _fn_plot_data
-	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-min-max-timestamps-timeline"
+	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-tablet-min-max-timestamps-timeline"
 	with open(_fn_plot_data, "w") as fo:
 		fmt = "%2s %20s %20s %20s %20s %20s %20s %20s %10.0f %10.0f"
 		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time"

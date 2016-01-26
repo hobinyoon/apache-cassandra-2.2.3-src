@@ -7,7 +7,7 @@ import zipfile
 sys.path.insert(0, "../util/python")
 import Cons
 
-import LoadgenLogReader
+import Desc
 import SimTime
 
 _raw_lines = []
@@ -42,7 +42,7 @@ def _ReadStoredCassMtdbLog():
 
 def _StoredCassMtdbLogFilename():
 	dn = os.path.dirname(__file__) + "/../logs/cassandra"
-	return dn + "/" + LoadgenLogReader.LogFilename()
+	return dn + "/" + Desc.ExpDatetime()
 
 
 def _ReadCassMtdbLog():
@@ -227,9 +227,9 @@ class LogEntry(object):
 		#Cons.P(line)
 		t = line.split()
 		self.simulation_time = datetime.datetime.strptime("%s %s" % (t[2], t[3]), "%Y-%m-%d %H:%M:%S,%f")
-		self.op = t[7]
 		self.simulated_time = SimTime.SimulatedTime(self.simulation_time)
 		#Cons.P("%s %s" % (self.simulated_time, self.op))
+		self.op = t[7]
 
 		if self.op == "SstCreated":
 			self.event = EventSstCreated(t)
@@ -240,6 +240,8 @@ class LogEntry(object):
 			_report_interval_ms = int(t[8])
 		elif self.op == "TabletAccessStat":
 			self.event = EventAccessStat(t)
+		elif self.op.startswith("metadata="):
+			Desc.SetCassMetadata(line)
 		else:
 			#Cons.P(t[7:])
 			pass

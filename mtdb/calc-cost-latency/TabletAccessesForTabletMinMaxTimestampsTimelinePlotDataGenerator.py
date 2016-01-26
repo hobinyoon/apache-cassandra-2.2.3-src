@@ -8,7 +8,7 @@ import Cons
 import Util
 
 import CassLogReader
-import LoadgenLogReader
+import Desc
 import TabletMinMaxTimestampsTimelinePlotDataGenerator
 
 _fn_plot_data = None
@@ -124,7 +124,7 @@ class NumToTime:
 def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) \
-			+ "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-accesses-for-min-max-timestamp-plot-by-time"
+			+ "/plot-data/" + Desc.ExpDatetime() + "-tablet-accesses-for-min-max-timestamp-plot-by-time"
 	with open(_fn_plot_data, "w") as fo:
 		fmt = "%2s %20s %20s" \
 				" %10d %10d %10d %10d" \

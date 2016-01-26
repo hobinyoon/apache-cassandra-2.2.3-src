@@ -6,7 +6,7 @@ import Cons
 import Util
 
 import CassLogReader
-import LoadgenLogReader
+import Desc
 import SimTime
 
 _fn_plot_data_tablet_timeline_created_deleted = None
@@ -131,7 +131,7 @@ def _CalcTabletsYCords():
 
 def _WriteToFile():
 	global _fn_plot_data_tablet_timeline_created_deleted
-	_fn_plot_data_tablet_timeline_created_deleted = os.path.dirname(__file__) + "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-timeline"
+	_fn_plot_data_tablet_timeline_created_deleted = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-tablet-timeline"
 	with open(_fn_plot_data_tablet_timeline_created_deleted, "w") as fo:
 		fmt = "%2s %20s %20s %20s %20s %10d %10d"
 		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot "
@@ -150,7 +150,7 @@ def _WriteToFile():
 
 	global _fn_plot_data_tablet_access_counts_by_time
 	_fn_plot_data_tablet_access_counts_by_time = os.path.dirname(__file__) \
-			+ "/plot-data/" + LoadgenLogReader.LogFilename() + "-tablet-access-counts-by-time"
+			+ "/plot-data/" + Desc.ExpDatetime() + "-tablet-access-counts-by-time"
 	with open(_fn_plot_data_tablet_access_counts_by_time, "w") as fo:
 		fmt = "%2s %10d %20s %20s %7.0f %7.0f %7.0f %7.0f"
 		fo.write("%s\n" % Util.BuildHeader(fmt,

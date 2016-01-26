@@ -8,6 +8,7 @@ import Cons
 import Util
 
 import Conf
+import Desc
 import SimTime
 
 _dn_log_loadgen = os.path.dirname(__file__) + "/../logs/loadgen"
@@ -119,12 +120,8 @@ def _GetYoungestFn():
 	fns.sort()
 	global _fn_log
 	_fn_log = fns[-1]
+	Desc.SetExpDatetime(_fn_log)
 	return _dn_log_loadgen + "/" + fns[-1]
-
-
-def LogFilename():
-	# In yymmdd-HHMMSS
-	return _fn_log
 
 
 def GenLatencyPlotData():

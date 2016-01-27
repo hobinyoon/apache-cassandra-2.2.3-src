@@ -65,8 +65,20 @@ def _BuildIdEventsMap(e):
 				_id_events[sst_gen].SetTabletSize(e1.size)
 
 
-# TODO: calc spacing
 def _CalcTabletsYCords():
+	# Y spacing between blocks
+	y_spacing = 0
+	_CalcTabletsYCords0(y_spacing)
+
+	max_y_cord = 0
+	for id, v in _id_events.iteritems():
+		max_y_cord = max(max_y_cord, v.y_cord + v.tablet_size)
+	Cons.P("max_y_cord: %d" % max_y_cord)
+	y_spacing = max_y_cord * 0.01
+	_CalcTabletsYCords0(y_spacing)
+
+
+def _CalcTabletsYCords0(y_spacing):
 	# Space filling by sweeping through the x-axis. There will be only a
 	# handful of blocks (sstables) going through the sweeping line.
 
@@ -108,9 +120,6 @@ def _CalcTabletsYCords():
 
 	# Areas intersecting the current sweep line
 	areas = []
-
-	# Y spacing between blocks
-	y_spacing = 0
 
 	for id, v in sorted(_id_events.iteritems()):
 		# Delete areas that are past the sweeping line

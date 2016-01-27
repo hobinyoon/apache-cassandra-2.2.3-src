@@ -7,6 +7,8 @@ FN_IN_AC = system("echo $FN_IN_AC")
 FN_OUT = system("echo $FN_OUT")
 DESC = system("echo $DESC")
 
+load "../conf/colorscheme.gnuplot"
+
 # Get the plot range
 set terminal unknown
 set xdata time
@@ -38,8 +40,8 @@ set format x "'%y"
 # Give some margin on the left and at the bottom
 x0=X_MIN-(365.25/12*1.3*24*3600)
 x1=X_MAX+(365.25/12*0.5*24*3600)
-y0=Y_MIN
-y1=Y_MAX-(5*1024*1024)
+y0=Y_MIN-(5*1024*1024)
+y1=Y_MAX
 
 set xrange [x0:x1]
 set yrange [y0:y1]
@@ -54,8 +56,52 @@ x0 = X_MIN
 y0 = Y_MAX - 3*y1p
 set label DESC at x0, y0 left tc rgb "black" font ",7"
 
-# Linear scale
-#AccessCountHeight(x) = x*40000
+TRANSP0=0.06
+
+# Legend
+x1 = X_MIN + 11.5*x1p
+x2 = x1 + 7*x1p
+y2 = y0 - 15*y1p
+y1 = y2 - 10*y1p
+set object rect from x1, y1 to x2, y2 fc rgb "black" fs transparent solid TRANSP0 noborder
+set arrow from x1, y1 to x1, y2 lc rgb "black" nohead
+
+y3 = (y2 + y1) / 2
+y4 = y3 + 1.5*y1p
+set label "sst\ngen" at x1, y4 right offset -0.5, 0 tc rgb "black" font ",8"
+
+x3 = x1 - 5*x1p
+set arrow from x3, y1 to x3, y2 lc rgb "black" nohead
+
+set arrow from x3 - 0.2*x1p, y2 to x3 + 0.2*x1p, y2 lc rgb "black" nohead
+set arrow from x3 - 0.2*x1p, y1 to x3 + 0.2*x1p, y1 lc rgb "black" nohead
+
+set label (sprintf("%d MB", (y2 - y1)/1024/1024)) at x3, y2 right offset -0.5, 0 tc rgb "black" font ",8"
+set label "0"                                     at x3, y1 right offset -0.5, 0 tc rgb "black" font ",8"
+
+x4 = x3 - 6.5*x1p
+set label "Tablet size" at x4, y3 center rotate by 90 tc rgb "black" font ",8"
+
+y4 = y1 - 4*y1p
+set arrow from x1, y1 to x1, y4 lt 0 lc rgb "black" nohead
+set arrow from x2, y1 to x2, y4 lt 0 lc rgb "black" nohead
+
+y5 = y4 - 2*y1p
+set label "created" at x1, y5 center tc rgb "black" font ",8"
+set label "deleted" at x2, y5 center tc rgb "black" font ",8"
+
+
+legendAccesses(x) = (x1 < x) && (x < x2) && (sin(x / (x2 - x1) * pi * 150) > 0) ? \
+										y1 + (y2 - y1) * (1 - sin((x - x1) / (x2 - x1) * pi / 2)) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
+										: 1 / 0
+
+x5 = x1 + 3*x1p
+x6 = x2 + 2*x1p
+set arrow from x5, y3 to x6, y3 lt 0 lc rgb "black" nohead
+
+x7 = x6 + x1p
+y6 = y3 + 2*y1p
+set label "# of accesses\nper day" at x7, y6 left tc rgb "black" font ",8"
 
 # Log scale
 #   value range
@@ -63,38 +109,41 @@ set label DESC at x0, y0 left tc rgb "black" font ",7"
 #     +1             : [1, AC_MAX+1]
 #     log(above)     : [0(=log(1)), log(AC_MAX+1)]
 #     / log(AC_MAX+1) : [0, 1]
-AccessCountHeight(x)=(log(x+1)/log(AC_MAX+1))*10000000
+AccessCountHeight(x) = x == 0 ? \
+											 1/0 \
+											 : (log(x+1)/log(AC_MAX+1))*10000000
 
-# Legend: Tablet size
-xx0 = X_MIN
-yy0 = Y_MIN + (Y_MAX - Y_MIN) * 0.6
-_10MB = 10*1024*1024
-y1 = yy0 + _10MB
-y2 = y1 + _10MB
-set arrow from xx0, yy0 to xx0, y1 lw 2 lc rgb "black" heads size graph 0.0013,90
-set label "0"     at xx0,yy0 offset 0.8,0 tc rgb "black" font ",8"
-set label "10 MB" at xx0,y1 offset 0.8,0 tc rgb "black" font ",8"
-set label "Tablet size"       at xx0,y2 offset -0.5,0.3 tc rgb "black" font ",8"
+x8 = x7 + 11*x1p
+y7 = y3 - AccessCountHeight(AC_MAX) / 2.0
+y8 = y3 + AccessCountHeight(AC_MAX) / 2.0
+set arrow from x8, y7 to x8, y8 lc rgb "red" nohead
+set arrow from x8 - 0.2*x1p, y7 to x8 + 0.2*x1p, y7 lc rgb "red" nohead
+set arrow from x8 - 0.2*x1p, y8 to x8 + 0.2*x1p, y8 lc rgb "red" nohead
+set label (sprintf("%d", AC_MAX)) at x8, y8 left offset 0.4, 0.1 tc rgb "red" font ",7"
+set label "0"                     at x8, y7 left offset 0.4,-0.1 tc rgb "red" font ",7"
 
-# Legend: Access count
-yy0 = Y_MIN + (Y_MAX - Y_MIN) * 0.5
-y1 = yy0 + AccessCountHeight(AC_MAX)
-y2 = y1 + _10MB
-set arrow from xx0, yy0 to xx0, y1 lw 2 lc rgb "red" heads size graph 0.0013,90
-set label "0"                   at xx0,yy0 offset 0.8,0 tc rgb "red" font ",7"
-set label sprintf("%d", AC_MAX) at xx0,y1 offset 0.8,0 tc rgb "red" font ",7"
-set label "# of accesses (in log scale)" at xx0,y2 offset -0.5,0.3 tc rgb "black" font ",8"
+set samples 5000
 
-set style fill solid 0.06 noborder
+# gnuplot doesn't have a mod function
+#   http://www.macs.hw.ac.uk/~ml355/lore/gnuplot.htm
+mod(a, b) = a - floor(a/b) * b
+
+color(a) = mod(a, 6)
+
+set style fill solid TRANSP0 noborder
 
 # x  y  xlow  xhigh  ylow  yhigh
 plot \
-FN_IN_CD u 2:7:2:5:7:($7+$6) w boxxyerrorbars lc rgb "blue" not, \
-FN_IN_AC u 3:2:($2 + AccessCountHeight($6+$7)) w filledcurves lc rgb "red" not, \
-FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)) w steps lc rgb "red" not, \
-FN_IN_CD u 2:7:(0):6         w vectors nohead lw 2 lt 1 lc rgb "black" not, \
-FN_IN_CD u 4:7:(0):6         w vectors nohead lw 2 lt 0 lc rgb "black" not, \
-FN_IN_CD u 2:($7+$6/2.0):1   w labels right offset -0.5,0 font ",8" not
+FN_IN_CD u 2:7:2:5:7:($7+$6):(color($1)) w boxxyerrorbars lc variable not, \
+FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)):(color($1)) w points pointsize 0.01 lc variable not, \
+FN_IN_CD u 2:7:(0):6:(color($1)) w vectors nohead      lt 1 lc variable not, \
+FN_IN_CD u 4:7:(0):6:(color($1)) w vectors nohead lw 2 lt 0 lc variable not, \
+FN_IN_CD u 2:($7+$6/2.0):1:(color($1)) w labels right offset -0.5,0 font ",8" tc variable not, \
+legendAccesses(x) w lines lc rgb "black" not
+
+# steps doesn't work with lc variable
+#FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)):(color($1)) w steps lc variable not, \
+#FN_IN_AC u 3:2:($2 + AccessCountHeight($6+$7)):(color($1)) w filledcurves lc variable not, \
 
 # This doesn't fill the exact same area as the steps, but was the closest thing
 # that I can find.

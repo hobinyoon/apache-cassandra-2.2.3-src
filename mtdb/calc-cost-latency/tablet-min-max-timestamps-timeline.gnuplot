@@ -9,6 +9,8 @@ MAX_NUM_ACCESSES = system("echo $MAX_NUM_ACCESSES")
 MIN_TIMESTAMP_RANGE = system("echo $MIN_TIMESTAMP_RANGE")
 DESC = system("echo $DESC")
 
+load "../conf/colorscheme.gnuplot"
+
 set xdata time
 set ydata time
 set timefmt "%y%m%d-%H%M%S"
@@ -53,8 +55,6 @@ set key top left font ",8"
 
 set samples 5000
 
-load "../conf/colorscheme.gnuplot"
-
 x1p = (X_MAX - X_MIN) / 100
 y1p = (Y_MAX - Y_MIN) / 100
 
@@ -66,11 +66,11 @@ set label DESC at x0, y0 left tc rgb "black" font ",7"
 # Legend
 x1 = X_MIN + 5*x1p
 x2 = x1 + 10*x1p
-y2 = y0 - 15*y1p
-y0 = y2 - 15*y1p
-set object rect from x1, y0 to x2, y2 fc rgb "black" fs transparent solid 0.05 noborder
-set arrow from x1, y0 to x1, y2 lc rgb "black" nohead
-#set arrow from x1, y2 to x2, y2 lc rgb "black" nohead
+y1 = y0 - 15*y1p
+y0 = y1 - 15*y1p
+set object rect from x1, y0 to x2, y1 fc rgb "black" fs transparent solid 0.05 noborder
+set arrow from x1, y0 to x1, y1 lc rgb "black" nohead
+#set arrow from x1, y1 to x2, y1 lc rgb "black" nohead
 
 y3 = y0 - 6*y1p
 set arrow from x1, y0 to x1, y3 lt 0 lc rgb "black" nohead
@@ -82,21 +82,21 @@ set label "deleted" at x2, y4 center tc rgb "black" font ",8"
 
 x3 = x2 + 3*x1p
 set arrow from x2, y0 to x3, y0 lt 0 lc rgb "black" nohead
-set arrow from x2, y2 to x3, y2 lt 0 lc rgb "black" nohead
+set arrow from x2, y1 to x3, y1 lt 0 lc rgb "black" nohead
 
 x4 = x3 + x1p
-set label "max timestamp" at x4, y2 left tc rgb "black" font ",8"
+set label "max timestamp" at x4, y1 left tc rgb "black" font ",8"
 set label "min timestamp" at x4, y0 left tc rgb "black" font ",8"
 
-set label "sst gen" at x1, (y0 + y2) / 2 right offset -0.5, 0 tc rgb "black" font ",8"
+set label "sst gen" at x1, (y0 + y1) / 2 right offset -0.5, 0 tc rgb "black" font ",8"
 
 legendAccesses(x) = (x1 < x) && (x < x2) && (sin(x / (x2 - x1) * pi * 150) > 0) ? \
-										y0 + (y2 - y0) * (1 - sin((x - x1) / (x2 - x1) * pi / 2)) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
+										y0 + (y1 - y0) * (1 - sin((x - x1) / (x2 - x1) * pi / 2)) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
 										: 1 / 0
 
 x6 = x1 + 5*x1p
 x7 = x2 + 6*x1p
-y5 = (y0 + y2) / 2
+y5 = (y0 + y1) / 2
 set arrow from x6, y5 to x7, y5 lt 0 lc rgb "black" nohead
 
 x8 = x7 + x1p
@@ -121,17 +121,17 @@ color(a) = mod(a, 6)
 set style fill transparent solid 0.10 noborder
 
 plot \
-FN_IN_TS u 2:6:2:5:6:7:(color($1)) w boxxyerrorbars linecolor variable not, \
-FN_IN_TS u 2:6:(0):9:(color($1)) w vectors nohead linecolor variable not, \
+FN_IN_TS u 2:6:2:5:6:7:(color($1)) w boxxyerrorbars lc variable not, \
+FN_IN_TS u 2:6:(0):9:(color($1)) w vectors nohead lc variable not, \
 FN_IN_TS u 2:8:1:(color($1)) w labels right offset -0.5,0 textcolor variable font ",8" not, \
 legendAccesses(x) w lines lc rgb "black" not, \
 FN_IN_AC u 2:8:(color($1)) w points pointsize 0.01 lc variable not # "# of accesses"
 
 # "vectors" doesn't have dotted line... dang
-#FN_IN_TS u 4:6:(0):9:(color($1)) w vectors nohead linecolor variable lt -1 not, \
+#FN_IN_TS u 4:6:(0):9:(color($1)) w vectors nohead lc variable lt -1 not, \
 
 # 3rd and 4th columns of "vectors" takes number, not date format... dang.
-#FN_IN_TS u 2:6:(0):9:(color($1)) w vectors nohead linecolor variable not, \
+#FN_IN_TS u 2:6:(0):9:(color($1)) w vectors nohead lc variable not, \
 
 # steps doesn't work with lc variable... dang
-#FN_IN_AC u 2:8:(color($1)) w steps linecolor variable t "# of accesses"
+#FN_IN_AC u 2:8:(color($1)) w steps lc variable t "# of accesses"

@@ -60,7 +60,7 @@ def TabletMinMaxTimestampsTimeline():
 		env["FN_IN_AC"] = fn_in_ac
 		env["FN_OUT"] = fn_out
 		env["DESC"] = Desc.GnuplotDesc()
-		env["MAX_NUM_ACCESSES"] = str(int(TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator.NumToTime.max_num_bf_positives_per_day))
+		env["MAX_NUM_ACCESSES"] = str(int(round(TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator.NumToTime.max_num_bf_positives_per_day, 0)))
 		env["MIN_TIMESTAMP_RANGE"] = str(int(TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator.NumToTime.min_timestamp_range.total_seconds()))
 		_RunSubp("gnuplot %s/tablet-min-max-timestamps-timeline.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))

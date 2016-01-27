@@ -9,9 +9,10 @@ import CassLogReader
 import Desc
 import LoadgenLogReader
 import StorageSizeByTimePlotDataGenerator
+import TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator
 import TabletAccessesForTabletSizeTimelinePlotDataGenerator
 import TabletMinMaxTimestampsTimelinePlotDataGenerator
-import TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator
+import TabletSizeTimelinePlotDataGenerator
 
 
 def Latency():
@@ -38,8 +39,8 @@ def StorageSize():
 
 def TabletSizesTimeline():
 	with Cons.MeasureTime("Plotting tablet sizes timeline ..."):
-		fn_in_cd = TabletAccessesForTabletSizeTimelinePlotDataGenerator._fn_plot_data_tablet_timeline_created_deleted
-		fn_in_ac = TabletAccessesForTabletSizeTimelinePlotDataGenerator._fn_plot_data_tablet_access_counts_by_time
+		fn_in_cd = TabletSizeTimelinePlotDataGenerator._fn_plot_data
+		fn_in_ac = TabletAccessesForTabletSizeTimelinePlotDataGenerator._fn_plot_data
 		fn_out = os.path.dirname(__file__) + "/" + Desc.ExpDatetime() + "-tablet-sizes-timeline.pdf"
 		env = os.environ.copy()
 		env["FN_IN_CD"] = fn_in_cd

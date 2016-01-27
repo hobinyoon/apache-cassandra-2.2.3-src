@@ -37,19 +37,19 @@ unset ytics
 
 set format x "'%y"
 
+x1p = (X_MAX - X_MIN) / 100
+y1p = (Y_MAX - Y_MIN) / 100
+
 # Give some margin on the left and at the bottom
-x0=X_MIN-(365.25/12*1.3*24*3600)
-x1=X_MAX+(365.25/12*0.5*24*3600)
-y0=Y_MIN-(5*1024*1024)
+x0=X_MIN-x1p
+x1=X_MAX+x1p
+y0=Y_MIN-y1p
 y1=Y_MAX
 
 set xrange [x0:x1]
 set yrange [y0:y1]
 
 set key top left
-
-x1p = (X_MAX - X_MIN) / 100
-y1p = (Y_MAX - Y_MIN) / 100
 
 # Desc
 x0 = X_MIN

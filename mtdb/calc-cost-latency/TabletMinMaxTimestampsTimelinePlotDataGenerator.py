@@ -22,6 +22,12 @@ def Gen():
 		_WriteToFile()
 
 
+def GetTabletMinTimestamp(sst_gen):
+	if sst_gen not in _id_events:
+		raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
+	return _id_events[sst_gen].min_timestamp
+
+
 class Events:
 	def __init__(self):
 		self.created = None

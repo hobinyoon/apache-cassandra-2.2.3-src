@@ -109,8 +109,8 @@ def _CalcTabletsYCords():
 	# Areas intersecting the current sweep line
 	areas = []
 
-	# Y spacing between blocks. 4 MB.
-	y_spacing = 4 * 1024 * 1024
+	# Y spacing between blocks
+	y_spacing = 0
 
 	for id, v in sorted(_id_events.iteritems()):
 		# Delete areas that are past the sweeping line

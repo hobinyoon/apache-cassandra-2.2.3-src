@@ -26,16 +26,10 @@ def Gen():
 class Events:
 	def __init__(self):
 		self.time_cnts = {}
-		self.min_timestamp = None
 
 	def AddAccStat(self, simulated_time, tablet_acc_stat):
 		# tablet_acc_stat is of type EventAccessStat.AccStat
 		self.time_cnts[simulated_time] = tablet_acc_stat
-		if self.min_timestamp == None:
-			self.min_timestamp = tablet_acc_stat.min_timestamp
-		elif self.min_timestamp != tablet_acc_stat.min_timestamp:
-			raise RuntimeError("Unexpected: self.min_timestamp (%s) != tablet_acc_stat.min_timestamp (%s)"
-					% (self.min_timestamp, tablet_acc_stat.min_timestamp))
 
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
@@ -54,6 +48,7 @@ def _BuildIdEventsMap(e):
 			if sst_gen not in _id_events:
 				_id_events[sst_gen] = Events()
 			_id_events[sst_gen].AddAccStat(e.simulated_time, e1)
+			#Cons.P("%s %s" % (e.simulated_time, e1))
 
 
 class NumToTime:
@@ -122,11 +117,16 @@ class NumToTime:
 
 	@staticmethod
 	def ConvLogscale(base_time, cnt):
-		if cnt == 0:
-			return NumToTime.datetime_out_of_rage
-		else:
-			return (base_time + datetime.timedelta(seconds = (NumToTime.min_timestamp_range.total_seconds()
-				* math.log(cnt + 1) / math.log(NumToTime.max_num_bf_positives_per_day + 1)))).strftime("%y%m%d-%H%M%S.%f")
+		try:
+			if cnt == 0:
+				return NumToTime.datetime_out_of_rage
+			else:
+				return (base_time + datetime.timedelta(seconds = (NumToTime.min_timestamp_range.total_seconds()
+					* math.log(cnt + 1) / math.log(NumToTime.max_num_bf_positives_per_day + 1)))).strftime("%y%m%d-%H%M%S.%f")
+		except ValueError as e:
+			Cons.P("%s: cnt=%d NumToTime.max_num_bf_positives_per_day=%d"
+					% (e, cnt, NumToTime.max_num_bf_positives_per_day))
+			raise
 
 
 def _WriteToFile():
@@ -151,6 +151,7 @@ def _WriteToFile():
 			# These two are not complete numbers. They are not always tracked.
 			num_tp_prev = 0
 			num_fp_prev = 0
+			min_timestamp = TabletMinMaxTimestampsTimelinePlotDataGenerator.GetTabletMinTimestamp(id_)
 			for time_, cnts in sorted(v.time_cnts.iteritems()):
 				num_negatives = cnts.num_reads - cnts.num_bf_positives
 				if time_prev == None:
@@ -164,15 +165,24 @@ def _WriteToFile():
 						raise RuntimeError("Unexpected: time_(%s) == time_prev" % time_)
 					time_dur_days = (time_ - time_prev).total_seconds() / (24.0 * 3600)
 					num_bf_positives_per_day = (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
+					if cnts.num_bf_positives < num_bf_positives_prev:
+						num_bf_positives_per_day = 0
+						# This can happen when multiple threads create SSTable access stat instances simultaneously.
+						Cons.P("BF positives decreases and ignored: %20s %d %d %f"
+								% (time_.strftime("%y%m%d-%H%M%S.%f")
+									, num_bf_positives_prev
+									, cnts.num_bf_positives
+									, time_dur_days
+									))
 					fo.write((fmt + "\n") % (id_
 						, time_.strftime("%y%m%d-%H%M%S.%f")
-						, v.min_timestamp.strftime("%y%m%d-%H%M%S.%f")
+						, min_timestamp.strftime("%y%m%d-%H%M%S.%f")
 						, (cnts.num_reads - num_reads_prev) / time_dur_days
 						, num_bf_positives_per_day
 						, (num_negatives - num_negatives_prev) / time_dur_days
 						, (cnts.num_tp - num_tp_prev) / time_dur_days
 						, (cnts.num_fp - num_fp_prev) / time_dur_days
-						, NumToTime.ConvLogscale(v.min_timestamp, num_bf_positives_per_day)
+						, NumToTime.ConvLogscale(min_timestamp, num_bf_positives_per_day)
 						))
 				time_prev = time_
 				num_reads_prev = cnts.num_reads

@@ -43,10 +43,13 @@ set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,(365.25*24*3600)
 set format x "'%y"
 set format y "'%y"
 
+x1p = (X_MAX - X_MIN) / 100
+y1p = (Y_MAX - Y_MIN) / 100
+
 # Give some margin on the left and at the bottom
-x0=X_MIN-(365.25/12*1.3*24*3600)
-x1=X_MAX+(365.25/12*0.5*24*3600)
-y0=Y_MIN - (365.25/12*0.5*24*3600)
+x0=X_MIN - 3*x1p
+x1=X_MAX + 2*x1p
+y0=Y_MIN - y1p
 y1=Y_MAX
 set xrange [x0:x1]
 set yrange [y0:y1]
@@ -55,16 +58,13 @@ set key top left font ",8"
 
 set samples 5000
 
-x1p = (X_MAX - X_MIN) / 100
-y1p = (Y_MAX - Y_MIN) / 100
-
 # Desc
-x0 = X_MIN - 2*x1p
+x0 = X_MIN - x1p
 y0 = Y_MAX - 3*y1p
 set label DESC at x0, y0 left tc rgb "black" font ",7"
 
 # Legend
-x1 = X_MIN + x1p
+x1 = X_MIN + 2*x1p
 x2 = x1 + 10*x1p
 y1 = y0 - 15*y1p
 y0 = y1 - 15*y1p

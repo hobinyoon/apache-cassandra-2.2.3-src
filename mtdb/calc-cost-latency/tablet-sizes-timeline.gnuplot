@@ -76,10 +76,10 @@ set arrow from x3, y1 to x3, y2 lc rgb "black" nohead
 set arrow from x3 - 0.2*x1p, y2 to x3 + 0.2*x1p, y2 lc rgb "black" nohead
 set arrow from x3 - 0.2*x1p, y1 to x3 + 0.2*x1p, y1 lc rgb "black" nohead
 
-set label (sprintf("%d MB", (y2 - y1)/1024/1024)) at x3, y2 right offset -0.5, 0 tc rgb "black" font ",8"
+set label (sprintf("%.1f MB", (y2 - y1)/1024/1024)) at x3, y2 right offset -0.5, 0 tc rgb "black" font ",8"
 set label "0"                                     at x3, y1 right offset -0.5, 0 tc rgb "black" font ",8"
 
-x4 = x3 - 6.5*x1p
+x4 = x3 - 7*x1p
 set label "Tablet size" at x4, y3 center rotate by 90 tc rgb "black" font ",8"
 
 y4 = y1 - 4*y1p

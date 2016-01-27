@@ -116,11 +116,11 @@ AccessCountHeight(x) = x == 0 ? \
 x8 = x7 + 11*x1p
 y7 = y3 - AccessCountHeight(AC_MAX) / 2.0
 y8 = y3 + AccessCountHeight(AC_MAX) / 2.0
-set arrow from x8, y7 to x8, y8 lc rgb "red" nohead
-set arrow from x8 - 0.2*x1p, y7 to x8 + 0.2*x1p, y7 lc rgb "red" nohead
-set arrow from x8 - 0.2*x1p, y8 to x8 + 0.2*x1p, y8 lc rgb "red" nohead
-set label (sprintf("%d", AC_MAX)) at x8, y8 left offset 0.4, 0.1 tc rgb "red" font ",7"
-set label "0"                     at x8, y7 left offset 0.4,-0.1 tc rgb "red" font ",7"
+set arrow from x8, y7 to x8, y8 lc rgb "black" nohead
+set arrow from x8 - 0.2*x1p, y7 to x8 + 0.2*x1p, y7 lc rgb "black" nohead
+set arrow from x8 - 0.2*x1p, y8 to x8 + 0.2*x1p, y8 lc rgb "black" nohead
+set label (sprintf("%d", AC_MAX)) at x8, y8 left offset 0.4, 0.1 tc rgb "black" font ",7"
+set label "0"                     at x8, y7 left offset 0.4,-0.1 tc rgb "black" font ",7"
 
 set samples 5000
 

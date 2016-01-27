@@ -59,12 +59,12 @@ x1p = (X_MAX - X_MIN) / 100
 y1p = (Y_MAX - Y_MIN) / 100
 
 # Desc
-x0 = X_MIN
+x0 = X_MIN - 2*x1p
 y0 = Y_MAX - 3*y1p
 set label DESC at x0, y0 left tc rgb "black" font ",7"
 
 # Legend
-x1 = X_MIN + 5*x1p
+x1 = X_MIN + x1p
 x2 = x1 + 10*x1p
 y1 = y0 - 15*y1p
 y0 = y1 - 15*y1p
@@ -88,14 +88,15 @@ x4 = x3 + x1p
 set label "max timestamp" at x4, y1 left tc rgb "black" font ",8"
 set label "min timestamp" at x4, y0 left tc rgb "black" font ",8"
 
-set label "sst gen" at x1, (y0 + y1) / 2 right offset -0.5, 0 tc rgb "black" font ",8"
+y2 = (y0 + y1)/2 + y1p
+set label "sst\ngen" at x1, y2 right offset -0.5, 0 tc rgb "black" font ",8"
 
 legendAccesses(x) = (x1 < x) && (x < x2) && (sin(x / (x2 - x1) * pi * 150) > 0) ? \
 										y0 + (y1 - y0) * cos((x - x1) / (x2 - x1) * pi / 2) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
 										: 1 / 0
 
 x6 = x1 + 8*x1p
-x7 = x2 + 6*x1p
+x7 = x2 + 8*x1p
 y5 = (y0 + y1) / 2
 set arrow from x6, y5 to x7, y5 lt 0 lc rgb "black" nohead
 

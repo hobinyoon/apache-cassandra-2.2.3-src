@@ -49,7 +49,7 @@ def _BuildIdEventsMap(e):
 def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) \
-			+ "/plot-data/" + Desc.ExpDatetime() + "-tablet-access-counts-by-time"
+			+ "/plot-data/" + Desc.ExpDatetime() + "-tablet-accesses-for-tablet-size-plot-by-time"
 	with open(_fn_plot_data, "w") as fo:
 		fmt = "%2s %10d %20s %20s" \
 				" %7.0f %7.0f %7.0f" \

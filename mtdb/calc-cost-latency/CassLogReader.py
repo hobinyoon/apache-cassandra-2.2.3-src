@@ -61,9 +61,11 @@ def _ReadCassMtdbLog():
 			if "MTDB:" in line:
 				lines.append(line.strip())
 
-	# Look at system.log.1.zip when "MTDB: ClearAccStat" is not found
-	if found_clear_acc_stat == False:
-		fn = os.path.expanduser("~") + "/work/cassandra/logs/system.log.1.zip"
+	# Keep reading zipped files like system.log.1.zip, until "MTDB: ClearAccStat"
+	# is found
+	i = 1
+	while found_clear_acc_stat == False:
+		fn = os.path.expanduser("~") + ("/work/cassandra/logs/system.log.%d.zip" % i)
 		Cons.P("MTDB: ClearAccStat not found. Reading more from file %s ..." % fn)
 		with zipfile.ZipFile(fn, "r") as z:
 			for fn1 in z.namelist():
@@ -76,13 +78,12 @@ def _ReadCassMtdbLog():
 						del lines1[:]
 					if "MTDB:" in line:
 						lines1.append(line.strip())
+		if len(lines1) != 0:
+			lines1.extend(lines)
+			lines = list(lines1)
+			del lines1[:]
+		i += 1
 
-	if found_clear_acc_stat == False:
-		raise RuntimeError("Incomplete Cassandra log. No MTDB: ClearAccStat in either of system.log or system.log.1.zip")
-
-	if len(lines1) != 0:
-		lines1.extend(lines)
-		lines = lines1
 	#for line in lines:
 	#	print line
 	global _raw_lines
@@ -93,11 +94,11 @@ def _ReadCassMtdbLog():
 
 def _WriteToFile():
 	fn = _StoredCassMtdbLogFilename()
-	Cons.P("Writing Cassandra MTDB log to file %s" % fn)
 	with open(fn, "w") as fo:
 		for line in _raw_lines:
 			fo.write(line)
 			fo.write("\n")
+	Cons.P("Created a Cassandra MTDB log file %s %d" % (fn, os.path.getsize(fn)))
 
 
 class Event(object):

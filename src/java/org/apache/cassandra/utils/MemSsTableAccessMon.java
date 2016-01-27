@@ -59,11 +59,18 @@ public class MemSsTableAccessMon
 
     private static class _SSTableAccCnt {
         private SSTableReader _sstr;
+        private AtomicLong _bf_positives;
+
         private boolean deleted = false;
         private boolean loggedAfterDiscarded = false;
 
         public _SSTableAccCnt(SSTableReader sstr) {
             _sstr = sstr;
+            _bf_positives = new AtomicLong(0);
+        }
+
+        public void IncrementBfPositives() {
+            _bf_positives.incrementAndGet();
         }
 
         @Override
@@ -73,6 +80,7 @@ public class MemSsTableAccessMon
             StringBuilder sb = new StringBuilder(80);
             sb.append(_sstr.bytesOnDisk())
                 .append(",").append(_sstr.getReadMeter().count())
+                .append(",").append(_bf_positives.get())
                 .append(",").append(_sstr.getBloomFilterTruePositiveCount())
                 .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
                 .append(",").append(_simpleDateFormat.format(min_ts))
@@ -117,7 +125,7 @@ public class MemSsTableAccessMon
 
 
     public static void Update(SSTableReader r) {
-        Descriptor key = r.descriptor;
+        Descriptor sst_desc = r.descriptor;
 
         // The race condition (time of check and modify) that may overwrite the
         // first put() is harmless. It avoids an expensive locking.
@@ -125,14 +133,32 @@ public class MemSsTableAccessMon
         // creation of _SSTableAccCnt(). It will help visualize the gap between
         // the creation of the tmp tablet and the first access to the regular
         // tablet.
-        if (_ssTableAccCnt.get(key) == null) {
-            _ssTableAccCnt.put(key, new _SSTableAccCnt(r));
+        if (_ssTableAccCnt.get(sst_desc) == null) {
+            _ssTableAccCnt.put(sst_desc, new _SSTableAccCnt(r));
             _updatedSinceLastOutput = true;
             _or.Wakeup();
         } else {
             _updatedSinceLastOutput = true;
         }
     }
+
+
+    public static void BloomfilterPositive(SSTableReader r) {
+        Descriptor sst_desc = r.descriptor;
+
+        _SSTableAccCnt sstAC = _ssTableAccCnt.get(sst_desc);
+        if (sstAC == null) {
+            sstAC = new _SSTableAccCnt(r);
+            sstAC.IncrementBfPositives();
+            _ssTableAccCnt.put(sst_desc, sstAC);
+            _updatedSinceLastOutput = true;
+            _or.Wakeup();
+        } else {
+            sstAC.IncrementBfPositives();
+            _updatedSinceLastOutput = true;
+        }
+    }
+
 
     // MemTable created
     public static void Created(Memtable m) {

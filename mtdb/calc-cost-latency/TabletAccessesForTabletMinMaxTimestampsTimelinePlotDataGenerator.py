@@ -62,6 +62,10 @@ class NumToTime:
 	# in seconds, in float
 	timedur_per_access = None
 
+	# To skip plotting
+	datetime_out_of_rage = "090101-000000.000000"
+
+
 	# Number of accesses is the sum of true and false positives, both of which
 	# access the SSTable.
 	@staticmethod
@@ -117,8 +121,11 @@ class NumToTime:
 
 	@staticmethod
 	def ConvLogscale(base_time, cnt):
-		return base_time + datetime.timedelta(seconds = (NumToTime.min_timestamp_range.total_seconds()
-			* math.log(cnt + 1) / math.log(NumToTime.max_num_tpfp_per_day + 1)))
+		if cnt == 0:
+			return NumToTime.datetime_out_of_rage
+		else:
+			return (base_time + datetime.timedelta(seconds = (NumToTime.min_timestamp_range.total_seconds()
+				* math.log(cnt + 1) / math.log(NumToTime.max_num_tpfp_per_day + 1)))).strftime("%y%m%d-%H%M%S.%f")
 
 
 def _WriteToFile():
@@ -160,7 +167,7 @@ def _WriteToFile():
 						, num_tp_per_day
 						, num_fp_per_day
 						, (num_negatives - num_negatives_prev) / time_dur_days
-						, NumToTime.ConvLogscale(v.min_timestamp, num_tp_per_day + num_fp_per_day).strftime("%y%m%d-%H%M%S.%f")
+						, NumToTime.ConvLogscale(v.min_timestamp, num_tp_per_day + num_fp_per_day)
 						))
 				time_prev = time_
 				num_reads_prev = cnts.num_reads

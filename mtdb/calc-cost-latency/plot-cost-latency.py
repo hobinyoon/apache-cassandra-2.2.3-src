@@ -26,7 +26,7 @@ def main(argv):
 
 	Plot.Latency()
 	Plot.StorageSize()
-	Plot.TabletAccessesTimeline()
+	Plot.TabletSizesTimeline()
 	Plot.TabletMinMaxTimestampsTimeline()
 
 

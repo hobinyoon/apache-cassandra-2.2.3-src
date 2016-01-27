@@ -51,7 +51,7 @@ set yrange [y0:y1]
 
 set key top left font ",8"
 
-set samples 1000
+set samples 5000
 
 load "../conf/colorscheme.gnuplot"
 
@@ -70,7 +70,7 @@ y2 = y0 - 15*y1p
 y0 = y2 - 15*y1p
 set object rect from x1, y0 to x2, y2 fc rgb "black" fs transparent solid 0.05 noborder
 set arrow from x1, y0 to x1, y2 lc rgb "black" nohead
-set arrow from x1, y2 to x2, y2 lc rgb "black" nohead
+#set arrow from x1, y2 to x2, y2 lc rgb "black" nohead
 
 y3 = y0 - 6*y1p
 set arrow from x1, y0 to x1, y3 lt 0 lc rgb "black" nohead
@@ -90,7 +90,7 @@ set label "min timestamp" at x4, y0 left tc rgb "black" font ",8"
 
 set label "sst gen" at x1, (y0 + y2) / 2 right offset -0.5, 0 tc rgb "black" font ",8"
 
-legendAccesses(x) = (x1 < x) && (x < x2) ? \
+legendAccesses(x) = (x1 < x) && (x < x2) && (sin(x / (x2 - x1) * pi * 150) > 0) ? \
 										y0 + (y2 - y0) * (1 - sin((x - x1) / (x2 - x1) * pi / 2)) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
 										: 1 / 0
 
@@ -115,6 +115,7 @@ set label MAX_NUM_ACCESSES at x9, y8 left offset 0.4,0 tc rgb "black" font ",7"
 # gnuplot doesn't have a mod function
 #   http://www.macs.hw.ac.uk/~ml355/lore/gnuplot.htm
 mod(a, b) = a - floor(a/b) * b
+
 color(a) = mod(a, 6)
 
 set style fill transparent solid 0.10 noborder

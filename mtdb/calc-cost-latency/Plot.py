@@ -36,16 +36,17 @@ def StorageSize():
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
-def TabletAccessesTimeline():
-	with Cons.MeasureTime("Plotting tablet accesses timeline ..."):
+def TabletSizesTimeline():
+	with Cons.MeasureTime("Plotting tablet sizes timeline ..."):
 		fn_in_cd = TabletAccessesForTabletSizeTimelinePlotDataGenerator._fn_plot_data_tablet_timeline_created_deleted
 		fn_in_ac = TabletAccessesForTabletSizeTimelinePlotDataGenerator._fn_plot_data_tablet_access_counts_by_time
-		fn_out = os.path.dirname(__file__) + "/" + Desc.ExpDatetime() + "-tablet-accesses-timeline.pdf"
+		fn_out = os.path.dirname(__file__) + "/" + Desc.ExpDatetime() + "-tablet-sizes-timeline.pdf"
 		env = os.environ.copy()
 		env["FN_IN_CD"] = fn_in_cd
 		env["FN_IN_AC"] = fn_in_ac
 		env["FN_OUT"] = fn_out
-		_RunSubp("gnuplot %s/tablet-accesses-timeline.gnuplot" % os.path.dirname(__file__), env)
+		env["DESC"] = Desc.GnuplotDesc()
+		_RunSubp("gnuplot %s/tablet-sizes-timeline.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

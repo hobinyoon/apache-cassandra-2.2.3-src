@@ -137,9 +137,11 @@ plot \
 FN_IN_CD u 2:7:2:5:7:($7+$6):(color($1)) w boxxyerrorbars lc variable not, \
 FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)):(color($1)) w points pointsize 0.01 lc variable not, \
 FN_IN_CD u 2:7:(0):6:(color($1)) w vectors nohead      lt 1 lc variable not, \
-FN_IN_CD u 4:7:(0):6:(color($1)) w vectors nohead lw 2 lt 0 lc variable not, \
 FN_IN_CD u 2:($7+$6/2.0):1:(color($1)) w labels right offset -0.5,0 font ",8" tc variable not, \
 legendAccesses(x) w lines lc rgb "black" not
+
+# dotted line doesn't work with lc variable
+#FN_IN_CD u 4:7:(0):6:(color($1)) w vectors nohead lw 2 lt 0 lc variable not, \
 
 # steps doesn't work with lc variable
 #FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)):(color($1)) w steps lc variable not, \

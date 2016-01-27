@@ -65,7 +65,6 @@ class NumToTime:
 	# To skip plotting
 	datetime_out_of_rage = "090101-000000.000000"
 
-
 	# Number of accesses is the sum of true and false positives, both of which
 	# access the SSTable.
 	@staticmethod
@@ -86,9 +85,16 @@ class NumToTime:
 						raise RuntimeError("Unexpected: time_(%s) == time_prev" % time_)
 					time_dur_days = (time_ - time_prev).total_seconds() / (24.0 * 3600)
 					num_bf_positives_per_day = (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
+					#Cons.P("%02d %20s %10d %10.6f %13.6f"
+					#		% (sstgen
+					#			, time_.strftime("%y%m%d-%H%M%S.%f")
+					#			, cnts.num_bf_positives - num_bf_positives_prev
+					#			, time_dur_days
+					#			, num_bf_positives_per_day))
 					NumToTime.max_num_bf_positives_per_day = max(NumToTime.max_num_bf_positives_per_day, num_bf_positives_per_day)
 				time_prev = time_
-		Cons.P("NumToTime.max_num_bf_positives_per_day: %d" % NumToTime.max_num_bf_positives_per_day)
+				num_bf_positives_prev = cnts.num_bf_positives
+		Cons.P("NumToTime.max_num_bf_positives_per_day: %f" % NumToTime.max_num_bf_positives_per_day)
 
 	@staticmethod
 	def _SetMinTabletTimestampRange():

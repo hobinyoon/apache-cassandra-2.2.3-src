@@ -125,7 +125,7 @@ FN_IN_TS u 2:6:2:5:6:7:(color($1)) w boxxyerrorbars lc variable not, \
 FN_IN_TS u 2:6:(0):9:(color($1)) w vectors nohead lc variable not, \
 FN_IN_TS u 2:8:1:(color($1)) w labels right offset -0.5,0 textcolor variable font ",8" not, \
 legendAccesses(x) w lines lc rgb "black" not, \
-FN_IN_AC u 2:8:(color($1)) w points pointsize 0.01 lc variable not # "# of accesses"
+FN_IN_AC u 2:9:(color($1)) w points pointsize 0.01 lc variable not # "# of accesses"
 
 # "vectors" doesn't have dotted line... dang
 #FN_IN_TS u 4:6:(0):9:(color($1)) w vectors nohead lc variable lt -1 not, \

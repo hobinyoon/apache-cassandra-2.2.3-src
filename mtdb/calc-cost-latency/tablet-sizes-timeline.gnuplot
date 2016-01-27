@@ -23,7 +23,7 @@ Y_MAX=GPVAL_DATA_Y_MAX
 # Get AC_MAX, access count max
 set terminal unknown
 plot \
-FN_IN_AC u 3:($6+$7) w points
+FN_IN_AC u 3:6 w points
 AC_MAX=GPVAL_DATA_Y_MAX
 set print "-"
 print sprintf("Max access count of all tablets: %d", AC_MAX)
@@ -135,7 +135,7 @@ set style fill solid TRANSP0 noborder
 # x  y  xlow  xhigh  ylow  yhigh
 plot \
 FN_IN_CD u 2:7:2:5:7:($7+$6):(color($1)) w boxxyerrorbars lc variable not, \
-FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)):(color($1)) w points pointsize 0.01 lc variable not, \
+FN_IN_AC u 3:($2 + AccessCountHeight($6)):(color($1)) w points pointsize 0.01 lc variable not, \
 FN_IN_CD u 2:7:(0):6:(color($1)) w vectors nohead      lt 1 lc variable not, \
 FN_IN_CD u 2:($7+$6/2.0):1:(color($1)) w labels right offset -0.5,0 font ",8" tc variable not, \
 legendAccesses(x) w lines lc rgb "black" not
@@ -144,14 +144,14 @@ legendAccesses(x) w lines lc rgb "black" not
 #FN_IN_CD u 4:7:(0):6:(color($1)) w vectors nohead lw 2 lt 0 lc variable not, \
 
 # steps doesn't work with lc variable
-#FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)):(color($1)) w steps lc variable not, \
-#FN_IN_AC u 3:2:($2 + AccessCountHeight($6+$7)):(color($1)) w filledcurves lc variable not, \
+#FN_IN_AC u 3:($2 + AccessCountHeight($6)):(color($1)) w steps lc variable not, \
+#FN_IN_AC u 3:2:($2 + AccessCountHeight($6)):(color($1)) w filledcurves lc variable not, \
 
 # This doesn't fill the exact same area as the steps, but was the closest thing
 # that I can find.
-#FN_IN_AC u 3:2:($2 + AccessCountHeight($6+$7)) w filledcurves lc rgb "red" not, \
+#FN_IN_AC u 3:2:($2 + AccessCountHeight($6)) w filledcurves lc rgb "red" not, \
 
-#FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)) w linespoints pt 7 pointsize 0.1 lc rgb "black" not, \
+#FN_IN_AC u 3:($2 + AccessCountHeight($6)) w linespoints pt 7 pointsize 0.1 lc rgb "black" not, \
 
 # no base y option, like y0
-#FN_IN_AC u 3:($2 + AccessCountHeight($6+$7)) w fillsteps lc rgb "red" not, \
+#FN_IN_AC u 3:($2 + AccessCountHeight($6)) w fillsteps lc rgb "red" not, \

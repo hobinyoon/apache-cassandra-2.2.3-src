@@ -175,26 +175,30 @@ class EventAccessStat(Event):
 			#Cons.P(t1)
 			self.size = int(t1[0])
 			self.num_reads = int(t1[1])
-			self.num_tp = int(t1[2])
-			self.num_fp = int(t1[3])
-			# number of negatives = num_reads - num_tp - num_fp
-			# no need to convert these to datetime objects
-			self.min_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[4], "%y%m%d-%H%M%S.%f"))
-			self.max_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[5], "%y%m%d-%H%M%S.%f"))
+			self.num_bf_positives = int(t1[2])
+			# These numbers are not complete. They are not tracked when key cache is
+			# present or the tracking is not enabled, which is a per-request option.
+			self.num_tp = int(t1[3])
+			self.num_fp = int(t1[4])
+			# No need to convert these to datetime objects
+			self.min_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[5], "%y%m%d-%H%M%S.%f"))
+			self.max_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[6], "%y%m%d-%H%M%S.%f"))
 
 		def __str__(self):
 			return "SstAccStat: " + super(EventAccessStat.SstAccStat, self).__str__()
 
 	# Memtable-table1@44994146(3.251MiB serialized bytes, 9768 ops, 15%/0% of on/off-heap limit)-17144,13881
 	pattern0 = re.compile(r"( )?Memtable-table1@\d+\(\d*\.*\d*\w* serialized bytes, \d* ops, \d*%\/\d*% of on\/off-heap limit\)-\d+,\d+")
-	#                           09:47735174,124672,70,0,160125-125303.023,160125-125408.551
-	#                           09:47735174
-	#                                  ,124672
-	#                                      ,70
-	#                                          ,0
-	#                                              ,160125-125303.023
-	#                                                           ,160125-125408.551
-	pattern1 = re.compile(r"( )?\d+:\d+,\d+,\d+,\d+,\d+-\d+\.\d+,\d+-\d+\.\d+")
+
+	#                           04:23890266,94839,8542,77,0,160127-120726.501,160127-120809.161
+	#                           04:23890266
+	#                                  ,94839
+	#                                      ,8542
+	#                                          ,77
+	#                                              ,0
+	#                                                  ,160127-120726.501
+	#                                                               ,160127-120809.161
+	pattern1 = re.compile(r"( )?\d+:\d+,\d+,\d+,\d+,\d+,\d+-\d+\.\d+,\d+-\d+\.\d+")
 
 	def __init__(self, t):
 		str0 = " ".join(t[8:])

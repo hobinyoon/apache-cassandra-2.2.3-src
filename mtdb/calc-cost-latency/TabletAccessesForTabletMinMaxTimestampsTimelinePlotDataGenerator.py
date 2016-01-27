@@ -57,7 +57,7 @@ def _BuildIdEventsMap(e):
 
 
 class NumToTime:
-	max_num_tpfp_per_day = 0
+	max_num_bf_positives_per_day = 0
 	min_timestamp_range = None
 	# in seconds, in float
 	timedur_per_access = None
@@ -73,8 +73,7 @@ class NumToTime:
 		global _id_events
 		for sstgen, events in sorted(_id_events.iteritems()):
 			time_prev = None
-			num_tp_prev = 0
-			num_fp_prev = 0
+			num_bf_positives_prev = 0
 			for time_, cnts in sorted(events.time_cnts.iteritems()):
 				if time_prev == None:
 					# We ignore the first time window, i.e., we don't print anything for
@@ -86,14 +85,10 @@ class NumToTime:
 						# It may happen.
 						raise RuntimeError("Unexpected: time_(%s) == time_prev" % time_)
 					time_dur_days = (time_ - time_prev).total_seconds() / (24.0 * 3600)
-					num_tp_per_day = (cnts.num_tp - num_tp_prev) / time_dur_days
-					num_fp_per_day = (cnts.num_fp - num_fp_prev) / time_dur_days
-					num_tpfp_per_day = num_tp_per_day + num_fp_per_day
-					NumToTime.max_num_tpfp_per_day = max(NumToTime.max_num_tpfp_per_day, num_tpfp_per_day)
+					num_bf_positives_per_day = (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
+					NumToTime.max_num_bf_positives_per_day = max(NumToTime.max_num_bf_positives_per_day, num_bf_positives_per_day)
 				time_prev = time_
-				num_tp_prev = cnts.num_tp
-				num_fp_prev = cnts.num_fp
-		Cons.P("NumToTime.max_num_tpfp_per_day: %d" % NumToTime.max_num_tpfp_per_day)
+		Cons.P("NumToTime.max_num_bf_positives_per_day: %d" % NumToTime.max_num_bf_positives_per_day)
 
 	@staticmethod
 	def _SetMinTabletTimestampRange():
@@ -113,7 +108,7 @@ class NumToTime:
 	def SetNumAccessesTimeRatio():
 		NumToTime._SetMaxNumAccesses()
 		NumToTime._SetMinTabletTimestampRange()
-		NumToTime.timedur_per_access = NumToTime.min_timestamp_range.total_seconds() / NumToTime.max_num_tpfp_per_day
+		NumToTime.timedur_per_access = NumToTime.min_timestamp_range.total_seconds() / NumToTime.max_num_bf_positives_per_day
 
 	@staticmethod
 	def Conv(base_time, cnt):
@@ -125,7 +120,7 @@ class NumToTime:
 			return NumToTime.datetime_out_of_rage
 		else:
 			return (base_time + datetime.timedelta(seconds = (NumToTime.min_timestamp_range.total_seconds()
-				* math.log(cnt + 1) / math.log(NumToTime.max_num_tpfp_per_day + 1)))).strftime("%y%m%d-%H%M%S.%f")
+				* math.log(cnt + 1) / math.log(NumToTime.max_num_bf_positives_per_day + 1)))).strftime("%y%m%d-%H%M%S.%f")
 
 
 def _WriteToFile():
@@ -134,20 +129,24 @@ def _WriteToFile():
 			+ "/plot-data/" + Desc.ExpDatetime() + "-tablet-accesses-for-min-max-timestamp-plot-by-time"
 	with open(_fn_plot_data, "w") as fo:
 		fmt = "%2s %20s %20s" \
-				" %10d %10d %10d %10d" \
+				" %10d %10d %10d" \
+				" %10d %10d" \
 				" %20s"
 		fo.write("%s\n" % Util.BuildHeader(fmt,
 			"id(sst_gen) simulated_time y_cord_base(min_timestamp)"
-			" num_reads_per_day num_true_positives_per_day num_false_positives_per_day num_negatives_per_day"
-			" num_true_false_positivies_per_day_converted_to_time"))
+			" num_reads_per_day num_bf_positives_per_day num_bf_negatives_per_day"
+			" num_num_true_positives_per_day(not_complete) num_false_positives_per_day(not_complete)"
+			" num_bf_positivies_per_day_converted_to_time"))
 		for id_, v in sorted(_id_events.iteritems()):
 			time_prev = None
 			num_reads_prev = 0
+			num_bf_positives_prev = 0
+			num_negatives_prev = 0
+			# These two are not complete numbers. They are not always tracked.
 			num_tp_prev = 0
 			num_fp_prev = 0
-			num_negatives_prev = 0
 			for time_, cnts in sorted(v.time_cnts.iteritems()):
-				num_negatives = cnts.num_reads - cnts.num_tp - cnts.num_fp
+				num_negatives = cnts.num_reads - cnts.num_bf_positives
 				if time_prev == None:
 					# We ignore the first time window, i.e., we don't print anything for
 					# it. There is a very small time window between the first access and
@@ -158,21 +157,22 @@ def _WriteToFile():
 						# It may happen.
 						raise RuntimeError("Unexpected: time_(%s) == time_prev" % time_)
 					time_dur_days = (time_ - time_prev).total_seconds() / (24.0 * 3600)
-					num_tp_per_day = (cnts.num_tp - num_tp_prev) / time_dur_days
-					num_fp_per_day = (cnts.num_fp - num_fp_prev) / time_dur_days
+					num_bf_positives_per_day = (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
 					fo.write((fmt + "\n") % (id_
 						, time_.strftime("%y%m%d-%H%M%S.%f")
 						, v.min_timestamp.strftime("%y%m%d-%H%M%S.%f")
 						, (cnts.num_reads - num_reads_prev) / time_dur_days
-						, num_tp_per_day
-						, num_fp_per_day
+						, num_bf_positives_per_day
 						, (num_negatives - num_negatives_prev) / time_dur_days
-						, NumToTime.ConvLogscale(v.min_timestamp, num_tp_per_day + num_fp_per_day)
+						, (cnts.num_tp - num_tp_prev) / time_dur_days
+						, (cnts.num_fp - num_fp_prev) / time_dur_days
+						, NumToTime.ConvLogscale(v.min_timestamp, num_bf_positives_per_day)
 						))
 				time_prev = time_
 				num_reads_prev = cnts.num_reads
+				num_bf_positives_prev = cnts.num_bf_positives
+				num_negatives_prev = num_negatives
 				num_tp_prev = cnts.num_tp
 				num_fp_prev = cnts.num_fp
-				num_negatives_prev = num_negatives
 			fo.write("\n")
 	Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

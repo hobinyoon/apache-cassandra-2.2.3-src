@@ -131,7 +131,7 @@ def _CalcTabletsYCords():
 
 def _WriteToFile():
 	global _fn_plot_data_tablet_timeline_created_deleted
-	_fn_plot_data_tablet_timeline_created_deleted = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-tablet-timeline"
+	_fn_plot_data_tablet_timeline_created_deleted = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-tablet-sizes-timeline"
 	with open(_fn_plot_data_tablet_timeline_created_deleted, "w") as fo:
 		fmt = "%2s %20s %20s %20s %20s %10d %10d"
 		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot "
@@ -152,19 +152,24 @@ def _WriteToFile():
 	_fn_plot_data_tablet_access_counts_by_time = os.path.dirname(__file__) \
 			+ "/plot-data/" + Desc.ExpDatetime() + "-tablet-access-counts-by-time"
 	with open(_fn_plot_data_tablet_access_counts_by_time, "w") as fo:
-		fmt = "%2s %10d %20s %20s %7.0f %7.0f %7.0f %7.0f"
+		fmt = "%2s %10d %20s %20s" \
+				" %7.0f %7.0f %7.0f" \
+				" %7.0f %7.0f"
 		fo.write("%s\n" % Util.BuildHeader(fmt,
 			"id(sst_gen_memt_id_may_be_added_later) y_cord_base_tablet_size_plot time_begin time_end"
-			" num_reads_per_day num_true_positives_per_day num_false_positives_per_day"
-			" num_negatives_per_day"))
+			" num_reads_per_day num_bf_positives_per_day num_bf_negatives_per_day"
+			" num_true_positives_per_day(not_complete) num_false_positives_per_day(not_complete)"
+			))
 		for id_, v in sorted(_id_events.iteritems()):
 			time_prev = None
 			num_reads_prev = 0
+			num_bf_positives_prev = 0
+			num_negatives_prev = 0
+			# These are not complete numbers.
 			num_tp_prev = 0
 			num_fp_prev = 0
-			num_negatives_prev = 0
 			for time_, cnts in sorted(v.time_cnts.iteritems()):
-				num_negatives = cnts.num_reads - cnts.num_tp - cnts.num_fp
+				num_negatives = cnts.num_reads - cnts.num_bf_positives
 				if time_prev == None:
 					# We ignore the first time window, i.e., we don't print anything for
 					# it. There is a very small time window between the first access and
@@ -180,14 +185,16 @@ def _WriteToFile():
 						, time_prev.strftime("%y%m%d-%H%M%S.%f")
 						, time_.strftime("%y%m%d-%H%M%S.%f")
 						, (cnts.num_reads - num_reads_prev) / time_dur_days
+						, (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
+						, (num_negatives - num_negatives_prev) / time_dur_days
 						, (cnts.num_tp - num_tp_prev) / time_dur_days
 						, (cnts.num_fp - num_fp_prev) / time_dur_days
-						, (num_negatives - num_negatives_prev) / time_dur_days
 						))
 				time_prev = time_
 				num_reads_prev = cnts.num_reads
+				num_bf_positives_prev = cnts.num_bf_positives
+				num_negatives_prev = num_negatives
 				num_tp_prev = cnts.num_tp
 				num_fp_prev = cnts.num_fp
-				num_negatives_prev = num_negatives
 			fo.write("\n")
 	Cons.P("Created file %s %d" % (_fn_plot_data_tablet_access_counts_by_time, os.path.getsize(_fn_plot_data_tablet_access_counts_by_time)))

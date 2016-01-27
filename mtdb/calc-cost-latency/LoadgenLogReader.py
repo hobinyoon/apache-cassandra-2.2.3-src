@@ -12,7 +12,6 @@ import Desc
 import SimTime
 
 _dn_log_loadgen = os.path.dirname(__file__) + "/../logs/loadgen"
-_fn_log = None
 _fn_plot_data = None
 
 # _raw_lines0, 1, 2: lines before, in, after progress monitor
@@ -26,12 +25,11 @@ def Read():
 	global _raw_lines0, _raw_lines1, _raw_lines2
 	with Cons.MeasureTime("Reading Loadgen log ..."):
 		fn = Conf.args.exp_datetime
+		Desc.SetExpDatetime(fn)
 		if fn == None:
 			# If not specified, read the latest one
 			fn = _GetYoungestFn()
 		else:
-			global _fn_log
-			_fn_log = fn
 			fn = _dn_log_loadgen + "/" + fn
 		Cons.P("fn=%s" % fn)
 		with open(fn) as fo:
@@ -118,16 +116,15 @@ def _GetYoungestFn():
 	if len(fns) == 0:
 		raise RuntimeError("No log file in %s" % _dn_log_loadgen)
 	fns.sort()
-	global _fn_log
-	_fn_log = fns[-1]
-	Desc.SetExpDatetime(_fn_log)
-	return _dn_log_loadgen + "/" + fns[-1]
+	fn = fns[-1]
+	Desc.SetExpDatetime(fn)
+	return _dn_log_loadgen + "/" + fn
 
 
 def GenLatencyPlotData():
 	with Cons.MeasureTime("Generating plotting data ..."):
 		global _fn_plot_data
-		_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + _fn_log + "-latency-by-time"
+		_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-latency-by-time"
 		with open(_fn_plot_data, "w") as fo:
 			fmt = "%20s %20s %20s %3d %3d"
 			fo.write("%s\n" % Util.BuildHeader(fmt,

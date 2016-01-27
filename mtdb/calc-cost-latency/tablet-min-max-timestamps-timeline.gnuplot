@@ -91,10 +91,10 @@ set label "min timestamp" at x4, y0 left tc rgb "black" font ",8"
 set label "sst gen" at x1, (y0 + y1) / 2 right offset -0.5, 0 tc rgb "black" font ",8"
 
 legendAccesses(x) = (x1 < x) && (x < x2) && (sin(x / (x2 - x1) * pi * 150) > 0) ? \
-										y0 + (y1 - y0) * (1 - sin((x - x1) / (x2 - x1) * pi / 2)) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
+										y0 + (y1 - y0) * cos((x - x1) / (x2 - x1) * pi / 2) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
 										: 1 / 0
 
-x6 = x1 + 5*x1p
+x6 = x1 + 8*x1p
 x7 = x2 + 6*x1p
 y5 = (y0 + y1) / 2
 set arrow from x6, y5 to x7, y5 lt 0 lc rgb "black" nohead

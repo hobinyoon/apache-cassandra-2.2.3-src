@@ -92,10 +92,10 @@ set label "deleted" at x2, y5 center tc rgb "black" font ",8"
 
 
 legendAccesses(x) = (x1 < x) && (x < x2) && (sin(x / (x2 - x1) * pi * 150) > 0) ? \
-										y1 + (y2 - y1) * (1 - sin((x - x1) / (x2 - x1) * pi / 2)) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
+										y1 + (y2 - y1) * cos((x - x1) / (x2 - x1) * pi / 2) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
 										: 1 / 0
 
-x5 = x1 + 3*x1p
+x5 = x1 + 5.5*x1p
 x6 = x2 + 2*x1p
 set arrow from x5, y3 to x6, y3 lt 0 lc rgb "black" nohead
 

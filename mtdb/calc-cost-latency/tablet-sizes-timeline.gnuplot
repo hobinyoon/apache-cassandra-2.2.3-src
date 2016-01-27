@@ -6,6 +6,8 @@ FN_IN_CD = system("echo $FN_IN_CD")
 FN_IN_AC = system("echo $FN_IN_AC")
 FN_OUT = system("echo $FN_OUT")
 DESC = system("echo $DESC")
+MIN_TABLET_SIZE = system("echo $MIN_TABLET_SIZE")
+MAX_BF_POSITIVES_PER_DAY = system("echo $MAX_BF_POSITIVES_PER_DAY")
 
 load "../conf/colorscheme.gnuplot"
 
@@ -19,14 +21,6 @@ X_MIN=GPVAL_DATA_X_MIN
 X_MAX=GPVAL_DATA_X_MAX
 Y_MIN=GPVAL_DATA_Y_MIN
 Y_MAX=GPVAL_DATA_Y_MAX
-
-# Get AC_MAX, access count max
-set terminal unknown
-plot \
-FN_IN_AC u 3:6 w points
-AC_MAX=GPVAL_DATA_Y_MAX
-set print "-"
-print sprintf("Max access count of all tablets: %d", AC_MAX)
 
 set terminal pdfcairo enhanced rounded size 6, 3in
 set output FN_OUT
@@ -105,21 +99,21 @@ set label "# of accesses\nper day" at x7, y6 left tc rgb "black" font ",8"
 
 # Log scale
 #   value range
-#     x              : [0, AC_MAX]
-#     +1             : [1, AC_MAX+1]
-#     log(above)     : [0(=log(1)), log(AC_MAX+1)]
-#     / log(AC_MAX+1) : [0, 1]
+#     x              : [0, max]
+#     +1             : [1, max+1]
+#     log(above)     : [0(=log(1)), log(max+1)]
+#     / log(max+1) : [0, 1]
 AccessCountHeight(x) = x == 0 ? \
 											 1/0 \
-											 : (log(x+1)/log(AC_MAX+1))*10000000
+											 : (log(x+1)/log(MAX_BF_POSITIVES_PER_DAY+1)) * MIN_TABLET_SIZE
 
 x8 = x7 + 11*x1p
-y7 = y3 - AccessCountHeight(AC_MAX) / 2.0
-y8 = y3 + AccessCountHeight(AC_MAX) / 2.0
+y7 = y3 - AccessCountHeight(MAX_BF_POSITIVES_PER_DAY) / 2.0
+y8 = y3 + AccessCountHeight(MAX_BF_POSITIVES_PER_DAY) / 2.0
 set arrow from x8, y7 to x8, y8 lc rgb "black" nohead
 set arrow from x8 - 0.2*x1p, y7 to x8 + 0.2*x1p, y7 lc rgb "black" nohead
 set arrow from x8 - 0.2*x1p, y8 to x8 + 0.2*x1p, y8 lc rgb "black" nohead
-set label (sprintf("%d", AC_MAX)) at x8, y8 left offset 0.4, 0.1 tc rgb "black" font ",7"
+set label (sprintf("%s", MAX_BF_POSITIVES_PER_DAY)) at x8, y8 left offset 0.4, 0.1 tc rgb "black" font ",7"
 set label "0"                     at x8, y7 left offset 0.4,-0.1 tc rgb "black" font ",7"
 
 set samples 5000

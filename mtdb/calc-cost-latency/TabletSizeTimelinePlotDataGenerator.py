@@ -10,8 +10,8 @@ import Desc
 import SimTime
 
 _fn_plot_data = None
-
 _id_events = {}
+
 
 def Gen():
 	with Cons.MeasureTime("Generating tablet accesses timeline plot data ..."):
@@ -25,6 +25,16 @@ def GetBaseYCord(sst_gen):
 	if sst_gen not in _id_events:
 		raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
 	return _id_events[sst_gen].y_cord
+
+
+def MinTabletSize():
+	s = None
+	for id, v in _id_events.iteritems():
+		if s == None:
+			s = v.tablet_size
+		else:
+			s = min(s, v.tablet_size)
+	return s
 
 
 class Events:

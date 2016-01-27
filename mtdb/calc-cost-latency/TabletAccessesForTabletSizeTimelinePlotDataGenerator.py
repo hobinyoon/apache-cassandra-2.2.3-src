@@ -10,14 +10,19 @@ import Desc
 import TabletSizeTimelinePlotDataGenerator
 
 _fn_plot_data = None
-
 _id_events = {}
+_max_num_bf_positives_per_day = 0
+
 
 def Gen():
 	with Cons.MeasureTime("Generating tablet accesses timeline plot data ..."):
 		for l in CassLogReader._logs:
 			_BuildIdEventsMap(l)
 		_WriteToFile()
+
+
+def MaxBfPositivesPerDay():
+	return _max_num_bf_positives_per_day
 
 
 class Events:
@@ -79,12 +84,15 @@ def _WriteToFile():
 						# It may happen.
 						raise RuntimeError("Unexpected: time_(%s) == time_prev" % time_)
 					time_dur_days = (time_ - time_prev).total_seconds() / (24.0 * 3600)
+					num_bf_positives_per_day = (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
+					global _max_num_bf_positives_per_day
+					_max_num_bf_positives_per_day = max(_max_num_bf_positives_per_day, num_bf_positives_per_day)
 					fo.write((fmt + "\n") % (id_
 						, TabletSizeTimelinePlotDataGenerator.GetBaseYCord(id_)
 						, time_prev.strftime("%y%m%d-%H%M%S.%f")
 						, time_.strftime("%y%m%d-%H%M%S.%f")
 						, (cnts.num_reads - num_reads_prev) / time_dur_days
-						, (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
+						, num_bf_positives_per_day
 						, (num_negatives - num_negatives_prev) / time_dur_days
 						, (cnts.num_tp - num_tp_prev) / time_dur_days
 						, (cnts.num_fp - num_fp_prev) / time_dur_days

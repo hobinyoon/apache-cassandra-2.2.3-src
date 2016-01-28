@@ -114,6 +114,18 @@ public class BigTableReader extends SSTableReader
      */
     protected RowIndexEntry getPosition(RowPosition key, Operator op, boolean updateCacheAndStats, boolean permitMatchPastLast)
     {
+        RowIndexEntry r = getPosition0(key, op, updateCacheAndStats, permitMatchPastLast);
+        if (r != null) {
+            if (descriptor.mtdbTable) {
+                MemSsTableAccessMon.SstNeedToReadDataFile(this);
+            }
+        }
+        return r;
+    }
+
+
+    protected RowIndexEntry getPosition0(RowPosition key, Operator op, boolean updateCacheAndStats, boolean permitMatchPastLast)
+    {
         if (op == Operator.EQ)
         {
             assert key instanceof DecoratedKey; // EQ only make sense if the key is a valid row key
@@ -123,12 +135,12 @@ public class BigTableReader extends SSTableReader
             // below doesn't track the request. So, we track all positives
             // here.
             if (bf.isPresent((DecoratedKey)key)) {
-                if (descriptor.mtdbTable) {
-                    MemSsTableAccessMon.BloomfilterPositive(this);
-                    //logger.warn("MTDB: Bloom filter test positive: sstable={} key={}",
-                    //        descriptor.generation,
-                    //        key);
-                }
+                //if (descriptor.mtdbTable) {
+                //    MemSsTableAccessMon.BloomfilterPositive(this);
+                //    //logger.warn("MTDB: Bloom filter test positive: sstable={} key={}",
+                //    //        descriptor.generation,
+                //    //        key);
+                //}
             } else {
                 Tracing.trace("Bloom filter allows skipping sstable {}", descriptor.generation);
                 return null;

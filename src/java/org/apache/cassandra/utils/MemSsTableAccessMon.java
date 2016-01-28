@@ -59,18 +59,24 @@ public class MemSsTableAccessMon
 
     private static class _SSTableAccCnt {
         private SSTableReader _sstr;
-        private AtomicLong _bf_positives;
+        //private AtomicLong _bf_positives;
+        private AtomicLong _needto_read_datafile;
 
         private boolean deleted = false;
         private boolean loggedAfterDiscarded = false;
 
         public _SSTableAccCnt(SSTableReader sstr) {
             _sstr = sstr;
-            _bf_positives = new AtomicLong(0);
+            //_bf_positives = new AtomicLong(0);
+            _needto_read_datafile = new AtomicLong(0);
         }
 
-        public void IncrementBfPositives() {
-            _bf_positives.incrementAndGet();
+        //public void IncrementBfPositives() {
+        //    _bf_positives.incrementAndGet();
+        //}
+
+        public void IncrementNeedToReadDataFile() {
+            _needto_read_datafile.incrementAndGet();
         }
 
         @Override
@@ -80,7 +86,8 @@ public class MemSsTableAccessMon
             StringBuilder sb = new StringBuilder(80);
             sb.append(_sstr.bytesOnDisk())
                 .append(",").append(_sstr.getReadMeter().count())
-                .append(",").append(_bf_positives.get())
+                //.append(",").append(_bf_positives.get())
+                .append(",").append(_needto_read_datafile.get())
                 .append(",").append(_sstr.getBloomFilterTruePositiveCount())
                 .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
                 .append(",").append(_simpleDateFormat.format(min_ts))
@@ -143,18 +150,35 @@ public class MemSsTableAccessMon
     }
 
 
-    public static void BloomfilterPositive(SSTableReader r) {
+    //public static void BloomfilterPositive(SSTableReader r) {
+    //    Descriptor sst_desc = r.descriptor;
+
+    //    _SSTableAccCnt sstAC = _ssTableAccCnt.get(sst_desc);
+    //    if (sstAC == null) {
+    //        sstAC = new _SSTableAccCnt(r);
+    //        sstAC.IncrementBfPositives();
+    //        _ssTableAccCnt.put(sst_desc, sstAC);
+    //        _updatedSinceLastOutput = true;
+    //        _or.Wakeup();
+    //    } else {
+    //        sstAC.IncrementBfPositives();
+    //        _updatedSinceLastOutput = true;
+    //    }
+    //}
+
+
+    public static void SstNeedToReadDataFile(SSTableReader r) {
         Descriptor sst_desc = r.descriptor;
 
         _SSTableAccCnt sstAC = _ssTableAccCnt.get(sst_desc);
         if (sstAC == null) {
             sstAC = new _SSTableAccCnt(r);
-            sstAC.IncrementBfPositives();
+            sstAC.IncrementNeedToReadDataFile();
             _ssTableAccCnt.put(sst_desc, sstAC);
             _updatedSinceLastOutput = true;
             _or.Wakeup();
         } else {
-            sstAC.IncrementBfPositives();
+            sstAC.IncrementNeedToReadDataFile();
             _updatedSinceLastOutput = true;
         }
     }

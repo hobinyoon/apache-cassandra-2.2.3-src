@@ -17,8 +17,7 @@ _id_events = {}
 
 def Gen():
 	with Cons.MeasureTime("Generating tablet min/max timestamp timeline plot data ..."):
-		for l in CassLogReader._logs:
-			_BuildIdEventsMap(l)
+		_BuildIdEventsMap()
 		_WriteToFile()
 
 
@@ -60,21 +59,30 @@ class Events:
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
 
 
-def _BuildIdEventsMap(e):
-	if e.op == "SstCreated" or e.op == "SstDeleted":
-		if e.event.sst_gen not in _id_events:
-			_id_events[e.event.sst_gen] = Events()
-		_id_events[e.event.sst_gen].AddCreatedDeleted(e)
-	elif e.op == "TabletAccessStat":
-		for e1 in e.event.entries:
-			if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
-				# Memtables don't have min/max timestamps
-				pass
-			elif type(e1) is CassLogReader.EventAccessStat.SstAccStat:
-				sst_gen = e1.id_
-				if sst_gen not in _id_events:
-					raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
-				_id_events[sst_gen].SetTimpstamps(e1)
+def _BuildIdEventsMap():
+	for l in CassLogReader._logs:
+		if l.op == "SstCreated" or l.op == "SstDeleted":
+			if l.event.sst_gen not in _id_events:
+				_id_events[l.event.sst_gen] = Events()
+			_id_events[l.event.sst_gen].AddCreatedDeleted(l)
+		elif l.op == "TabletAccessStat":
+			for e1 in l.event.entries:
+				if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
+					# Memtables don't have min/max timestamps
+					pass
+				elif type(e1) is CassLogReader.EventAccessStat.SstAccStat:
+					sst_gen = e1.id_
+					if sst_gen not in _id_events:
+						raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
+					_id_events[sst_gen].SetTimpstamps(e1)
+
+	# Filter out sstables without min/max timestamps. It can happen when the
+	# tablets are created at the end of the experiment period without any
+	# accesses to them followed.
+	for id_ in _id_events.keys():
+		if _id_events[id_].min_timestamp == None:
+			Cons.P("SSTable %d doesn't have min/max timestamp info. Safe to delete." % id_)
+			del _id_events[id_]
 
 
 def _WriteToFile():

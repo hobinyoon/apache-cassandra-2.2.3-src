@@ -113,7 +113,10 @@ class NumToTime:
 
 	@staticmethod
 	def Conv(base_time, cnt):
-		return base_time + datetime.timedelta(seconds = (NumToTime.timedur_per_access * cnt))
+		if cnt == 0:
+			return NumToTime.datetime_out_of_rage
+		else:
+			return (base_time + datetime.timedelta(seconds = (NumToTime.timedur_per_access * cnt))).strftime("%y%m%d-%H%M%S.%f")
 
 	@staticmethod
 	def ConvLogscale(base_time, cnt):
@@ -182,7 +185,7 @@ def _WriteToFile():
 						, (num_negatives - num_negatives_prev) / time_dur_days
 						, (cnts.num_tp - num_tp_prev) / time_dur_days
 						, (cnts.num_fp - num_fp_prev) / time_dur_days
-						, NumToTime.ConvLogscale(min_timestamp, num_needto_read_datafile_per_day)
+						, NumToTime.Conv(min_timestamp, num_needto_read_datafile_per_day)
 						))
 				time_prev = time_
 				num_reads_prev = cnts.num_reads

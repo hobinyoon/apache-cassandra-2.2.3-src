@@ -86,7 +86,7 @@ set label "deleted" at x2, y5 center tc rgb "black" font ",8"
 
 
 legendAccesses(x) = (x1 < x) && (x < x2) && (sin(x / (x2 - x1) * pi * 150) > 0) ? \
-										y1 + (y2 - y1) * cos((x - x1) / (x2 - x1) * pi / 2) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
+										y1 + (y2 - y1) * (1 - sin((x - x1) / (x2 - x1) * pi / 2)) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
 										: 1 / 0
 
 x5 = x1 + 5.5*x1p
@@ -97,15 +97,19 @@ x7 = x6 + x1p
 y6 = y3 + 2*y1p
 set label "# of accesses\nper day" at x7, y6 left tc rgb "black" font ",8"
 
-# Log scale
-#   value range
-#     x              : [0, max]
-#     +1             : [1, max+1]
-#     log(above)     : [0(=log(1)), log(max+1)]
-#     / log(max+1) : [0, 1]
+## Log scale
+##   value range
+##     x              : [0, max]
+##     +1             : [1, max+1]
+##     log(above)     : [0(=log(1)), log(max+1)]
+##     / log(max+1) : [0, 1]
+#AccessCountHeight(x) = x == 0 ? \
+#											 1/0 \
+#											 : (log(x+1)/log(MAX_NEEDTO_READ_DATAFILE_PER_DAY+1)) * MIN_TABLET_SIZE
+
 AccessCountHeight(x) = x == 0 ? \
 											 1/0 \
-											 : (log(x+1)/log(MAX_NEEDTO_READ_DATAFILE_PER_DAY+1)) * MIN_TABLET_SIZE
+											 : x / MAX_NEEDTO_READ_DATAFILE_PER_DAY * MIN_TABLET_SIZE
 
 x8 = x7 + 11*x1p
 y7 = y3 - AccessCountHeight(MAX_NEEDTO_READ_DATAFILE_PER_DAY) / 2.0

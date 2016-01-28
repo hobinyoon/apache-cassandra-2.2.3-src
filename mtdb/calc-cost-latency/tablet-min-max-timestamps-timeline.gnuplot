@@ -92,7 +92,7 @@ y2 = (y0 + y1)/2 + y1p
 set label "sst\ngen" at x1, y2 right offset -0.5, 0 tc rgb "black" font ",8"
 
 legendAccesses(x) = (x1 < x) && (x < x2) && (sin(x / (x2 - x1) * pi * 150) > 0) ? \
-										y0 + (y1 - y0) * cos((x - x1) / (x2 - x1) * pi / 2) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
+										y0 + (y1 - y0) * (1 - sin((x - x1) / (x2 - x1) * pi / 2)) + sin(x / (x2 - x1) * pi * 20) * 0.5*y1p \
 										: 1 / 0
 
 x6 = x1 + 8*x1p

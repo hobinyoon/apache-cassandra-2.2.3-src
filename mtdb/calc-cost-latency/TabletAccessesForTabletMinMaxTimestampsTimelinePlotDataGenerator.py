@@ -67,7 +67,7 @@ class NumToTime:
 		global _id_events
 		for sstgen, events in sorted(_id_events.iteritems()):
 			time_prev = None
-			num_bf_positives_prev = 0
+			num_needto_read_datafile_prev = 0
 			for time_, cnts in sorted(events.time_cnts.iteritems()):
 				if time_prev == None:
 					# We ignore the first time window, i.e., we don't print anything for
@@ -79,16 +79,16 @@ class NumToTime:
 						# It may happen.
 						raise RuntimeError("Unexpected: time_(%s) == time_prev" % time_)
 					time_dur_days = (time_ - time_prev).total_seconds() / (24.0 * 3600)
-					num_bf_positives_per_day = (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
+					num_needto_read_datafile_per_day = (cnts.num_needto_read_datafile - num_needto_read_datafile_prev) / time_dur_days
 					#Cons.P("%02d %20s %10d %10.6f %13.6f"
 					#		% (sstgen
 					#			, time_.strftime("%y%m%d-%H%M%S.%f")
-					#			, cnts.num_bf_positives - num_bf_positives_prev
+					#			, cnts.num_needto_read_datafile - num_needto_read_datafile_prev
 					#			, time_dur_days
-					#			, num_bf_positives_per_day))
-					NumToTime.max_num_bf_positives_per_day = max(NumToTime.max_num_bf_positives_per_day, num_bf_positives_per_day)
+					#			, num_needto_read_datafile_per_day))
+					NumToTime.max_num_bf_positives_per_day = max(NumToTime.max_num_bf_positives_per_day, num_needto_read_datafile_per_day)
 				time_prev = time_
-				num_bf_positives_prev = cnts.num_bf_positives
+				num_needto_read_datafile_prev = cnts.num_needto_read_datafile
 		Cons.P("NumToTime.max_num_bf_positives_per_day: %f" % NumToTime.max_num_bf_positives_per_day)
 
 	@staticmethod
@@ -140,20 +140,20 @@ def _WriteToFile():
 				" %20s"
 		fo.write("%s\n" % Util.BuildHeader(fmt,
 			"id(sst_gen) simulated_time y_cord_base(min_timestamp)"
-			" num_reads_per_day num_bf_positives_per_day num_bf_negatives_per_day"
+			" num_reads_per_day num_needto_read_datafile_per_day num_bf_negatives_per_day"
 			" num_num_true_positives_per_day(not_complete) num_false_positives_per_day(not_complete)"
 			" num_bf_positivies_per_day_converted_to_time"))
 		for id_, v in sorted(_id_events.iteritems()):
 			time_prev = None
 			num_reads_prev = 0
-			num_bf_positives_prev = 0
+			num_needto_read_datafile_prev = 0
 			num_negatives_prev = 0
 			# These two are not complete numbers. They are not always tracked.
 			num_tp_prev = 0
 			num_fp_prev = 0
 			min_timestamp = TabletMinMaxTimestampsTimelinePlotDataGenerator.GetTabletMinTimestamp(id_)
 			for time_, cnts in sorted(v.time_cnts.iteritems()):
-				num_negatives = cnts.num_reads - cnts.num_bf_positives
+				num_negatives = cnts.num_reads - cnts.num_needto_read_datafile
 				if time_prev == None:
 					# We ignore the first time window, i.e., we don't print anything for
 					# it. There is a very small time window between the first access and
@@ -164,29 +164,29 @@ def _WriteToFile():
 						# It may happen.
 						raise RuntimeError("Unexpected: time_(%s) == time_prev" % time_)
 					time_dur_days = (time_ - time_prev).total_seconds() / (24.0 * 3600)
-					num_bf_positives_per_day = (cnts.num_bf_positives - num_bf_positives_prev) / time_dur_days
-					if cnts.num_bf_positives < num_bf_positives_prev:
-						num_bf_positives_per_day = 0
+					num_needto_read_datafile_per_day = (cnts.num_needto_read_datafile - num_needto_read_datafile_prev) / time_dur_days
+					if cnts.num_needto_read_datafile < num_needto_read_datafile_prev:
+						num_needto_read_datafile_per_day = 0
 						# This can happen when multiple threads create SSTable access stat instances simultaneously.
 						Cons.P("BF positives decreases and ignored: %20s %d %d %f"
 								% (time_.strftime("%y%m%d-%H%M%S.%f")
-									, num_bf_positives_prev
-									, cnts.num_bf_positives
+									, num_needto_read_datafile_prev
+									, cnts.num_needto_read_datafile
 									, time_dur_days
 									))
 					fo.write((fmt + "\n") % (id_
 						, time_.strftime("%y%m%d-%H%M%S.%f")
 						, min_timestamp.strftime("%y%m%d-%H%M%S.%f")
 						, (cnts.num_reads - num_reads_prev) / time_dur_days
-						, num_bf_positives_per_day
+						, num_needto_read_datafile_per_day
 						, (num_negatives - num_negatives_prev) / time_dur_days
 						, (cnts.num_tp - num_tp_prev) / time_dur_days
 						, (cnts.num_fp - num_fp_prev) / time_dur_days
-						, NumToTime.ConvLogscale(min_timestamp, num_bf_positives_per_day)
+						, NumToTime.ConvLogscale(min_timestamp, num_needto_read_datafile_per_day)
 						))
 				time_prev = time_
 				num_reads_prev = cnts.num_reads
-				num_bf_positives_prev = cnts.num_bf_positives
+				num_needto_read_datafile_prev = cnts.num_needto_read_datafile
 				num_negatives_prev = num_negatives
 				num_tp_prev = cnts.num_tp
 				num_fp_prev = cnts.num_fp

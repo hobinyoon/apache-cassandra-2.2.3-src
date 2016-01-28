@@ -48,7 +48,7 @@ def TabletSizesTimeline():
 		env["FN_OUT"] = fn_out
 		env["DESC"] = Desc.GnuplotDesc()
 		env["MIN_TABLET_SIZE"] = str(TabletSizeTimelinePlotDataGenerator.MinTabletSize())
-		env["MAX_BF_POSITIVES_PER_DAY"] = str(int(round(TabletAccessesForTabletSizeTimelinePlotDataGenerator.MaxBfPositivesPerDay(), 0)))
+		env["MAX_NEEDTO_READ_DATAFILE_PER_DAY"] = str(int(round(TabletAccessesForTabletSizeTimelinePlotDataGenerator.MaxNumNeedtoReadDatafilePerDay(), 0)))
 		_RunSubp("gnuplot %s/tablet-sizes-timeline.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 

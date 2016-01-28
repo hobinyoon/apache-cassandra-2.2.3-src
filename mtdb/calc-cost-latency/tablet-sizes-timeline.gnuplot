@@ -7,7 +7,7 @@ FN_IN_AC = system("echo $FN_IN_AC")
 FN_OUT = system("echo $FN_OUT")
 DESC = system("echo $DESC")
 MIN_TABLET_SIZE = system("echo $MIN_TABLET_SIZE")
-MAX_BF_POSITIVES_PER_DAY = system("echo $MAX_BF_POSITIVES_PER_DAY")
+MAX_NEEDTO_READ_DATAFILE_PER_DAY = system("echo $MAX_NEEDTO_READ_DATAFILE_PER_DAY")
 
 load "../conf/colorscheme.gnuplot"
 
@@ -105,15 +105,15 @@ set label "# of accesses\nper day" at x7, y6 left tc rgb "black" font ",8"
 #     / log(max+1) : [0, 1]
 AccessCountHeight(x) = x == 0 ? \
 											 1/0 \
-											 : (log(x+1)/log(MAX_BF_POSITIVES_PER_DAY+1)) * MIN_TABLET_SIZE
+											 : (log(x+1)/log(MAX_NEEDTO_READ_DATAFILE_PER_DAY+1)) * MIN_TABLET_SIZE
 
 x8 = x7 + 11*x1p
-y7 = y3 - AccessCountHeight(MAX_BF_POSITIVES_PER_DAY) / 2.0
-y8 = y3 + AccessCountHeight(MAX_BF_POSITIVES_PER_DAY) / 2.0
+y7 = y3 - AccessCountHeight(MAX_NEEDTO_READ_DATAFILE_PER_DAY) / 2.0
+y8 = y3 + AccessCountHeight(MAX_NEEDTO_READ_DATAFILE_PER_DAY) / 2.0
 set arrow from x8, y7 to x8, y8 lc rgb "black" nohead
 set arrow from x8 - 0.2*x1p, y7 to x8 + 0.2*x1p, y7 lc rgb "black" nohead
 set arrow from x8 - 0.2*x1p, y8 to x8 + 0.2*x1p, y8 lc rgb "black" nohead
-set label (sprintf("%s", MAX_BF_POSITIVES_PER_DAY)) at x8, y8 left offset 0.4, 0.1 tc rgb "black" font ",7"
+set label (sprintf("%s", MAX_NEEDTO_READ_DATAFILE_PER_DAY)) at x8, y8 left offset 0.4, 0.1 tc rgb "black" font ",7"
 set label "0"                     at x8, y7 left offset 0.4,-0.1 tc rgb "black" font ",7"
 
 set samples 5000

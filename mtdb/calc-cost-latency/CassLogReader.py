@@ -175,7 +175,7 @@ class EventAccessStat(Event):
 			#Cons.P(t1)
 			self.size = int(t1[0])
 			self.num_reads = int(t1[1])
-			self.num_bf_positives = int(t1[2])
+			self.num_needto_read_datafile = int(t1[2])
 			# These numbers are not complete. They are not tracked when key cache is
 			# present or the tracking is not enabled, which is a per-request option.
 			self.num_tp = int(t1[3])

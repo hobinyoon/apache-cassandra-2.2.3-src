@@ -23,7 +23,7 @@ public class Conf
 		String fn_test_obj_ages = "";
 		String fn_dump_wrs = "";
 
-		int simulated_time_in_year;
+		double simulated_time_in_year;
 		double simulation_time_in_min;
 		int writes;
 		String write_time_dist;
@@ -31,7 +31,7 @@ public class Conf
 		// Init with a YAML obj. Can be overwritten by command line options.
 		Global(Object obj_) {
 			Map obj = (Map) obj_;
-			simulated_time_in_year = Integer.parseInt(obj.get("simulated_time_in_year").toString());
+			simulated_time_in_year = Double.parseDouble(obj.get("simulated_time_in_year").toString());
 			simulation_time_in_min = Double.parseDouble(obj.get("simulation_time_in_min").toString());
 			writes = Integer.parseInt(obj.get("writes").toString());
 			write_time_dist = obj.get("write_time_dist").toString();
@@ -40,7 +40,7 @@ public class Conf
 		@Override
 		public String toString() {
 			return String.format(
-					"simulated_time_in_year: %d"
+					"simulated_time_in_year: %.1f"
 					+ "\nsimulation_time_in_min: %.1f"
 					+ "\nwrites: %d"
 					+ "\nwrite_time_dist: %s"
@@ -149,8 +149,10 @@ public class Conf
 				.withRequiredArg().ofType(Boolean.class).defaultsTo(db.requests);
 			accepts("db_threads", "Number of client threads that make requests to the database server.")
 				.withRequiredArg().ofType(Integer.class).defaultsTo(db.num_threads);
-			accepts("sim_time", "Simulation time in minutes.")
+			accepts("simulation_time", "Simulation time in minute.")
 				.withRequiredArg().ofType(Double.class).defaultsTo(global.simulation_time_in_min);
+			accepts("simulated_time", "Simulated time in year.")
+				.withRequiredArg().ofType(Double.class).defaultsTo(global.simulated_time_in_year);
 		}};
 
 		OptionSet options = _opt_parser.parse(args);
@@ -173,7 +175,8 @@ public class Conf
 		global.fn_dump_wrs = (String) options.valueOf("dump_wr");
 		db.requests = (boolean) options.valueOf("db");
 		db.num_threads = (int) options.valueOf("db_threads");
-		global.simulation_time_in_min = (double) options.valueOf("sim_time");
+		global.simulation_time_in_min = (double) options.valueOf("simulation_time");
+		global.simulated_time_in_year = (double) options.valueOf("simulated_time");
 	}
 
 	public static void Init(String[] args)

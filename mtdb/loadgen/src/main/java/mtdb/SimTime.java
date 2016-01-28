@@ -31,7 +31,7 @@ class SimTime {
 
 	public static void Init() {
 		_simulatedTimeBegin = LocalDateTime.of(2010, 1, 1, 0, 0);
-		_simulatedTimeEnd = LocalDateTime.of(2010 + Conf.global.simulated_time_in_year, 1, 1, 0, 0);
+		_simulatedTimeEnd = _simulatedTimeBegin.plusSeconds((long)(Conf.global.simulated_time_in_year * 365.25 * 24 * 3600));
 
 		_zoneId = ZoneId.systemDefault();
 

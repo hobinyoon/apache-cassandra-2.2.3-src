@@ -28,10 +28,13 @@ per_obj:
   #           object
   num_reads_dist: "Custom: facebook-num-reqs-by-rank"
 
-  # read time distribution
+  # Read time distribution
   # - Custom: Use a file that has a read time distribution by age in CDF.
   #           E.g., Kumar. Efficiency at Scale. ’14.
   read_time_dist: "Custom: facebook-num-reads-by-age"
+
+  # Object size in bytes. E.g., a tweet is about 1KB big.
+  obj_size: 5000
 
 db:
   # Request IO to the database server

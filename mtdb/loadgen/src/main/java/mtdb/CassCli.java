@@ -71,7 +71,7 @@ public class CassCli extends DbCli
 					+ "VALUES (%d, %d, 0x%s)"
 					, op.wrs.key
 					, op.wrs.wEpochSec
-					, BuildC0(1000)
+					, BuildC0(Conf.per_obj.obj_size)
 					));
 	}
 

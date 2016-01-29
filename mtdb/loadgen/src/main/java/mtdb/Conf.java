@@ -56,12 +56,14 @@ public class Conf
 		double avg_reads;
 		String num_reads_dist;
 		String read_time_dist;
+		int obj_size;
 
 		PerObj(Object obj_) {
 			Map obj = (Map) obj_;
 			avg_reads = Double.parseDouble(obj.get("avg_reads").toString());
 			num_reads_dist = obj.get("num_reads_dist").toString();
 			read_time_dist = obj.get("read_time_dist").toString();
+			obj_size = Integer.parseInt(obj.get("obj_size").toString());
 		}
 
 		@Override
@@ -70,9 +72,12 @@ public class Conf
 					"avg_reads: %f"
 					+ "\nnum_reads_dist: %s"
 					+ "\nread_time_dist: %s"
+					+ "\nobj_size: %d"
 					, avg_reads
 					, num_reads_dist
-					, read_time_dist);
+					, read_time_dist
+					, obj_size
+					);
 		}
 	}
 
@@ -145,14 +150,16 @@ public class Conf
 				.withRequiredArg().ofType(String.class).defaultsTo(global.fn_test_obj_ages);
 			accepts("dump_wr", "When a file name is specified, loadgen dumps all WRs to the file.")
 				.withRequiredArg().ofType(String.class).defaultsTo(global.fn_dump_wrs);
-			accepts("db", "Issue requests to the database server.")
+			accepts("db", "Issue requests to the database server")
 				.withRequiredArg().ofType(Boolean.class).defaultsTo(db.requests);
-			accepts("db_threads", "Number of client threads that make requests to the database server.")
+			accepts("db_threads", "Number of client threads that make requests to the database server")
 				.withRequiredArg().ofType(Integer.class).defaultsTo(db.num_threads);
-			accepts("simulation_time", "Simulation time in minute.")
+			accepts("simulation_time", "Simulation time in minutes")
 				.withRequiredArg().ofType(Double.class).defaultsTo(global.simulation_time_in_min);
-			accepts("simulated_time", "Simulated time in year.")
+			accepts("simulated_time", "Simulated time in years")
 				.withRequiredArg().ofType(Double.class).defaultsTo(global.simulated_time_in_year);
+			accepts("obj_size", "Object size in bytes.")
+				.withRequiredArg().ofType(Integer.class).defaultsTo(per_obj.obj_size);
 		}};
 
 		OptionSet options = _opt_parser.parse(args);
@@ -177,6 +184,7 @@ public class Conf
 		db.num_threads = (int) options.valueOf("db_threads");
 		global.simulation_time_in_min = (double) options.valueOf("simulation_time");
 		global.simulated_time_in_year = (double) options.valueOf("simulated_time");
+		per_obj.obj_size = (int) options.valueOf("obj_size");
 	}
 
 	public static void Init(String[] args)

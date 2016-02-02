@@ -523,7 +523,7 @@ class SSTableTemperatureMonitors {
         static {
             long minTabletAgeNsToBeColdInSimulatedTime = (long)
                 (DatabaseDescriptor.getMutantsOptions().min_tablet_age_days_for_migration_to_cold_storage
-                 * 24 * 3600 * 1000000000);
+                 * 24.0 * 3600 * 1000000000);
             minTabletAgeNsToBeColdInSimulationTime =
                 SimTime.toSimulationTimeDurNs(minTabletAgeNsToBeColdInSimulatedTime);
 
@@ -531,8 +531,16 @@ class SSTableTemperatureMonitors {
 
             coldnessThreshold = DatabaseDescriptor.getMutantsOptions().tablet_coldness_migration_threshold;
 
-            logger.warn("MTDB: minTabletAgeNsToBeColdInSimulationTime={} temperatureCheckIntervalMs={}"
-                    , minTabletAgeNsToBeColdInSimulationTime, temperatureCheckIntervalMs);
+            logger.warn("MTDB: "
+                    + "\n  minTabletAgeNsToBeColdInSimulatedTime : {}"
+                    + "\n  minTabletAgeNsToBeColdInSimulationTime: {}"
+                    + "\n  temperatureCheckIntervalMs: {}"
+                    + "\n      in simulated time days: {}"
+                    , minTabletAgeNsToBeColdInSimulatedTime
+                    , minTabletAgeNsToBeColdInSimulationTime
+                    , temperatureCheckIntervalMs
+                    , (SimTime.toSimulatedTimeDurNs(temperatureCheckIntervalMs * 1000000) / (24.0 * 3600 * 1000000000))
+                    );
         }
 
         MonitorRunnable(SSTableReader sstr) {
@@ -550,7 +558,8 @@ class SSTableTemperatureMonitors {
 
         public void run() {
             logger.warn("MTDB: TempMonStart {}", _sstr.descriptor.generation);
-            long nnrd_prev = -1;
+            long prevNnrd = -1;
+            long prevNano = -1;
 
             while (! _stopRequested) {
                 synchronized (_sleepLock) {
@@ -562,26 +571,35 @@ class SSTableTemperatureMonitors {
                 if (_stopRequested)
                     break;
 
-                long curTime = System.nanoTime();
-                long timeDurNs = curTime - _tabletCreationTime;
-                if (timeDurNs < minTabletAgeNsToBeColdInSimulationTime)
+                long curNano = System.nanoTime();
+                long tabletAgeSimulationTimeNs = curNano - _tabletCreationTime;
+                if (tabletAgeSimulationTimeNs < minTabletAgeNsToBeColdInSimulationTime) {
+                    //logger.warn("MTDB: tablet {} tabletAgeSimulationDays={}"
+                    //        , _sstr.descriptor.generation, tabletAgeSimulationTimeNs / (24.0 * 3600 * 1000000000));
                     continue;
+                }
 
                 // Number of need-to-read-datafiles
                 long nnrd = MemSsTableAccessMon.GetNumSstNeedToReadDataFile(_sstr);
-                if (nnrd_prev == -1) {
-                    nnrd_prev = nnrd;
+                if (prevNnrd == -1 || prevNano == -1) {
+                    prevNnrd = nnrd;
+                    prevNano = curNano;
                     continue;
                 }
 
-                double nnrd_per_day = (nnrd_prev - nnrd) * (24.0 * 3600 * 1000000000) / timeDurNs;
-                if (nnrd_per_day < coldnessThreshold) {
-                    logger.warn("MTDB: tablet {} became cold. Implement migration!", _sstr.descriptor.generation);
-                    // Stop monitoring the temperature after this. Mutants'
+                long simulatedTimeDurNs = SimTime.toSimulatedTimeDurNs(curNano - prevNano);
+                double nnrdPerDay = (nnrd - prevNnrd) * (24.0 * 3600 * 1000000000) / simulatedTimeDurNs;
+                //logger.warn("MTDB: tablet {} nnrdPerDay={} prevNnrd={} nnrd={}",
+                //        _sstr.descriptor.generation, nnrdPerDay, prevNnrd, nnrd);
+                if (nnrdPerDay < coldnessThreshold) {
+                    logger.warn("MTDB: TempMonBecomeCold {}. Implement migration!", _sstr.descriptor.generation);
+                    // TODO: Stop monitoring the temperature after this. Mutants'
                     // tablet only ages. No anti-aging.
+                    break;
                 }
 
-                nnrd_prev = nnrd;
+                prevNnrd = nnrd;
+                prevNano = curNano;
             }
 
             logger.warn("MTDB: TempMonStop {}", _sstr.descriptor.generation);

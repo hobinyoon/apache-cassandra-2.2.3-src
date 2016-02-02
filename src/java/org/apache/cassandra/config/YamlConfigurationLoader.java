@@ -49,6 +49,8 @@ public class YamlConfigurationLoader implements ConfigurationLoader
 
     private final static String DEFAULT_CONFIGURATION = "cassandra.yaml";
 
+    private static String configString;
+
     /**
      * Inspect the classpath to find storage configuration file
      */
@@ -137,7 +139,13 @@ public class YamlConfigurationLoader implements ConfigurationLoader
                 configMap.put(sensitiveKey, "<REDACTED>");
             }
         }
-        logger.info("Node configuration:[{}]", Joiner.on("; ").join(configMap.entrySet()));
+        configString = Joiner.on("; ").join(configMap.entrySet());
+        logger.info("Node configuration:[{}]", configString);
+    }
+
+    public static void mtdbLogConfig()
+    {
+        logger.warn("MTDB: Node configuration:[{}]", configString);
     }
 
     private static class MissingPropertiesChecker extends PropertyUtils

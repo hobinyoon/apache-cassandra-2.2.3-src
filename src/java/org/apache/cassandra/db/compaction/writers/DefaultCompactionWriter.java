@@ -44,10 +44,21 @@ public class DefaultCompactionWriter extends CompactionAwareWriter
     @SuppressWarnings("resource")
     public DefaultCompactionWriter(ColumnFamilyStore cfs, LifecycleTransaction txn, Set<SSTableReader> nonExpiredSSTables, boolean offline, OperationType compactionType)
     {
+        this(cfs, txn, nonExpiredSSTables, offline, compactionType, false);
+    }
+
+
+    @SuppressWarnings("resource")
+    public DefaultCompactionWriter(ColumnFamilyStore cfs, LifecycleTransaction txn, Set<SSTableReader> nonExpiredSSTables, boolean offline, OperationType compactionType, boolean compactToColdStorage)
+    {
         super(cfs, txn, nonExpiredSSTables, offline);
         logger.trace("Expected bloom filter size : {}", estimatedTotalKeys);
         long expectedWriteSize = cfs.getExpectedCompactedFileSize(nonExpiredSSTables, compactionType);
-        File sstableDirectory = cfs.directories.getLocationForDisk(getWriteDirectory(expectedWriteSize));
+        File sstableDirectory = cfs.directories.getLocationForDisk(getWriteDirectory(expectedWriteSize, compactToColdStorage));
+        //if (compactToColdStorage) {
+        //    logger.warn("MTDB: sstableDirectory={} getWriteDirectory({})={}",
+        //            sstableDirectory, expectedWriteSize, getWriteDirectory(expectedWriteSize));
+        //}
         @SuppressWarnings("resource")
         SSTableWriter writer = SSTableWriter.create(Descriptor.fromFilename(cfs.getTempSSTablePath(sstableDirectory)),
                                                     estimatedTotalKeys,

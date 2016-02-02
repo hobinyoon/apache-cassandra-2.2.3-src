@@ -47,6 +47,7 @@ import org.apache.cassandra.service.ActiveRepairService;
 import org.apache.cassandra.utils.CloseableIterator;
 import org.apache.cassandra.utils.UUIDGen;
 import org.apache.cassandra.utils.concurrent.Refs;
+import org.apache.cassandra.utils.Tracer;
 
 public class CompactionTask extends AbstractCompactionTask
 {
@@ -71,7 +72,11 @@ public class CompactionTask extends AbstractCompactionTask
     protected int executeInternal(CompactionExecutorStatsCollector collector)
     {
         this.collector = collector;
+        //if (cfs.metadata.mtdbTable)
+        //    logger.info("MTDB: compaction collector={}", collector);
         run();
+        //if (cfs.metadata.mtdbTable)
+        //    logger.info("MTDB: compaction transaction={}", transaction);
         return transaction.originals().size();
     }
 
@@ -103,6 +108,9 @@ public class CompactionTask extends AbstractCompactionTask
 
         if (transaction.originals().isEmpty())
             return;
+        //if (cfs.metadata.mtdbTable) {
+        //    logger.warn("MTDB: transaction.originals()={}\n{}", transaction.originals(), Tracer.GetCallStack());
+        //}
 
         // Note that the current compaction strategy, is not necessarily the one this task was created under.
         // This should be harmless; see comments to CFS.maybeReloadCompactionStrategy.
@@ -140,6 +148,8 @@ public class CompactionTask extends AbstractCompactionTask
         ssTableLoggerMsg.append("]");
         String taskIdLoggerMsg = taskId == null ? UUIDGen.getTimeUUID().toString() : taskId.toString();
         logger.debug("Compacting ({}) {}", taskIdLoggerMsg, ssTableLoggerMsg);
+        //if (cfs.metadata.mtdbTable)
+        //    logger.warn("MTDB: Compacting taskId={} transaction.originals()={}", taskIdLoggerMsg, ssTableLoggerMsg);
 
         long start = System.nanoTime();
 
@@ -149,6 +159,15 @@ public class CompactionTask extends AbstractCompactionTask
         try (CompactionController controller = getCompactionController(transaction.originals()))
         {
             Set<SSTableReader> actuallyCompact = Sets.difference(transaction.originals(), controller.getFullyExpiredSSTables());
+            //if (cfs.metadata.mtdbTable)
+            //    logger.warn("MTDB: actuallyCompact={}", actuallyCompact);
+
+            // Playing with cold storage
+            // TODO: the decision will be made by monitoring tablet temperature
+            boolean compactToColdStorage = false;
+            if (cfs.metadata.mtdbTable) {
+                compactToColdStorage = true;
+            }
 
             SSTableFormat.Type sstableFormat = getFormatType(transaction.originals());
 
@@ -171,7 +190,7 @@ public class CompactionTask extends AbstractCompactionTask
                     if (!controller.cfs.getCompactionStrategy().isActive)
                         throw new CompactionInterruptedException(ci.getCompactionInfo());
 
-                    try (CompactionAwareWriter writer = getCompactionAwareWriter(cfs, transaction, actuallyCompact))
+                    try (CompactionAwareWriter writer = getCompactionAwareWriter(cfs, transaction, actuallyCompact, compactToColdStorage))
                     {
                         estimatedKeys = writer.estimatedKeys();
                         while (iter.hasNext())
@@ -226,16 +245,22 @@ public class CompactionTask extends AbstractCompactionTask
             logger.trace(String.format("CF Total Bytes Compacted: %,d", CompactionTask.addToTotalBytesCompacted(endsize)));
             logger.trace("Actual #keys: {}, Estimated #keys:{}, Err%: {}", totalKeysWritten, estimatedKeys, ((double)(totalKeysWritten - estimatedKeys)/totalKeysWritten));
 
+            if (cfs.metadata.mtdbTable) {
+                logger.warn(String.format("MTDB: Compacted (%s) %d sstables to [%s] to level=%d.  %,d bytes to %,d (~%d%% of original) in %,dms = %fMB/s.  %,d total partitions merged to %,d.  Partition merge counts were {%s}",
+                            taskIdLoggerMsg, transaction.originals().size(), newSSTableNames.toString(), getLevel(), startsize, endsize, (int) (ratio * 100), dTime, mbps, totalSourceRows, totalKeysWritten, mergeSummary));
+                //logger.warn(String.format("MTDB: CF Total Bytes Compacted: %,d", CompactionTask.addToTotalBytesCompacted(endsize)));
+                //logger.warn("MTDB: Actual #keys: {}, Estimated #keys:{}, Err%: {}", totalKeysWritten, estimatedKeys, ((double)(totalKeysWritten - estimatedKeys)/totalKeysWritten));
+            }
+
             if (offline)
                 Refs.release(Refs.selfRefs(newSStables));
         }
     }
 
     @Override
-    public CompactionAwareWriter getCompactionAwareWriter(ColumnFamilyStore cfs, LifecycleTransaction transaction, Set<SSTableReader> nonExpiredSSTables)
+    public CompactionAwareWriter getCompactionAwareWriter( ColumnFamilyStore cfs, LifecycleTransaction transaction, Set<SSTableReader> nonExpiredSSTables, boolean compactToColdStorage)
     {
-        return new DefaultCompactionWriter(cfs, transaction, nonExpiredSSTables, offline, compactionType);
-
+        return new DefaultCompactionWriter(cfs, transaction, nonExpiredSSTables, offline, compactionType, compactToColdStorage);
     }
 
     public static String updateCompactionHistory(String keyspaceName, String columnFamilyName, AbstractCompactionIterable ci, long startSize, long endSize)

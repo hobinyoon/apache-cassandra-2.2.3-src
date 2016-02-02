@@ -1,4 +1,4 @@
-package org.apache.cassandra.utils;
+package org.apache.cassandra.mutants;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.cassandra.config.DatabaseDescriptor;
+import org.apache.cassandra.config.YamlConfigurationLoader;
 import org.apache.cassandra.db.Memtable;
 import org.apache.cassandra.db.ColumnFamily;
 import org.apache.cassandra.io.sstable.Descriptor;
@@ -60,7 +61,7 @@ public class MemSsTableAccessMon
     private static class _SSTableAccCnt {
         private SSTableReader _sstr;
         //private AtomicLong _bf_positives;
-        private AtomicLong _needto_read_datafile;
+        private AtomicLong _numNeedToReadDatafile;
 
         private boolean deleted = false;
         private boolean loggedAfterDiscarded = false;
@@ -68,15 +69,19 @@ public class MemSsTableAccessMon
         public _SSTableAccCnt(SSTableReader sstr) {
             _sstr = sstr;
             //_bf_positives = new AtomicLong(0);
-            _needto_read_datafile = new AtomicLong(0);
+            _numNeedToReadDatafile = new AtomicLong(0);
         }
 
         //public void IncrementBfPositives() {
         //    _bf_positives.incrementAndGet();
         //}
 
-        public void IncrementNeedToReadDataFile() {
-            _needto_read_datafile.incrementAndGet();
+        public void IncrementNumNeedToReadDataFile() {
+            _numNeedToReadDatafile.incrementAndGet();
+        }
+
+        public long numNeedToReadDataFile() {
+            return _numNeedToReadDatafile.get();
         }
 
         @Override
@@ -87,7 +92,7 @@ public class MemSsTableAccessMon
             sb.append(_sstr.bytesOnDisk())
                 .append(",").append(_sstr.getReadMeter().count())
                 //.append(",").append(_bf_positives.get())
-                .append(",").append(_needto_read_datafile.get())
+                .append(",").append(_numNeedToReadDatafile.get())
                 .append(",").append(_sstr.getBloomFilterTruePositiveCount())
                 .append(",").append(_sstr.getBloomFilterFalsePositiveCount())
                 .append(",").append(_simpleDateFormat.format(min_ts))
@@ -111,6 +116,7 @@ public class MemSsTableAccessMon
         _memTableAccCnt.clear();
         _ssTableAccCnt.clear();
         logger.warn("MTDB: ClearAccStat");
+        YamlConfigurationLoader.mtdbLogConfig();
     }
 
     public static void Update(Memtable m, ColumnFamily cf) {
@@ -167,36 +173,45 @@ public class MemSsTableAccessMon
     //}
 
 
-    public static void SstNeedToReadDataFile(SSTableReader r) {
+    public static void IncrementSstNeedToReadDataFile(SSTableReader r) {
         Descriptor sst_desc = r.descriptor;
 
         _SSTableAccCnt sstAC = _ssTableAccCnt.get(sst_desc);
         if (sstAC == null) {
             sstAC = new _SSTableAccCnt(r);
-            sstAC.IncrementNeedToReadDataFile();
+            sstAC.IncrementNumNeedToReadDataFile();
             _ssTableAccCnt.put(sst_desc, sstAC);
             _updatedSinceLastOutput = true;
             _or.Wakeup();
         } else {
-            sstAC.IncrementNeedToReadDataFile();
+            sstAC.IncrementNumNeedToReadDataFile();
             _updatedSinceLastOutput = true;
+        }
+    }
+
+
+    public static long GetNumSstNeedToReadDataFile(SSTableReader r) {
+        _SSTableAccCnt sstAC = _ssTableAccCnt.get(r.descriptor);
+        if (sstAC == null) {
+            // Harmless
+            return 0;
+        } else {
+            return sstAC.numNeedToReadDataFile();
         }
     }
 
 
     // MemTable created
     public static void Created(Memtable m) {
-        logger.warn("MTDB: CreateMemtable {}", m);
+        logger.warn("MTDB: MemtCreated {}", m);
         if (_memTableAccCnt.get(m) == null)
             _memTableAccCnt.put(m, new _MemTableAccCnt(0, 0));
         _or.Wakeup();
     }
 
-    // SSTable created
+    // SSTable created. A tmp sstable is created.
     public static void Created(Descriptor d) {
         logger.warn("MTDB: SstCreated {}", d);
-        // We log creations of SSTables, but don't keep track of access stats
-        // to them.
         _or.Wakeup();
     }
 
@@ -211,7 +226,7 @@ public class MemSsTableAccessMon
         v.discarded = true;
 
         _updatedSinceLastOutput = true;
-        logger.warn("MTDB: MemtableDiscard {}", m);
+        logger.warn("MTDB: MemtDiscard {}", m);
         _or.Wakeup();
     }
 
@@ -240,7 +255,7 @@ public class MemSsTableAccessMon
         }
 
         public void run() {
-            long report_interval_ms = DatabaseDescriptor.getMutantsOptions().access_mon_report_interval_ms;
+            long report_interval_ms = DatabaseDescriptor.getMutantsOptions().tablet_access_stat_report_interval_ms;
             logger.warn("MTDB: report_interval_ms {}", report_interval_ms);
 
             // Sort lexicographcally with Memtables go first

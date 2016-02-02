@@ -449,6 +449,8 @@ public abstract class SSTableReader extends SSTable implements SelfRefCounted<SS
         }
 
         logger.debug("Opening {} ({} bytes)", descriptor, new File(descriptor.filenameFor(Component.DATA)).length());
+        if (descriptor.mtdbTable)
+            logger.info("MTDB: SSTableReader Opening {} ({} bytes)", descriptor, new File(descriptor.filenameFor(Component.DATA)).length());
         SSTableReader sstable = internalOpen(descriptor, components, metadata, partitioner, System.currentTimeMillis(),
                                              statsMetadata, OpenReason.NORMAL);
         try
@@ -592,6 +594,9 @@ public abstract class SSTableReader extends SSTable implements SelfRefCounted<SS
         this.maxDataAge = maxDataAge;
         this.openReason = openReason;
         this.rowIndexEntrySerializer = descriptor.version.getSSTableFormat().getIndexSerializer(metadata);
+        if (desc.mtdbTable) {
+            logger.info("MTDB: SSTableReader desc={} openReason={}", desc, openReason);
+        }
     }
 
     public static long getTotalBytes(Iterable<SSTableReader> sstables)

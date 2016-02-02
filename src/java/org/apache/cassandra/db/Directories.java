@@ -94,12 +94,14 @@ public class Directories
     public static final String SECONDARY_INDEX_NAME_SEPARATOR = ".";
 
     public static final DataDirectory[] dataDirectories;
+    public static final DataDirectory coldDataDirectory;
     static
     {
         String[] locations = DatabaseDescriptor.getAllDataFileLocations();
         dataDirectories = new DataDirectory[locations.length];
         for (int i = 0; i < locations.length; ++i)
             dataDirectories[i] = new DataDirectory(new File(locations[i]));
+        coldDataDirectory = new DataDirectory(new File(DatabaseDescriptor.getMutantsOptions().cold_storage_dir));
     }
 
     /**
@@ -177,6 +179,7 @@ public class Directories
 
     private final CFMetaData metadata;
     private final File[] dataPaths;
+    private final File coldDataPath;
 
     /**
      * Create Directories of given ColumnFamily.
@@ -220,6 +223,15 @@ public class Directories
         {
             for (int i = 0; i < dataDirectories.length; ++i)
                 dataPaths[i] = new File(dataPaths[i], indexNameWithDot);
+        }
+
+        if (metadata.mtdbTable) {
+            String newSSTableRelativePath = join(metadata.ksName, cfName + '-' + cfId);
+            coldDataPath = new File(coldDataDirectory.location, newSSTableRelativePath);
+            //logger.warn("MTDB: coldDataPath=[{}]", coldDataPath);
+            FileUtils.createDirectory(coldDataPath);
+        } else {
+            coldDataPath = null;
         }
 
         for (File dir : dataPaths)
@@ -273,10 +285,13 @@ public class Directories
      */
     public File getLocationForDisk(DataDirectory dataDirectory)
     {
-        if (dataDirectory != null)
+        if (dataDirectory != null) {
             for (File dir : dataPaths)
                 if (dir.getAbsolutePath().startsWith(dataDirectory.location.getAbsolutePath()))
                     return dir;
+            if (coldDataPath.getAbsolutePath().startsWith(dataDirectory.location.getAbsolutePath()))
+                return coldDataPath;
+        }
         return null;
     }
 
@@ -319,44 +334,63 @@ public class Directories
      */
     public DataDirectory getWriteableLocation(long writeSize)
     {
-        List<DataDirectoryCandidate> candidates = new ArrayList<>();
+        return getWriteableLocation(writeSize, false);
+    }
 
-        long totalAvailable = 0L;
+    public DataDirectory getWriteableLocation(long writeSize, boolean coldStorage)
+    {
+        if (coldStorage) {
+            if (coldDataPath == null)
+                throw new IOError(new IOException("coldDataPath is not set"));
 
-        // pick directories with enough space and so that resulting sstable dirs aren't blacklisted for writes.
-        boolean tooBig = false;
-        for (DataDirectory dataDir : dataDirectories)
-        {
-            if (BlacklistedDirectories.isUnwritable(getLocationForDisk(dataDir)))
-            {
-                logger.trace("removing blacklisted candidate {}", dataDir.location);
-                continue;
-            }
-            DataDirectoryCandidate candidate = new DataDirectoryCandidate(dataDir);
+            DataDirectoryCandidate candidate = new DataDirectoryCandidate(coldDataDirectory);
             // exclude directory if its total writeSize does not fit to data directory
-            if (candidate.availableSpace < writeSize)
-            {
-                logger.trace("removing candidate {}, usable={}, requested={}", candidate.dataDirectory.location, candidate.availableSpace, writeSize);
-                tooBig = true;
-                continue;
-            }
-            candidates.add(candidate);
-            totalAvailable += candidate.availableSpace;
-        }
-
-        if (candidates.isEmpty())
-            if (tooBig)
+            if (candidate.availableSpace < writeSize) {
+                logger.warn("MTDB: coldDataDir {} doesn't have enough space ({}) for writeSize ({})",
+                                candidate.dataDirectory.location, candidate.availableSpace, writeSize);
                 return null;
-            else
-                throw new IOError(new IOException("All configured data directories have been blacklisted as unwritable for erroring out"));
+            }
+            return candidate.dataDirectory;
+        } else {
+            List<DataDirectoryCandidate> candidates = new ArrayList<>();
 
-        // shortcut for single data directory systems
-        if (candidates.size() == 1)
-            return candidates.get(0).dataDirectory;
+            long totalAvailable = 0L;
 
-        sortWriteableCandidates(candidates, totalAvailable);
+            // pick directories with enough space and so that resulting sstable dirs aren't blacklisted for writes.
+            boolean tooBig = false;
+            for (DataDirectory dataDir : dataDirectories)
+            {
+                if (BlacklistedDirectories.isUnwritable(getLocationForDisk(dataDir)))
+                {
+                    logger.trace("removing blacklisted candidate {}", dataDir.location);
+                    continue;
+                }
+                DataDirectoryCandidate candidate = new DataDirectoryCandidate(dataDir);
+                // exclude directory if its total writeSize does not fit to data directory
+                if (candidate.availableSpace < writeSize)
+                {
+                    logger.trace("removing candidate {}, usable={}, requested={}", candidate.dataDirectory.location, candidate.availableSpace, writeSize);
+                    tooBig = true;
+                    continue;
+                }
+                candidates.add(candidate);
+                totalAvailable += candidate.availableSpace;
+            }
 
-        return pickWriteableDirectory(candidates);
+            if (candidates.isEmpty())
+                if (tooBig)
+                    return null;
+                else
+                    throw new IOError(new IOException("All configured data directories have been blacklisted as unwritable for erroring out"));
+
+            // shortcut for single data directory systems
+            if (candidates.size() == 1)
+                return candidates.get(0).dataDirectory;
+
+            sortWriteableCandidates(candidates, totalAvailable);
+
+            return pickWriteableDirectory(candidates);
+        }
     }
 
     // separated for unit testing

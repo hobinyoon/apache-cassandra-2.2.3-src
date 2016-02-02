@@ -38,9 +38,9 @@ import org.apache.cassandra.io.sstable.format.SSTableReader;
 import org.apache.cassandra.io.sstable.metadata.StatsMetadata;
 import org.apache.cassandra.io.util.FileDataInput;
 import org.apache.cassandra.io.util.FileUtils;
+import org.apache.cassandra.mutants.MemSsTableAccessMon;
 import org.apache.cassandra.tracing.Tracing;
 import org.apache.cassandra.utils.ByteBufferUtil;
-import org.apache.cassandra.utils.MemSsTableAccessMon;
 import org.apache.cassandra.utils.Tracer;
 
 import org.slf4j.Logger;
@@ -115,9 +115,12 @@ public class BigTableReader extends SSTableReader
     protected RowIndexEntry getPosition(RowPosition key, Operator op, boolean updateCacheAndStats, boolean permitMatchPastLast)
     {
         RowIndexEntry r = getPosition0(key, op, updateCacheAndStats, permitMatchPastLast);
+
         if (r != null) {
             if (descriptor.mtdbTable) {
-                MemSsTableAccessMon.SstNeedToReadDataFile(this);
+                // Different from SSTableReader.incrementReadCount(), which
+                // seems to include negatives.
+                MemSsTableAccessMon.IncrementSstNeedToReadDataFile(this);
             }
         }
         return r;

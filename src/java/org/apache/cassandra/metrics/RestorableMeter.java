@@ -35,9 +35,12 @@ import com.codahale.metrics.Clock;
  */
 public class RestorableMeter
 {
-    private static final long TICK_INTERVAL = TimeUnit.SECONDS.toNanos(5);
+    //private static final long TICK_INTERVAL = TimeUnit.SECONDS.toNanos(5);
+    private static final long TICK_INTERVAL = TimeUnit.MILLISECONDS.toNanos(50);
     private static final double NANOS_PER_SECOND = TimeUnit.SECONDS.toNanos(1);
 
+    // MTDB: Tried it, but turned out not good for simulation
+    //private final RestorableEWMA s5Rate;
     private final RestorableEWMA m15Rate;
     private final RestorableEWMA m120Rate;
 
@@ -50,6 +53,7 @@ public class RestorableMeter
      * Creates a new, uninitialized RestorableMeter.
      */
     public RestorableMeter() {
+        //this.s5Rate = new RestorableEWMA(TimeUnit.SECONDS.toSeconds(5));
         this.m15Rate = new RestorableEWMA(TimeUnit.MINUTES.toSeconds(15));
         this.m120Rate = new RestorableEWMA(TimeUnit.MINUTES.toSeconds(120));
         this.startTime = this.clock.getTick();
@@ -62,6 +66,7 @@ public class RestorableMeter
      * @param lastM120Rate the last seen 2h rate, in terms of events per second
      */
     public RestorableMeter(double lastM15Rate, double lastM120Rate) {
+        //this.s5Rate = new RestorableEWMA(0.0, TimeUnit.SECONDS.toSeconds(5));
         this.m15Rate = new RestorableEWMA(lastM15Rate, TimeUnit.MINUTES.toSeconds(15));
         this.m120Rate = new RestorableEWMA(lastM120Rate, TimeUnit.MINUTES.toSeconds(120));
         this.startTime = this.clock.getTick();
@@ -80,6 +85,7 @@ public class RestorableMeter
             if (lastTick.compareAndSet(oldTick, newIntervalStartTick)) {
                 final long requiredTicks = age / TICK_INTERVAL;
                 for (long i = 0; i < requiredTicks; i++) {
+                    //s5Rate.tick();
                     m15Rate.tick();
                     m120Rate.tick();
                 }
@@ -102,6 +108,7 @@ public class RestorableMeter
     public void mark(long n) {
         tickIfNecessary();
         count.addAndGet(n);
+        //s5Rate.update(n);
         m15Rate.update(n);
         m120Rate.update(n);
     }

@@ -34,6 +34,9 @@ import org.apache.cassandra.io.sstable.metadata.LegacyMetadataSerializer;
 import org.apache.cassandra.io.sstable.metadata.MetadataSerializer;
 import org.apache.cassandra.utils.Pair;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static org.apache.cassandra.io.sstable.Component.separator;
 
 /**
@@ -45,6 +48,7 @@ import static org.apache.cassandra.io.sstable.Component.separator;
  */
 public class Descriptor
 {
+    static final Logger logger = LoggerFactory.getLogger(Descriptor.class);
 
     public static enum Type
     {

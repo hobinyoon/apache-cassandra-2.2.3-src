@@ -111,7 +111,13 @@ public abstract class CompactionAwareWriter extends Transactional.AbstractTransa
      */
     public Directories.DataDirectory getWriteDirectory(long expectedWriteSize)
     {
-        Directories.DataDirectory directory = getDirectories().getWriteableLocation(expectedWriteSize);
+        return getWriteDirectory(expectedWriteSize, false);
+    }
+
+
+    public Directories.DataDirectory getWriteDirectory(long expectedWriteSize, boolean coldStorage)
+    {
+        Directories.DataDirectory directory = getDirectories().getWriteableLocation(expectedWriteSize, coldStorage);
         if (directory == null)
             throw new RuntimeException("Insufficient disk space to write " + expectedWriteSize + " bytes");
 

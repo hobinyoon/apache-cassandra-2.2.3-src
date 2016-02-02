@@ -44,11 +44,11 @@ import org.apache.cassandra.db.index.SecondaryIndexManager;
 import org.apache.cassandra.dht.Murmur3Partitioner.LongToken;
 import org.apache.cassandra.io.sstable.metadata.MetadataCollector;
 import org.apache.cassandra.io.util.DiskAwareRunnable;
+import org.apache.cassandra.mutants.MemSsTableAccessMon;
 import org.apache.cassandra.service.ActiveRepairService;
 import org.apache.cassandra.utils.*;
 import org.apache.cassandra.utils.concurrent.OpOrder;
 import org.apache.cassandra.utils.memory.*;
-import org.apache.cassandra.utils.MemSsTableAccessMon;
 
 public class Memtable implements Comparable<Memtable>
 {

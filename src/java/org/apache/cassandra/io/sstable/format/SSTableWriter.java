@@ -35,8 +35,8 @@ import org.apache.cassandra.io.sstable.metadata.MetadataComponent;
 import org.apache.cassandra.io.sstable.metadata.MetadataType;
 import org.apache.cassandra.io.sstable.metadata.StatsMetadata;
 import org.apache.cassandra.io.util.FileUtils;
+import org.apache.cassandra.mutants.MemSsTableAccessMon;
 import org.apache.cassandra.utils.concurrent.Transactional;
-import org.apache.cassandra.utils.MemSsTableAccessMon;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +89,7 @@ public abstract class SSTableWriter extends SSTable implements Transactional
             MemSsTableAccessMon.Created(descriptor);
     }
 
-    public static SSTableWriter create(Descriptor descriptor, Long keyCount, Long repairedAt, CFMetaData metadata,  IPartitioner partitioner, MetadataCollector metadataCollector)
+    public static SSTableWriter create(Descriptor descriptor, Long keyCount, Long repairedAt, CFMetaData metadata, IPartitioner partitioner, MetadataCollector metadataCollector)
     {
         Factory writerFactory = descriptor.getFormat().getWriterFactory();
         return writerFactory.open(descriptor, keyCount, repairedAt, metadata, partitioner, metadataCollector);

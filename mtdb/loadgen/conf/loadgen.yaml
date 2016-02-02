@@ -2,11 +2,6 @@
 
 # Global options
 global:
-  simulated_time_in_year: 8
-
-  # Simulation time. You can specify a fraction of minutes, e.g., 0.5.
-  simulation_time_in_min: 0.5
-
   # Total number of writes
   writes: 10000
 

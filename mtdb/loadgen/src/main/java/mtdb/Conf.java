@@ -23,29 +23,33 @@ public class Conf
 		String fn_test_obj_ages = "";
 		String fn_dump_wrs = "";
 
-		double simulated_time_in_year;
-		double simulation_time_in_min;
+		double simulated_time_years;
+		double simulation_time_mins;
 		int writes;
 		String write_time_dist;
 
 		// Init with a YAML obj. Can be overwritten by command line options.
 		Global(Object obj_) {
 			Map obj = (Map) obj_;
-			simulated_time_in_year = Double.parseDouble(obj.get("simulated_time_in_year").toString());
-			simulation_time_in_min = Double.parseDouble(obj.get("simulation_time_in_min").toString());
 			writes = Integer.parseInt(obj.get("writes").toString());
 			write_time_dist = obj.get("write_time_dist").toString();
+		}
+
+		public void AddCassandraMutantsOptions(Object obj_) {
+			Map obj = (Map) obj_;
+			simulated_time_years = Double.parseDouble(obj.get("simulated_time_years").toString());
+			simulation_time_mins = Double.parseDouble(obj.get("simulation_time_mins").toString());
 		}
 
 		@Override
 		public String toString() {
 			return String.format(
-					"simulated_time_in_year: %.1f"
+					"simulated_time_years: %.1f"
 					+ "\nsimulation_time_in_min: %.1f"
 					+ "\nwrites: %d"
 					+ "\nwrite_time_dist: %s"
-					, simulated_time_in_year
-					, simulation_time_in_min
+					, simulated_time_years
+					, simulation_time_mins
 					, writes
 					, write_time_dist
 					);
@@ -106,7 +110,12 @@ public class Conf
 	public static PerObj per_obj;
 	public static Db db;
 
-	private static void _LoadYaml() throws IOException {
+	private static void LoadYamls() throws IOException {
+		LoadLoadgenYaml();
+		LoadCassandraYaml();
+	}
+
+	private static void LoadLoadgenYaml() throws IOException {
 		InputStream input = new FileInputStream(new File("conf/loadgen.yaml"));
 		Yaml yaml = new Yaml();
 		Map root = (Map) yaml.load(input);
@@ -116,6 +125,13 @@ public class Conf
 		global = new Global(root.get("global"));
 		per_obj = new PerObj(root.get("per_obj"));
 		db = new Db(root.get("db"));
+	}
+
+	private static void LoadCassandraYaml() throws IOException {
+		InputStream input = new FileInputStream(new File("../../conf/cassandra.yaml"));
+		Yaml yaml = new Yaml();
+		Map root = (Map) yaml.load(input);
+		global.AddCassandraMutantsOptions(root.get("mutants_options"));
 	}
 
 	private static void _Dump() {
@@ -154,10 +170,6 @@ public class Conf
 				.withRequiredArg().ofType(Boolean.class).defaultsTo(db.requests);
 			accepts("db_threads", "Number of client threads that make requests to the database server")
 				.withRequiredArg().ofType(Integer.class).defaultsTo(db.num_threads);
-			accepts("simulation_time", "Simulation time in minutes")
-				.withRequiredArg().ofType(Double.class).defaultsTo(global.simulation_time_in_min);
-			accepts("simulated_time", "Simulated time in years")
-				.withRequiredArg().ofType(Double.class).defaultsTo(global.simulated_time_in_year);
 			accepts("obj_size", "Object size in bytes.")
 				.withRequiredArg().ofType(Integer.class).defaultsTo(per_obj.obj_size);
 		}};
@@ -182,15 +194,13 @@ public class Conf
 		global.fn_dump_wrs = (String) options.valueOf("dump_wr");
 		db.requests = (boolean) options.valueOf("db");
 		db.num_threads = (int) options.valueOf("db_threads");
-		global.simulation_time_in_min = (double) options.valueOf("simulation_time");
-		global.simulated_time_in_year = (double) options.valueOf("simulated_time");
 		per_obj.obj_size = (int) options.valueOf("obj_size");
 	}
 
 	public static void Init(String[] args)
 		throws IOException, java.text.ParseException, InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("Conf.Init ...")) {
-			_LoadYaml();
+			LoadYamls();
 			_ParseCmdlnOptions(args);
 			_Dump();
 		}

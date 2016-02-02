@@ -880,14 +880,14 @@ mutants_options:
     simulated_time_years: 8
     simulation_time_mins: 0.5
 
-    tablet_temperature_monitor_interval_ms: 100
+    tablet_temperature_monitor_interval_simulation_time_ms: 100
 
     cold_storage_dir: /mnt/s5-cass-cold-storage/mtdb-cold
 
-    # Number of need-to-read-dfiles per day in simulated time.
-    tablet_coldness_migration_threshold: 2
-
-    min_tablet_age_days_for_migration_to_cold_storage: 7
+    # Number of need-to-read-dfiles per day (tablet_coldness_threshold) in
+    # simulated time tablet_coldness_monitor_time_window_simulated_time_days
+    tablet_coldness_monitor_time_window_simulated_time_days: 45
+    tablet_coldness_threshold: 0.01
 
     # Tablet access stat report interval. Plotting tools use this report
-    tablet_access_stat_report_interval_ms: 500
+    tablet_access_stat_report_interval_simulation_time_ms: 500

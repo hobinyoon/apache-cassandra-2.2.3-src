@@ -18,23 +18,20 @@
 package org.apache.cassandra.db.compaction;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
 import com.google.common.collect.*;
-import org.apache.cassandra.io.sstable.format.SSTableReader;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.cql3.statements.CFPropDefs;
 import org.apache.cassandra.db.ColumnFamilyStore;
 import org.apache.cassandra.db.lifecycle.LifecycleTransaction;
 import org.apache.cassandra.exceptions.ConfigurationException;
-import org.apache.cassandra.mutants.MemSsTableAccessMon;
-import org.apache.cassandra.mutants.SimTime;
+import org.apache.cassandra.io.sstable.format.SSTableReader;
+import org.apache.cassandra.mutants.SstTempMon;
 import org.apache.cassandra.utils.Pair;
 import org.apache.cassandra.utils.Tracer;
 
@@ -213,14 +210,14 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
     public void addSSTable(SSTableReader sstable)
     {
         sstables.add(sstable);
-        SSTableTemperatureMonitors.Add(sstable);
+        SstTempMon.Add(sstable);
     }
 
     @Override
     public void removeSSTable(SSTableReader sstable)
     {
         sstables.remove(sstable);
-        SSTableTemperatureMonitors.Remove(sstable);
+        SstTempMon.Remove(sstable);
     }
     /**
      * A target time span used for bucketing SSTables based on timestamps.
@@ -452,157 +449,5 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
         return String.format("DateTieredCompactionStrategy[%s/%s]",
                 cfs.getMinimumCompactionThreshold(),
                 cfs.getMaximumCompactionThreshold());
-    }
-}
-
-class SSTableTemperatureMonitors {
-    private static final Logger logger = LoggerFactory.getLogger(SSTableTemperatureMonitors.class);
-
-    private static Map<SSTableReader, Monitor> monitors = new ConcurrentHashMap();
-
-    static void Add(SSTableReader sstr) {
-        if (monitors.containsKey(sstr)) {
-            throw new RuntimeException(String.format("Unexpected: SSTableReader for %d is already in the map"
-                        , sstr.descriptor.generation));
-            // I hope a SSTableReader is added at most once. If called multiple
-            // times, think about what to do with the readMeter.
-        }
-        monitors.put(sstr, new Monitor(sstr));
-    }
-
-    static void Remove(SSTableReader sstr) {
-        Monitor m = monitors.remove(sstr);
-        if (m != null) {
-            // It is called multiple times for a sstr, but harmless.
-            m.Stop();
-        }
-    }
-
-    private static class Monitor {
-        private MonitorRunnable _tmr;
-        private Thread _thread;
-
-        // Start a temperature monitor thread. The initial thread name is
-        // attached to make sure that there is only one instance per
-        // SSTableReader instance.
-        Monitor(SSTableReader sstr) {
-            _tmr = new MonitorRunnable(sstr);
-            _thread = new Thread(_tmr);
-            _thread.setName(String.format("SstTempMon-%d-%s",
-                        sstr.descriptor.generation, _thread.getName()));
-            _thread.start();
-        }
-
-        // Stop the temperature monitor thread and join
-        public void Stop() {
-            if (_tmr != null)
-                _tmr.Stop();
-            try {
-                if (_thread != null) {
-                    _thread.join();
-                    _thread = null;
-                }
-            } catch (InterruptedException e) {
-                logger.warn("MTDB: InterruptedException {}", e);
-            }
-            _tmr = null;
-        }
-    }
-
-    private static class MonitorRunnable implements Runnable {
-        private static final long minTabletAgeNsToBeColdInSimulationTime;
-        private static final long temperatureCheckIntervalMs;
-        private static final double coldnessThreshold;
-
-        // It is in fact when a tablet becomes available for reading
-        private final long _tabletCreationTime;
-        private final SSTableReader _sstr;
-        private final Object _sleepLock = new Object();
-        private volatile boolean _stopRequested = false;
-
-        static {
-            long minTabletAgeNsToBeColdInSimulatedTime = (long)
-                (DatabaseDescriptor.getMutantsOptions().min_tablet_age_days_for_migration_to_cold_storage
-                 * 24.0 * 3600 * 1000000000);
-            minTabletAgeNsToBeColdInSimulationTime =
-                SimTime.toSimulationTimeDurNs(minTabletAgeNsToBeColdInSimulatedTime);
-
-            temperatureCheckIntervalMs = DatabaseDescriptor.getMutantsOptions().tablet_temperature_monitor_interval_ms;
-
-            coldnessThreshold = DatabaseDescriptor.getMutantsOptions().tablet_coldness_migration_threshold;
-
-            logger.warn("MTDB: "
-                    + "\n  minTabletAgeNsToBeColdInSimulatedTime : {}"
-                    + "\n  minTabletAgeNsToBeColdInSimulationTime: {}"
-                    + "\n  temperatureCheckIntervalMs: {}"
-                    + "\n      in simulated time days: {}"
-                    , minTabletAgeNsToBeColdInSimulatedTime
-                    , minTabletAgeNsToBeColdInSimulationTime
-                    , temperatureCheckIntervalMs
-                    , (SimTime.toSimulatedTimeDurNs(temperatureCheckIntervalMs * 1000000) / (24.0 * 3600 * 1000000000))
-                    );
-        }
-
-        MonitorRunnable(SSTableReader sstr) {
-            _tabletCreationTime = System.nanoTime();
-            _sstr = sstr;
-        }
-
-        void Stop() {
-            synchronized (_sleepLock) {
-                //logger.warn("MTDB: gen={} stop requested", _sstr.descriptor.generation);
-                _stopRequested = true;
-                _sleepLock.notify();
-            }
-        }
-
-        public void run() {
-            logger.warn("MTDB: TempMonStart {}", _sstr.descriptor.generation);
-            long prevNnrd = -1;
-            long prevNano = -1;
-
-            while (! _stopRequested) {
-                synchronized (_sleepLock) {
-                    try {
-                        _sleepLock.wait(temperatureCheckIntervalMs);
-                    } catch(InterruptedException e) {
-                    }
-                }
-                if (_stopRequested)
-                    break;
-
-                long curNano = System.nanoTime();
-                long tabletAgeSimulationTimeNs = curNano - _tabletCreationTime;
-                if (tabletAgeSimulationTimeNs < minTabletAgeNsToBeColdInSimulationTime) {
-                    //logger.warn("MTDB: tablet {} tabletAgeSimulationDays={}"
-                    //        , _sstr.descriptor.generation, tabletAgeSimulationTimeNs / (24.0 * 3600 * 1000000000));
-                    continue;
-                }
-
-                // Number of need-to-read-datafiles
-                long nnrd = MemSsTableAccessMon.GetNumSstNeedToReadDataFile(_sstr);
-                if (prevNnrd == -1 || prevNano == -1) {
-                    prevNnrd = nnrd;
-                    prevNano = curNano;
-                    continue;
-                }
-
-                long simulatedTimeDurNs = SimTime.toSimulatedTimeDurNs(curNano - prevNano);
-                double nnrdPerDay = (nnrd - prevNnrd) * (24.0 * 3600 * 1000000000) / simulatedTimeDurNs;
-                //logger.warn("MTDB: tablet {} nnrdPerDay={} prevNnrd={} nnrd={}",
-                //        _sstr.descriptor.generation, nnrdPerDay, prevNnrd, nnrd);
-                if (nnrdPerDay < coldnessThreshold) {
-                    logger.warn("MTDB: TempMonBecomeCold {}. Implement migration!", _sstr.descriptor.generation);
-                    // TODO: Stop monitoring the temperature after this. Mutants'
-                    // tablet only ages. No anti-aging.
-                    break;
-                }
-
-                prevNnrd = nnrd;
-                prevNano = curNano;
-            }
-
-            logger.warn("MTDB: TempMonStop {}", _sstr.descriptor.generation);
-        }
     }
 }

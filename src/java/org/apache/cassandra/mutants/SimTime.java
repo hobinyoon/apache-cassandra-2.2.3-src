@@ -20,8 +20,8 @@ public class SimTime {
             (DatabaseDescriptor.getMutantsOptions().simulated_time_years * 365.25 * 24 * 60)
             / (DatabaseDescriptor.getMutantsOptions().simulation_time_mins);
 
-        logger.warn("MTDB: simulationOverSimulatedTime={} simulatedOverSimulationTime={}"
-                , simulationOverSimulatedTime, simulatedOverSimulationTime);
+        //logger.warn("MTDB: simulationOverSimulatedTime={} simulatedOverSimulationTime={}"
+        //        , simulationOverSimulatedTime, simulatedOverSimulationTime);
 	}
 
     public static long toSimulationTimeDurNs(long simulatedTimeDurNs) {

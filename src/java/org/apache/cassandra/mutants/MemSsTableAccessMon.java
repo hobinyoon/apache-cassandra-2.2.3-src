@@ -246,6 +246,9 @@ public class MemSsTableAccessMon
     }
 
     private static class OutputRunnable implements Runnable {
+        static final long reportIntervalMs =
+            DatabaseDescriptor.getMutantsOptions().tablet_access_stat_report_interval_simulation_time_ms;
+
         private final Object _sleepLock = new Object();
 
         void Wakeup() {
@@ -255,9 +258,6 @@ public class MemSsTableAccessMon
         }
 
         public void run() {
-            long report_interval_ms = DatabaseDescriptor.getMutantsOptions().tablet_access_stat_report_interval_ms;
-            logger.warn("MTDB: report_interval_ms {}", report_interval_ms);
-
             // Sort lexicographcally with Memtables go first
             class OutputComparator implements Comparator<String> {
                 @Override
@@ -282,7 +282,7 @@ public class MemSsTableAccessMon
             while (true) {
                 synchronized (_sleepLock) {
                     try {
-                        _sleepLock.wait(report_interval_ms);
+                        _sleepLock.wait(reportIntervalMs);
                     } catch(InterruptedException e) {
                         // It can wake up early to process Memtable /
                         // SSTable deletion events

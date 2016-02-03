@@ -114,8 +114,6 @@ class LogEntry(object):
 		self.op = t[7]
 		line_from_op = " ".join(t[7:])
 
-		# TODO: add more events, like temperature monitor started, ...
-
 		self.event = None
 		if self.op == "SstCreated":
 			self.event = Event.SstCreated(t)
@@ -123,16 +121,18 @@ class LogEntry(object):
 			self.event = Event.SstDeleted(t)
 		elif self.op == "TabletAccessStat":
 			self.event = Event.AccessStat(t)
-		elif line_from_op.startswith("Node configuration:"):
-			Desc.SetNodeConfiguration(line_from_op)
-		elif self.op.startswith("metadata="):
-			Desc.SetCassMetadata(line)
 		elif self.op == "SSTableReader":
 			mo = re.match(LogEntry.pattern0, line_from_op)
 			if mo == None:
 				raise RuntimeError("Unexpected: [%s]" % line_from_op)
 			#Cons.P(mo.group(0))
 			self.event = Event.SstOpen(line_from_op)
+		elif self.op == "TempMon":
+			self.event = Event.TempMon(line)
+		elif line_from_op.startswith("Node configuration:"):
+			Desc.SetNodeConfiguration(line_from_op)
+		elif self.op.startswith("metadata="):
+			Desc.SetCassMetadata(line)
 		else:
 			#Cons.P(t[7:])
 			pass

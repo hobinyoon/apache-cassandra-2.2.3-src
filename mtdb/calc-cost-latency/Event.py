@@ -44,6 +44,68 @@ class SstOpen(Event):
 		self.open_reason = t2[1]
 
 
+class TempMon(Event):
+	class Started(object):
+		def __init__(self):
+			pass
+
+	class Stopped(object):
+		def __init__(self):
+			pass
+
+	class NumAccessesPerDay(object):
+		def __init__(self):
+			pass
+
+	class BecomeCold(object):
+		def __init__(self):
+			pass
+
+	pattern_start = re.compile(r" Start ")
+	pattern_stop = re.compile(r" Stop ")
+	pattern_num_accesses = re.compile(r" numAccessesPerDay=")
+	pattern_num_accesses_sstgen = re.compile(r"SstTempMon-\d+-Thread-\d+")
+	pattern_become_cold = re.compile(r" TabletBecomeCold ")
+	pattern_become_cold_sstgen = re.compile(r"\d+")
+
+	def __init__(self, line):
+		mo = re.search(TempMon.pattern_start, line)
+		if mo != None:
+			self.sst_gen = int(line[mo.end():])
+			self.event = TempMon.Started()
+			return
+
+		mo = re.search(TempMon.pattern_stop, line)
+		if mo != None:
+			self.sst_gen = int(line[mo.end():])
+			self.event = TempMon.Stopped()
+			return
+
+		mo = re.search(TempMon.pattern_num_accesses, line)
+		if mo != None:
+			self.num_accesses_per_day = float(line[mo.end():])
+			mo = re.search(TempMon.pattern_num_accesses_sstgen, line)
+			if mo == None:
+				raise RuntimeError("Unexpected [%s]" % line)
+			#Cons.P(line[mo.start():])
+			t = line[mo.start():].split("-")
+			self.sst_gen = int(t[1])
+			self.event = TempMon.NumAccessesPerDay()
+			return
+
+		mo = re.search(TempMon.pattern_become_cold, line)
+		if mo != None:
+			mo1 = re.search(TempMon.pattern_become_cold_sstgen, line[mo.end():])
+			if mo1 == None:
+				raise RuntimeError("Unexpected [%s]" % line)
+			#Cons.P(line[mo.end():][mo1.start():mo1.end()])
+			self.sst_gen = int(line[mo.end():][mo1.start():mo1.end()])
+			self.event = TempMon.BecomeCold()
+			return
+
+		raise RuntimeError("Unexpected [%s]" % line)
+
+
 class AccessStat(Event):
 	class AccStat(object):
 		def __init__(self):

@@ -86,6 +86,33 @@ class Events:
 				return e1
 		return None
 
+	def TempMonStarted(self):
+		e = self.events.get(Event.TempMon)
+		if e == None:
+			return None
+		for e1 in e:
+			if type(e1.event.event) is Event.TempMon.Started:
+				return e1
+		return None
+
+	def TempMonStopped(self):
+		e = self.events.get(Event.TempMon)
+		if e == None:
+			return None
+		for e1 in e:
+			if type(e1.event.event) is Event.TempMon.Stopped:
+				return e1
+		return None
+
+	def TempMonBecomeCold(self):
+		e = self.events.get(Event.TempMon)
+		if e == None:
+			return None
+		for e1 in e:
+			if type(e1.event.event) is Event.TempMon.BecomeCold:
+				return e1
+		return None
+
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
 
@@ -110,6 +137,8 @@ def _BuildIdEventsMap():
 					if sst_gen not in _id_events:
 						raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
 					_id_events[sst_gen].SetTabletSize(e1.size)
+		elif type(l.event) is Event.TempMon:
+			_id_events[l.event.sst_gen].Add(l)
 
 	# Filter out sstables without tablet_size info. It can happen when the
 	# tablets are created at the end of the experiment period without any
@@ -201,9 +230,12 @@ def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-tablet-sizes-timeline"
 	with open(_fn_plot_data, "w") as fo:
-		fmt = "%2s %20s %20s %20s %20s %10d %10d %20s %20s"
-		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot "
-			"box_plot_right_bound tablet_size y_cord_base opened_early opened_normal"))
+		fmt = "%2s %20s %20s %20s %20s %10d %10d %20s %20s %20s %20s %20s"
+		fo.write("%s\n" % Util.BuildHeader(fmt,
+			"id creation_time deletion_time deletion_time_for_plot"
+			" box_plot_right_bound tablet_size y_cord_base opened_early opened_normal"
+			" temp_mon_started temp_mon_stopped temp_mon_becomd_cold"
+			))
 		# Note: id can be m(number) or (number) for memtables and sstables
 		for id_, v in sorted(_id_events.iteritems()):
 			fo.write((fmt + "\n") % (id_
@@ -215,5 +247,8 @@ def _WriteToFile():
 				, v.y_cord
 				, SimTime.StrftimeWithOutofrange(v.OpenedEarly())
 				, SimTime.StrftimeWithOutofrange(v.OpenedNormal())
+				, SimTime.StrftimeWithOutofrange(v.TempMonStarted())
+				, SimTime.StrftimeWithOutofrange(v.TempMonStopped())
+				, SimTime.StrftimeWithOutofrange(v.TempMonBecomeCold())
 				))
 	Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

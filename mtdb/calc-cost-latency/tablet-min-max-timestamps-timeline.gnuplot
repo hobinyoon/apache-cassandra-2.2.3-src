@@ -61,6 +61,13 @@ set samples 5000
 # Desc
 x0 = X_MIN - x1p
 y0 = Y_MAX - 3*y1p
+DESC = DESC \
+. "\n" \
+. "\nOE: Open Early" \
+. "\nON: Open Normal" \
+. "\nTM0: Temperature monitor start" \
+. "\nTM1: Temperature monitor stop" \
+. "\nBC: Become cold"
 set label DESC at x0, y0 left tc rgb "black" font ",7"
 
 # Legend
@@ -126,6 +133,16 @@ FN_IN_TS u 2:6:2:5:6:7:(color($1)) w boxxyerrorbars lc variable not, \
 FN_IN_TS u 2:6:(0):9:(color($1)) w vectors nohead lc variable not, \
 FN_IN_TS u 2:8:1:(color($1)) w labels right offset -0.5,0 textcolor variable font ",8" not, \
 legendAccesses(x) w lines lc rgb "black" not, \
+FN_IN_TS u 11:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 12:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 13:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 14:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 15:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 11:7:("OE")  w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
+FN_IN_TS u 12:7:("ON")  w labels tc rgb "black" rotate by 90 left  offset 0, 0.2 font ",7" not, \
+FN_IN_TS u 13:7:("TM0") w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
+FN_IN_TS u 14:7:("BC")  w labels tc rgb "black" rotate by 90 left  offset 0, 0.2 font ",7" not, \
+FN_IN_TS u 15:7:("TM1") w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
 FN_IN_AC u 2:9:(color($1)) w points pointsize 0.05 lc variable not # "# of accesses"
 
 # "vectors" doesn't have dotted line... dang

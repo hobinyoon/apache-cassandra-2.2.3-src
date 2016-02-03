@@ -233,7 +233,8 @@ def _WriteToFile():
 		fmt = "%2s %20s %20s %20s %20s %10d %10d %20s %20s %20s %20s %20s"
 		fo.write("%s\n" % Util.BuildHeader(fmt,
 			"id creation_time deletion_time deletion_time_for_plot"
-			" box_plot_right_bound tablet_size y_cord_base opened_early opened_normal"
+			" box_plot_right_bound tablet_size y_cord_base"
+			" opened_early opened_normal"
 			" temp_mon_started temp_mon_stopped temp_mon_becomd_cold"
 			))
 		# Note: id can be m(number) or (number) for memtables and sstables

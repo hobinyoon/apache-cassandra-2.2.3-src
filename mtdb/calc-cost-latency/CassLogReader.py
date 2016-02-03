@@ -8,12 +8,11 @@ sys.path.insert(0, "../util/python")
 import Cons
 
 import Desc
+import Event
 import SimTime
 
 _raw_lines = []
 _logs = []
-
-_report_interval_ms = None
 
 
 def Read():
@@ -101,146 +100,6 @@ def _WriteToFile():
 	Cons.P("Created a Cassandra MTDB log file %s %d" % (fn, os.path.getsize(fn)))
 
 
-# TODO: may want to separate these into MutantsEvent (or CassEvent) module
-class Event(object):
-	def __init__(self):
-		pass
-
-	def __str__(self):
-		return ", ".join("%s: %s" % item for item in vars(self).items())
-
-# A tmp table is created
-class EventSstCreated(Event):
-	def __init__(self, t):
-		if "tmp-la-" not in t[8]:
-			raise RuntimeError("A tmp table is expected: %s" % t[8])
-		t1 = t[8].split("tmp-la-")
-		#Cons.P(t1)
-		self.sst_gen = int(t1[1].split("-")[0])
-
-	def __str__(self):
-		return "EventSstCreated: " + ", ".join("%s: %s" % item for item in vars(self).items())
-
-class EventSstDeleted(Event):
-	def __init__(self, t):
-		t1 = t[8].split("/la-")
-		#Cons.P(t1)
-		self.sst_gen = int(t1[1].split("-")[0])
-
-	def __str__(self):
-		return "EventSstDeleted: " + ", ".join("%s: %s" % item for item in vars(self).items())
-
-class EventSstOpen(Event):
-	def __init__(self, t):
-		t1 = t.split("/la-")
-		self.sst_gen = int(t1[1].split("-")[0])
-		#Cons.P(self.sst_gen)
-		t2 = t.split(" openReason=")
-		if len(t2) != 2:
-			raise RuntimeError("Unexpected format: [%s]" % t)
-		self.open_reason = t2[1]
-
-	def __str__(self):
-		return "EventSstOpen: " + ", ".join("%s: %s" % item for item in vars(self).items())
-
-
-class EventAccessStat(Event):
-	class AccStat(object):
-		def __init__(self):
-			pass
-		def __str__(self):
-			return ", ".join("%s: %s" % item for item in vars(self).items())
-
-	class MemtAccStat(AccStat):
-		def __init__(self, str0):
-			# Memtable-table1@1481193123(271.975KiB serialized bytes, 798 ops, 1%/0% of on/off-heap limit)-1287,386
-			if str0.startswith(" "):
-				str0 = str0[1:]
-			if str0.startswith("Memtable-table1@") == False:
-				#                 0123456789012345
-				raise RuntimeError("Unexpected: [%s]" % str0)
-			str0 = str0[16:]
-			t = str0.split("(")
-			self.id_ = int(t[0])
-			#Cons.P(self.id_)
-			t1 = t[1].split()
-			# In 110.426KiB
-			self.size = t1[0]
-			#Cons.P(self.size)
-			#Cons.P(t[1])
-			t2 = t[1].split("-")
-			#Cons.P(t2)
-			t3 = t2[2].split(",")
-			self.num_accesses = int(t3[0])
-			self.num_hits = int(t3[1])
-			#Cons.P("%d %d" % (num_accesses, num_hits))
-
-		def __str__(self):
-			return "MemtAccStat: " + super(EventAccessStat.MemtAccStat, self).__str__()
-
-	class SstAccStat(AccStat):
-		def __init__(self, str0):
-			#Cons.P(str0)
-			# 09:55428930,258068,258068,0
-			if str0.startswith(" "):
-				str0 = str0[1:]
-			t = str0.split(":")
-			# We use sstable gen as id_
-			self.id_ = int(t[0])
-			t1 = t[1].split(",")
-			#Cons.P(t1)
-			self.size = int(t1[0])
-			self.num_reads = int(t1[1])
-			self.num_needto_read_datafile = int(t1[2])
-			# These numbers are not complete. They are not tracked when key cache is
-			# present or the tracking is not enabled, which is a per-request option.
-			self.num_tp = int(t1[3])
-			self.num_fp = int(t1[4])
-			# No need to convert these to datetime objects
-			self.min_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[5], "%y%m%d-%H%M%S.%f"))
-			self.max_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[6], "%y%m%d-%H%M%S.%f"))
-
-		def __str__(self):
-			return "SstAccStat: " + super(EventAccessStat.SstAccStat, self).__str__()
-
-	# Memtable-table1@44994146(3.251MiB serialized bytes, 9768 ops, 15%/0% of on/off-heap limit)-17144,13881
-	pattern0 = re.compile(r"( )?Memtable-table1@\d+\(\d*\.*\d*\w* serialized bytes, \d* ops, \d*%\/\d*% of on\/off-heap limit\)-\d+,\d+")
-
-	#                           04:23890266,94839,8542,77,0,160127-120726.501,160127-120809.161
-	#                           04:23890266 sst_gen:file_size
-	#                                  ,94839 num_reads
-	#                                      ,8542 num_need_to_read_dfiles
-	#                                          ,77 num_bf_tp
-	#                                              ,0 num_bf_fp
-	#                                                  ,160127-120726.501 timestamp_min
-	#                                                               ,160127-120809.161 timestamp_max
-	pattern1 = re.compile(r"( )?\d+:\d+,\d+,\d+,\d+,\d+,\d+-\d+\.\d+,\d+-\d+\.\d+")
-
-	def __init__(self, t):
-		str0 = " ".join(t[8:])
-		#Cons.P(str0)
-		self.entries = []
-		i = 0
-		while True:
-			mo = re.match(EventAccessStat.pattern0, str0[i:])
-			if mo != None:
-				#Cons.P("%s %d %d" % (mo.group(0), mo.start(), mo.end()))
-				self.entries.append(EventAccessStat.MemtAccStat(mo.group(0)))
-				#Cons.P(acc_stat)
-				i += mo.end()
-				continue
-			mo = re.match(EventAccessStat.pattern1, str0[i:])
-			if mo != None:
-				#Cons.P("%s %d %d" % (mo.group(0), mo.start(), mo.end()))
-				self.entries.append(EventAccessStat.SstAccStat(mo.group(0)))
-				i += mo.end()
-				continue
-			break
-
-	def __str__(self):
-		return "EventAccessStat: " + ", ".join("%s: %s" % item for item in vars(self).items())
-
-
 class LogEntry(object):
 	pattern0 = re.compile(r"SSTableReader desc=.+/la-\d+-big openReason=.+")
 
@@ -255,16 +114,15 @@ class LogEntry(object):
 		self.op = t[7]
 		line_from_op = " ".join(t[7:])
 
-		# TODO: this string comparison part can be replaced
-		# if self.op == "SstCreated":
+		# TODO: add more events, like temperature monitor started, ...
 
 		self.event = None
 		if self.op == "SstCreated":
-			self.event = EventSstCreated(t)
+			self.event = Event.SstCreated(t)
 		elif self.op == "SstDeleted":
-			self.event = EventSstDeleted(t)
+			self.event = Event.SstDeleted(t)
 		elif self.op == "TabletAccessStat":
-			self.event = EventAccessStat(t)
+			self.event = Event.AccessStat(t)
 		elif line_from_op.startswith("Node configuration:"):
 			Desc.SetNodeConfiguration(line_from_op)
 		elif self.op.startswith("metadata="):
@@ -274,7 +132,7 @@ class LogEntry(object):
 			if mo == None:
 				raise RuntimeError("Unexpected: [%s]" % line_from_op)
 			#Cons.P(mo.group(0))
-			self.event = EventSstOpen(line_from_op)
+			self.event = Event.SstOpen(line_from_op)
 		else:
 			#Cons.P(t[7:])
 			pass

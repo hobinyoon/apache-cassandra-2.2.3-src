@@ -7,6 +7,7 @@ import Util
 
 import CassLogReader
 import Desc
+import Event
 import SimTime
 
 _fn_plot_data = None
@@ -48,11 +49,11 @@ class Events:
 		self.events[type(e.event)].append(e)
 
 	def SetTabletSize(self, tablet_size):
-		# tablet_acc_stat is of type EventAccessStat.AccStat
+		# tablet_acc_stat is of type AccessStat.AccStat
 		self.tablet_size = max(self.tablet_size, tablet_size)
 
 	def Created(self):
-		e = self.events.get(CassLogReader.EventSstCreated)
+		e = self.events.get(Event.SstCreated)
 		if e == None:
 			return None
 		if len(e) != 1:
@@ -60,7 +61,7 @@ class Events:
 		return e[0]
 
 	def Deleted(self):
-		e = self.events.get(CassLogReader.EventSstDeleted)
+		e = self.events.get(Event.SstDeleted)
 		if e == None:
 			return None
 		if len(e) != 1:
@@ -68,7 +69,7 @@ class Events:
 		return e[0]
 
 	def OpenedNormal(self):
-		e = self.events.get(CassLogReader.EventSstOpen)
+		e = self.events.get(Event.SstOpen)
 		if e == None:
 			return None
 		for e1 in e:
@@ -77,7 +78,7 @@ class Events:
 		return None
 
 	def OpenedEarly(self):
-		e = self.events.get(CassLogReader.EventSstOpen)
+		e = self.events.get(Event.SstOpen)
 		if e == None:
 			return None
 		for e1 in e:
@@ -91,20 +92,20 @@ class Events:
 
 def _BuildIdEventsMap():
 	for l in CassLogReader._logs:
-		if type(l.event) is CassLogReader.EventSstCreated:
+		if type(l.event) is Event.SstCreated:
 			if l.event.sst_gen not in _id_events:
 				_id_events[l.event.sst_gen] = Events()
 			_id_events[l.event.sst_gen].Add(l)
-		elif type(l.event) is CassLogReader.EventSstDeleted:
+		elif type(l.event) is Event.SstDeleted:
 			_id_events[l.event.sst_gen].Add(l)
-		elif type(l.event) is CassLogReader.EventSstOpen:
+		elif type(l.event) is Event.SstOpen:
 			_id_events[l.event.sst_gen].Add(l)
-		elif type(l.event) is CassLogReader.EventAccessStat:
+		elif type(l.event) is Event.AccessStat:
 			for e1 in l.event.entries:
-				if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
+				if type(e1) is Event.AccessStat.MemtAccStat:
 					# We don't plot memtables for now
 					pass
-				elif type(e1) is CassLogReader.EventAccessStat.SstAccStat:
+				elif type(e1) is Event.AccessStat.SstAccStat:
 					sst_gen = e1.id_
 					if sst_gen not in _id_events:
 						raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)

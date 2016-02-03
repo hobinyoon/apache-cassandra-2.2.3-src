@@ -8,6 +8,7 @@ import Util
 
 import CassLogReader
 import Desc
+import Event
 import SimTime
 
 _fn_plot_data = None
@@ -29,19 +30,17 @@ def GetTabletMinTimestamp(sst_gen):
 
 class Events:
 	def __init__(self):
-		self.created = None
-		self.deleted = None
+		self.events = {}
 		self.min_timestamp = None
 		self.max_timestamp = None
 
-	def AddCreatedDeleted(self, e):
-		if e.op == "SstCreated":
-			self.created = e
-		elif e.op == "SstDeleted":
-			self.deleted = e
+	def Add(self, e):
+		if type(e.event) not in self.events:
+			self.events[type(e.event)] = []
+		self.events[type(e.event)].append(e)
 
 	def SetTimpstamps(self, tablet_acc_stat):
-		# tablet_acc_stat is of type EventAccessStat.AccStat
+		# tablet_acc_stat is of type AccessStat.AccStat
 		if self.min_timestamp == None:
 			self.min_timestamp = tablet_acc_stat.min_timestamp
 		else:
@@ -55,22 +54,40 @@ class Events:
 				raise RuntimeError("Unexpected: self.max_timestamp (%d) != tablet_acc_stat.max_timestamp (%d)"
 						% (self.max_timestamp, tablet_acc_stat.max_timestamp))
 
+	def Created(self):
+		e = self.events.get(Event.SstCreated)
+		if e == None:
+			return None
+		if len(e) != 1:
+			raise RuntimeError("Unexpected:")
+		return e[0]
+
+	def Deleted(self):
+		e = self.events.get(Event.SstDeleted)
+		if e == None:
+			return None
+		if len(e) != 1:
+			raise RuntimeError("Unexpected:")
+		return e[0]
+
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
 
 
 def _BuildIdEventsMap():
 	for l in CassLogReader._logs:
-		if l.op == "SstCreated" or l.op == "SstDeleted":
+		if type(l.event) is Event.SstCreated:
 			if l.event.sst_gen not in _id_events:
 				_id_events[l.event.sst_gen] = Events()
-			_id_events[l.event.sst_gen].AddCreatedDeleted(l)
-		elif l.op == "TabletAccessStat":
+			_id_events[l.event.sst_gen].Add(l)
+		elif type(l.event) is Event.SstDeleted:
+			_id_events[l.event.sst_gen].Add(l)
+		elif type(l.event) is Event.AccessStat:
 			for e1 in l.event.entries:
-				if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
+				if type(e1) is Event.AccessStat.MemtAccStat:
 					# Memtables don't have min/max timestamps
 					pass
-				elif type(e1) is CassLogReader.EventAccessStat.SstAccStat:
+				elif type(e1) is Event.AccessStat.SstAccStat:
 					sst_gen = e1.id_
 					if sst_gen not in _id_events:
 						raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
@@ -97,14 +114,14 @@ def _WriteToFile():
 			))
 		for id_, v in sorted(_id_events.iteritems()):
 			# If not defined, "-"
-			deleted_time0 = (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "-")
+			deleted_time0 = (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else "-")
 			# If not defined, SimTime._simulated_time_end
-			deleted_time1_ = v.deleted.simulated_time if v.deleted != None else SimTime._simulated_time_end
+			deleted_time1_ = v.Deleted().simulated_time if v.Deleted() != None else SimTime._simulated_time_end
 			deleted_time1 = deleted_time1_.strftime("%y%m%d-%H%M%S.%f")
-			deleted_time2 = SimTime.StrftimeWithOutofrange(v.deleted)
+			deleted_time2 = SimTime.StrftimeWithOutofrange(v.Deleted())
 
 			fo.write((fmt + "\n") % (id_
-				, v.created.simulated_time.strftime("%y%m%d-%H%M%S.%f")
+				, v.Created().simulated_time.strftime("%y%m%d-%H%M%S.%f")
 				, deleted_time0
 				, deleted_time2
 				, deleted_time1
@@ -112,6 +129,6 @@ def _WriteToFile():
 				, v.max_timestamp.strftime("%y%m%d-%H%M%S.%f")
 				, (v.min_timestamp + datetime.timedelta(seconds = (v.max_timestamp - v.min_timestamp).total_seconds()/2.0)).strftime("%y%m%d-%H%M%S.%f")
 				, (v.max_timestamp - v.min_timestamp).total_seconds()
-				, (deleted_time1_ - v.created.simulated_time).total_seconds()
+				, (deleted_time1_ - v.Created().simulated_time).total_seconds()
 				))
 	Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

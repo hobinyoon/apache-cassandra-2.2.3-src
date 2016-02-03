@@ -9,6 +9,7 @@ import Util
 
 import CassLogReader
 import Desc
+import Event
 import TabletMinMaxTimestampsTimelinePlotDataGenerator
 
 _fn_plot_data = None
@@ -28,7 +29,7 @@ class Events:
 		self.time_cnts = {}
 
 	def AddAccStat(self, simulated_time, tablet_acc_stat):
-		# tablet_acc_stat is of type EventAccessStat.AccStat
+		# tablet_acc_stat is of type AccessStat.AccStat
 		self.time_cnts[simulated_time] = tablet_acc_stat
 
 	def __str__(self):
@@ -36,13 +37,13 @@ class Events:
 
 
 def _BuildIdEventsMap(e):
-	if e.op != "TabletAccessStat":
+	if type(e.event) is not Event.AccessStat:
 		return
 	for e1 in e.event.entries:
-		if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
+		if type(e1) is Event.AccessStat.MemtAccStat:
 			# We don't plot memtables for now.
 			pass
-		elif type(e1) is CassLogReader.EventAccessStat.SstAccStat:
+		elif type(e1) is Event.AccessStat.SstAccStat:
 			sst_gen = e1.id_
 			global _id_events
 			if sst_gen not in _id_events:

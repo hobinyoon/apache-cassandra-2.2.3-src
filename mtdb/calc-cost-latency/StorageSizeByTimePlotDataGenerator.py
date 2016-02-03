@@ -8,6 +8,7 @@ import Util
 
 import CassLogReader
 import Desc
+import Event
 import SimTime
 import StgCost
 
@@ -24,11 +25,11 @@ def Gen():
 			total_cost = 0.0
 			last_cost_print_time = SimTime._simulated_time_begin
 			for l in CassLogReader._logs:
-				if l.op == "TabletAccessStat":
+				if type(l.event) is Event.AccessStat:
 					cost = 0.0
 					stg_size = 0
 					for e in l.event.entries:
-						if type(e) is CassLogReader.EventAccessStat.SstAccStat:
+						if type(e) is Event.AccessStat.SstAccStat:
 							stg_size += e.size
 							# Find the last logging time of the same sstable and calculate cost.
 							c = StgCost.InstStore(e.size, l.simulated_time - SstLastCostCalcTime.Get(e.id_))
@@ -46,7 +47,7 @@ def Gen():
 					last_cost_print_time = l.simulated_time
 
 					total_cost += cost
-				elif l.op == "SstCreated":
+				elif type(l.event) is Event.SstCreated:
 					SstLastCostCalcTime.Set(l.event.sst_gen, l.simulated_time)
 			msg = "total cost ($): %f" % total_cost
 			fo.write("# %s\n" % msg)

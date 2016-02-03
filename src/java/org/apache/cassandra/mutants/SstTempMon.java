@@ -168,7 +168,7 @@ public class SstTempMon {
                 //    * SimTime.toSimulationTimeDurNs(24.0 * 3600 * 1000000000)
                 //    / coldnessMonitorTimeWindowSimulationNs;
                 double numAccessesPerDay = numAccessesInQ * dayOverTimeWindowDays;
-                logger.warn("MTDB: TempMon numAccessesPerDay={}", numAccessesPerDay);
+                //logger.warn("MTDB: TempMon numAccessesPerDay={}", numAccessesPerDay);
                 if (numAccessesPerDay < coldnessThreshold) {
                     return true;
                 } else {

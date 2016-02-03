@@ -32,25 +32,11 @@ class MeasureTime:
 		return (time.time() - self.start_time) * 1000.0
 
 
-# TODO: may want to use regex replace
 def Indent(s0, ind):
 	spaces = ""
 	for i in range(ind):
 		spaces += " "
-
-	o = ""
-	tokens = s0.split("\n")
-	first = True
-	for t in tokens:
-		if len(t) == 0:
-			continue
-		if first == True:
-			first = False
-		else:
-			o += "\n"
-		o += spaces
-		o += t
-	return o
+	return re.sub(re.compile("^", re.MULTILINE), spaces, s0)
 
 
 def IndPrint(s0, ind = 0):

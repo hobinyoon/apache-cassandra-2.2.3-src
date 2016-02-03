@@ -38,7 +38,7 @@ y1p = (Y_MAX - Y_MIN) / 100
 x0=X_MIN-x1p
 x1=X_MAX+x1p
 y0=Y_MIN-y1p
-y1=Y_MAX
+y1=Y_MAX+2*y1p
 
 set xrange [x0:x1]
 set yrange [y0:y1]
@@ -47,7 +47,11 @@ set key top left
 
 # Desc
 x0 = X_MIN
-y0 = Y_MAX - 3*y1p
+y0 = Y_MAX +2*y1p
+DESC = DESC \
+. "\n" \
+. "\nOE: Open Early" \
+. "\nON: Open Normal"
 set label DESC at x0, y0 left tc rgb "black" font ",7"
 
 TRANSP0=0.06
@@ -134,8 +138,12 @@ set style fill transparent solid TRANSP0 noborder
 plot \
 FN_IN_CD u 2:7:2:5:7:($7+$6):(color($1)) w boxxyerrorbars lc variable not, \
 FN_IN_AC u 3:($2 + AccessCountHeight($6)):(color($1)) w points pointsize 0.05 lc variable not, \
-FN_IN_CD u 2:7:(0):6:(color($1)) w vectors nohead      lt 1 lc variable not, \
+FN_IN_CD u 2:7:(0):6:(color($1)) w vectors nohead lc variable not, \
 FN_IN_CD u 2:($7+$6/2.0):1:(color($1)) w labels right offset -0.5,0 font ",8" tc variable not, \
+FN_IN_CD u 8:($7+$6-y1p):(0):(2*y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_CD u 9:($7+$6-y1p):(0):(2*y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_CD u 8:($7+$6+2*y1p):("OE") w labels tc rgb "black" rotate by 90 left font ",7" not, \
+FN_IN_CD u 9:($7+$6+2*y1p):("ON") w labels tc rgb "black" rotate by 90 left font ",7" not, \
 legendAccesses(x) w lines lc rgb "black" not
 
 # dotted line doesn't work with lc variable

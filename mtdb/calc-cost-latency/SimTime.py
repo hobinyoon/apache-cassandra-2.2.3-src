@@ -66,3 +66,10 @@ def SimulatedTime(simulation_time):
 
 def SimulatedTimeBegin():
 	return _simulated_time_begin
+
+
+def StrftimeWithOutofrange(d):
+	if d == None:
+		return "090101-000000.000000"
+	else:
+		return d.simulated_time.strftime("%y%m%d-%H%M%S.%f")

@@ -38,20 +38,52 @@ def MinTabletSize():
 
 class Events:
 	def __init__(self):
-		self.created = None
-		self.deleted = None
+		self.events = {}
 		self.tablet_size = -1
 		self.y_cord = -1
 
-	def AddCreatedDeleted(self, e):
-		if e.op == "SstCreated":
-			self.created = e
-		elif e.op == "SstDeleted":
-			self.deleted = e
+	def Add(self, e):
+		if type(e.event) not in self.events:
+			self.events[type(e.event)] = []
+		self.events[type(e.event)].append(e)
 
 	def SetTabletSize(self, tablet_size):
 		# tablet_acc_stat is of type EventAccessStat.AccStat
 		self.tablet_size = max(self.tablet_size, tablet_size)
+
+	def Created(self):
+		e = self.events.get(CassLogReader.EventSstCreated)
+		if e == None:
+			return None
+		if len(e) != 1:
+			raise RuntimeError("Unexpected:")
+		return e[0]
+
+	def Deleted(self):
+		e = self.events.get(CassLogReader.EventSstDeleted)
+		if e == None:
+			return None
+		if len(e) != 1:
+			raise RuntimeError("Unexpected:")
+		return e[0]
+
+	def OpenedNormal(self):
+		e = self.events.get(CassLogReader.EventSstOpen)
+		if e == None:
+			return None
+		for e1 in e:
+			if e1.event.open_reason == "NORMAL":
+				return e1
+		return None
+
+	def OpenedEarly(self):
+		e = self.events.get(CassLogReader.EventSstOpen)
+		if e == None:
+			return None
+		for e1 in e:
+			if e1.event.open_reason == "EARLY":
+				return e1
+		return None
 
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
@@ -59,11 +91,15 @@ class Events:
 
 def _BuildIdEventsMap():
 	for l in CassLogReader._logs:
-		if l.op == "SstCreated" or l.op == "SstDeleted":
+		if type(l.event) is CassLogReader.EventSstCreated:
 			if l.event.sst_gen not in _id_events:
 				_id_events[l.event.sst_gen] = Events()
-			_id_events[l.event.sst_gen].AddCreatedDeleted(l)
-		elif l.op == "TabletAccessStat":
+			_id_events[l.event.sst_gen].Add(l)
+		elif type(l.event) is CassLogReader.EventSstDeleted:
+			_id_events[l.event.sst_gen].Add(l)
+		elif type(l.event) is CassLogReader.EventSstOpen:
+			_id_events[l.event.sst_gen].Add(l)
+		elif type(l.event) is CassLogReader.EventAccessStat:
 			for e1 in l.event.entries:
 				if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
 					# We don't plot memtables for now
@@ -143,7 +179,7 @@ def _CalcTabletsYCords0(y_spacing):
 		# Delete areas that are past the sweeping line
 		new_areas = []
 		for a in areas:
-			if v.created.simulated_time <= a.x1:
+			if v.Created().simulated_time <= a.x1:
 				new_areas.append(a)
 		areas = new_areas
 
@@ -151,8 +187,8 @@ def _CalcTabletsYCords0(y_spacing):
 		areas.sort()
 
 		# Fit the current area (block) while avoiding overlapping with existing areas.
-		#a0 = Area(v.created, v.deleted, 0, v.size)
-		a0 = Area(v.deleted, 0, v.tablet_size)
+		#a0 = Area(v.Created(), v.Deleted(), 0, v.size)
+		a0 = Area(v.Deleted(), 0, v.tablet_size)
 		for a in areas:
 			if a.Overlaps(a0):
 				a0.Moveup(a.y1 + y_spacing)
@@ -164,17 +200,19 @@ def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-tablet-sizes-timeline"
 	with open(_fn_plot_data, "w") as fo:
-		fmt = "%2s %20s %20s %20s %20s %10d %10d"
+		fmt = "%2s %20s %20s %20s %20s %10d %10d %20s %20s"
 		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time deletion_time_for_plot "
-			"box_plot_right_bound tablet_size y_cord_base"))
+			"box_plot_right_bound tablet_size y_cord_base opened_early opened_normal"))
 		# Note: id can be m(number) or (number) for memtables and sstables
 		for id_, v in sorted(_id_events.iteritems()):
 			fo.write((fmt + "\n") % (id_
-				, v.created.simulated_time.strftime("%y%m%d-%H%M%S.%f")
-				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "-")
-				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else "090101-000000.000000")
-				, (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None else SimTime._simulated_time_end.strftime("%y%m%d-%H%M%S.%f"))
+				, v.Created().simulated_time.strftime("%y%m%d-%H%M%S.%f")
+				, (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else "-")
+				, SimTime.StrftimeWithOutofrange(v.Deleted())
+				, (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else SimTime._simulated_time_end.strftime("%y%m%d-%H%M%S.%f"))
 				, v.tablet_size
 				, v.y_cord
+				, SimTime.StrftimeWithOutofrange(v.OpenedEarly())
+				, SimTime.StrftimeWithOutofrange(v.OpenedNormal())
 				))
 	Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

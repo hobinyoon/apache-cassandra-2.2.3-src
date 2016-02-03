@@ -101,6 +101,7 @@ def _WriteToFile():
 	Cons.P("Created a Cassandra MTDB log file %s %d" % (fn, os.path.getsize(fn)))
 
 
+# TODO: may want to separate these into MutantsEvent (or CassEvent) module
 class Event(object):
 	def __init__(self):
 		pass
@@ -108,6 +109,7 @@ class Event(object):
 	def __str__(self):
 		return ", ".join("%s: %s" % item for item in vars(self).items())
 
+# A tmp table is created
 class EventSstCreated(Event):
 	def __init__(self, t):
 		if "tmp-la-" not in t[8]:
@@ -127,6 +129,20 @@ class EventSstDeleted(Event):
 
 	def __str__(self):
 		return "EventSstDeleted: " + ", ".join("%s: %s" % item for item in vars(self).items())
+
+class EventSstOpen(Event):
+	def __init__(self, t):
+		t1 = t.split("/la-")
+		self.sst_gen = int(t1[1].split("-")[0])
+		#Cons.P(self.sst_gen)
+		t2 = t.split(" openReason=")
+		if len(t2) != 2:
+			raise RuntimeError("Unexpected format: [%s]" % t)
+		self.open_reason = t2[1]
+
+	def __str__(self):
+		return "EventSstOpen: " + ", ".join("%s: %s" % item for item in vars(self).items())
+
 
 class EventAccessStat(Event):
 	class AccStat(object):
@@ -226,6 +242,8 @@ class EventAccessStat(Event):
 
 
 class LogEntry(object):
+	pattern0 = re.compile(r"SSTableReader desc=.+/la-\d+-big openReason=.+")
+
 	#    0       1          2            3                        4 5     6            7
 	# WARN  [main] 2016-01-18 23:10:30,728 CassandraDaemon.java:490 - MTDB: CassActivate
 	def __init__(self, line):
@@ -237,19 +255,26 @@ class LogEntry(object):
 		self.op = t[7]
 		line_from_op = " ".join(t[7:])
 
+		# TODO: this string comparison part can be replaced
+		# if self.op == "SstCreated":
+
+		self.event = None
 		if self.op == "SstCreated":
 			self.event = EventSstCreated(t)
 		elif self.op == "SstDeleted":
 			self.event = EventSstDeleted(t)
-		elif self.op == "report_interval_ms":
-			global _report_interval_ms
-			_report_interval_ms = int(t[8])
 		elif self.op == "TabletAccessStat":
 			self.event = EventAccessStat(t)
 		elif line_from_op.startswith("Node configuration:"):
 			Desc.SetNodeConfiguration(line_from_op)
 		elif self.op.startswith("metadata="):
 			Desc.SetCassMetadata(line)
+		elif self.op == "SSTableReader":
+			mo = re.match(LogEntry.pattern0, line_from_op)
+			if mo == None:
+				raise RuntimeError("Unexpected: [%s]" % line_from_op)
+			#Cons.P(mo.group(0))
+			self.event = EventSstOpen(line_from_op)
 		else:
 			#Cons.P(t[7:])
 			pass

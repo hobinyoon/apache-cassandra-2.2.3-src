@@ -101,9 +101,7 @@ def _WriteToFile():
 			# If not defined, SimTime._simulated_time_end
 			deleted_time1_ = v.deleted.simulated_time if v.deleted != None else SimTime._simulated_time_end
 			deleted_time1 = deleted_time1_.strftime("%y%m%d-%H%M%S.%f")
-			# If not defined, "090101-000000.000000" (one out of the plot range)
-			deleted_time2 = (v.deleted.simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.deleted != None
-					else "090101-000000.000000")
+			deleted_time2 = SimTime.StrftimeWithOutofrange(v.deleted)
 
 			fo.write((fmt + "\n") % (id_
 				, v.created.simulated_time.strftime("%y%m%d-%H%M%S.%f")

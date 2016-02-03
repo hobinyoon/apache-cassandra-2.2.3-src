@@ -191,13 +191,13 @@ class EventAccessStat(Event):
 	pattern0 = re.compile(r"( )?Memtable-table1@\d+\(\d*\.*\d*\w* serialized bytes, \d* ops, \d*%\/\d*% of on\/off-heap limit\)-\d+,\d+")
 
 	#                           04:23890266,94839,8542,77,0,160127-120726.501,160127-120809.161
-	#                           04:23890266
-	#                                  ,94839
-	#                                      ,8542
-	#                                          ,77
-	#                                              ,0
-	#                                                  ,160127-120726.501
-	#                                                               ,160127-120809.161
+	#                           04:23890266 sst_gen:file_size
+	#                                  ,94839 num_reads
+	#                                      ,8542 num_need_to_read_dfiles
+	#                                          ,77 num_bf_tp
+	#                                              ,0 num_bf_fp
+	#                                                  ,160127-120726.501 timestamp_min
+	#                                                               ,160127-120809.161 timestamp_max
 	pattern1 = re.compile(r"( )?\d+:\d+,\d+,\d+,\d+,\d+,\d+-\d+\.\d+,\d+-\d+\.\d+")
 
 	def __init__(self, t):
@@ -235,6 +235,7 @@ class LogEntry(object):
 		self.simulated_time = SimTime.SimulatedTime(self.simulation_time)
 		#Cons.P("%s %s" % (self.simulated_time, self.op))
 		self.op = t[7]
+		line_from_op = " ".join(t[7:])
 
 		if self.op == "SstCreated":
 			self.event = EventSstCreated(t)
@@ -245,6 +246,8 @@ class LogEntry(object):
 			_report_interval_ms = int(t[8])
 		elif self.op == "TabletAccessStat":
 			self.event = EventAccessStat(t)
+		elif line_from_op.startswith("Node configuration:"):
+			Desc.SetNodeConfiguration(line_from_op)
 		elif self.op.startswith("metadata="):
 			Desc.SetCassMetadata(line)
 		else:

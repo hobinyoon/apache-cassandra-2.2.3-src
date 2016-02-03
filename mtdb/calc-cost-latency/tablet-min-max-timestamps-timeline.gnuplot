@@ -64,9 +64,9 @@ y0 = Y_MAX - 3*y1p
 set label DESC at x0, y0 left tc rgb "black" font ",7"
 
 # Legend
-x1 = X_MIN + 2*x1p
+x1 = X_MIN + 40*x1p
 x2 = x1 + 10*x1p
-y1 = y0 - 15*y1p
+y1 = Y_MAX - 6*y1p
 y0 = y1 - 15*y1p
 set object rect from x1, y0 to x2, y1 fc rgb "black" fs transparent solid 0.05 noborder
 set arrow from x1, y0 to x1, y1 lc rgb "black" nohead

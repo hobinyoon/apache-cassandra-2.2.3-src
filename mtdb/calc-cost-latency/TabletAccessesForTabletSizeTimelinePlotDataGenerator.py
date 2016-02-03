@@ -38,17 +38,16 @@ class Events:
 
 
 def _BuildIdEventsMap(e):
-	if e.op != "TabletAccessStat":
-		return
-	for e1 in e.event.entries:
-		if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
-			# We don't plot memtables for now
-			pass
-		elif type(e1) is CassLogReader.EventAccessStat.SstAccStat:
-			sst_gen = e1.id_
-			if sst_gen not in _id_events:
-				_id_events[sst_gen] = Events()
-			_id_events[sst_gen].AddAccStat(e.simulated_time, e1)
+	if e.op == "TabletAccessStat":
+		for e1 in e.event.entries:
+			if type(e1) is CassLogReader.EventAccessStat.MemtAccStat:
+				# We don't plot memtables for now
+				pass
+			elif type(e1) is CassLogReader.EventAccessStat.SstAccStat:
+				sst_gen = e1.id_
+				if sst_gen not in _id_events:
+					_id_events[sst_gen] = Events()
+				_id_events[sst_gen].AddAccStat(e.simulated_time, e1)
 
 
 def _WriteToFile():

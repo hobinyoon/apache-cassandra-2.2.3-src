@@ -1,13 +1,17 @@
+import re
 import sys
 
 sys.path.insert(0, "../util/python")
 import Cons
+import Util
 
 _exp_datetime = None
 
 # Compaction strategy
 _cs = None
 _cs_options = None
+_memtable_heap_space_in_mb = None
+_mutants_options = None
 
 
 def SetExpDatetime(dt):
@@ -18,6 +22,18 @@ def SetExpDatetime(dt):
 
 def ExpDatetime():
 	return _exp_datetime
+
+
+def SetNodeConfiguration(line_from_op):
+	mo = re.search(re.compile(r"memtable_heap_space_in_mb=\d+"), line_from_op)
+	#Cons.P(mo.group(0))
+	global _memtable_heap_space_in_mb
+	_memtable_heap_space_in_mb = mo.group(0)
+
+	mo = re.search(re.compile(r"mutants_options={[^}]+}"), line_from_op)
+	#Cons.P(mo.group(0))
+	global _mutants_options
+	_mutants_options = mo.group(0).replace("{", "\n  ").replace(", ", "\n  ").replace("}", "")
 
 
 def SetCassMetadata(line):
@@ -42,5 +58,11 @@ def GnuplotDesc():
 	desc = "exp datetime: %s" \
 			"\ncompaction strategy: %s" \
 			"\ncompaction strategy options: %s" \
-			% (_exp_datetime, _cs, _cs_options);
-	return desc.replace("\n", "\\n")
+			"\n%s" \
+			"\n%s" \
+			% (_exp_datetime
+					, _cs
+					, _cs_options
+					, _memtable_heap_space_in_mb
+					, _mutants_options)
+	return desc.replace("\n", "\\n").replace("_", "\_")

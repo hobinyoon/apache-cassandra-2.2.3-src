@@ -53,8 +53,8 @@ DESC = DESC \
 . "\nOE: Open Early" \
 . "\nON: Open Normal" \
 . "\nTM0: Temperature monitor start" \
-. "\nTM1: Temperature monitor stop" \
-. "\nBC: Become cold"
+. "\nBC: Become cold" \
+. "\nTM1: Temperature monitor stop. Not shown when there is a BC."
 set label DESC at x0, y0 left tc rgb "black" font ",7"
 
 TRANSP0=0.06

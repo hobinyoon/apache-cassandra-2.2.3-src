@@ -96,6 +96,8 @@ class Events:
 		return None
 
 	def TempMonStopped(self):
+		if self.TempMonBecomeCold() != None:
+			return None
 		e = self.events.get(Event.TempMon)
 		if e == None:
 			return None

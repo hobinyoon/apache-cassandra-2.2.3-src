@@ -225,8 +225,8 @@ public class CompactionManager implements CompactionManagerMBean
                     logger.trace("No tasks available");
                     return;
                 }
-                if (cfs.metadata.mtdbTable)
-                    logger.info("MTDB: compaction task={}", task);
+                //if (cfs.metadata.mtdbTable)
+                //    logger.info("MTDB: compaction task={}", task);
                 task.execute(metrics);
             }
             finally

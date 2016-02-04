@@ -341,7 +341,7 @@ public class SizeTieredCompactionStrategy extends AbstractCompactionStrategy
         }
 
         @Override
-        public CompactionAwareWriter getCompactionAwareWriter(ColumnFamilyStore cfs, LifecycleTransaction txn, Set<SSTableReader> nonExpiredSSTables, boolean compactToColdStorage)
+        public CompactionAwareWriter getCompactionAwareWriter(ColumnFamilyStore cfs, LifecycleTransaction txn, Set<SSTableReader> nonExpiredSSTables)
         {
             return new SplittingSizeTieredCompactionWriter(cfs, txn, nonExpiredSSTables, compactionType);
         }

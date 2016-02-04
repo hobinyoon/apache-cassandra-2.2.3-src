@@ -67,15 +67,17 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
         while (true)
         {
             List<SSTableReader> latestBucket = getNextBackgroundSSTables(gcBefore);
-
             if (latestBucket.isEmpty())
                 return null;
+            if (cfs.metadata.mtdbTable) {
+                logger.warn("MTDB: latestBucket={}", latestBucket);
+            }
 
             LifecycleTransaction modifier = cfs.getTracker().tryModify(latestBucket, OperationType.COMPACTION);
             if (modifier != null) {
-                //if (cfs.metadata.mtdbTable) {
-                //    logger.warn("MTDB:\n{}", Tracer.GetCallStack());
-                //}
+                if (cfs.metadata.mtdbTable) {
+                    logger.warn("MTDB: modifier={}", modifier);
+                }
                 return new CompactionTask(cfs, modifier, gcBefore, false);
             }
         }
@@ -87,6 +89,17 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
      * @return
      */
     private List<SSTableReader> getNextBackgroundSSTables(final int gcBefore)
+    {
+        List<SSTableReader> candidates = getNextBackgroundSSTables0(gcBefore);
+        if (candidates.isEmpty() && cfs.metadata.mtdbTable) {
+            SSTableReader coldestSstr = SstTempMon.GetColdest();
+            if (coldestSstr != null)
+                candidates.add(coldestSstr);
+        }
+        return candidates;
+    }
+
+    private List<SSTableReader> getNextBackgroundSSTables0(final int gcBefore)
     {
         if (cfs.getSSTables().isEmpty())
             return Collections.emptyList();
@@ -102,6 +115,8 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
             lastExpiredCheck = System.currentTimeMillis();
         }
         Set<SSTableReader> candidates = Sets.newHashSet(filterSuspectSSTables(uncompacting));
+        //if (cfs.metadata.mtdbTable)
+        //    logger.warn("MTDB: candidates={}", candidates);
 
         List<SSTableReader> compactionCandidates = new ArrayList<>(getNextNonExpiredSSTables(Sets.difference(candidates, expired), gcBefore));
         if (!expired.isEmpty())
@@ -119,6 +134,8 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
         List<SSTableReader> mostInteresting = getCompactionCandidates(nonExpiringSSTables, now, base);
         if (mostInteresting != null)
         {
+            //if (cfs.metadata.mtdbTable)
+            //    logger.warn("MTDB: mostInteresting={}", mostInteresting);
             return mostInteresting;
         }
 
@@ -210,14 +227,14 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
     public void addSSTable(SSTableReader sstable)
     {
         sstables.add(sstable);
-        SstTempMon.Add(sstable);
+        SstTempMon.StartMonitor(cfs, sstable);
     }
 
     @Override
     public void removeSSTable(SSTableReader sstable)
     {
         sstables.remove(sstable);
-        SstTempMon.Remove(sstable);
+        SstTempMon.StopMonitor(sstable);
     }
     /**
      * A target time span used for bucketing SSTables based on timestamps.

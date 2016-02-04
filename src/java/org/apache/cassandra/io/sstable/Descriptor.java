@@ -18,6 +18,7 @@
 package org.apache.cassandra.io.sstable;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.StringTokenizer;
@@ -74,6 +75,7 @@ public class Descriptor
     private final int hashCode;
 
     public final boolean mtdbTable;
+    private int temperatureLevel;
 
     /**
      * A descriptor that assumes CURRENT_VERSION.
@@ -107,6 +109,19 @@ public class Descriptor
         hashCode = Objects.hashCode(version, directory, generation, ksname, cfname, temp, formatType);
 
         mtdbTable = (ksname.equals("mtdb1") && cfname.equals("table1"));
+
+        temperatureLevel = 0;
+        if (mtdbTable) {
+            //logger.warn("MTDB: {} {}"
+            //        , directory
+            //        , Directories.coldDataDirectory.location);
+            try {
+                if (directory.getCanonicalPath().startsWith(Directories.coldDataDirectory.location.getCanonicalPath()))
+                    temperatureLevel = 1;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public Descriptor withGeneration(int newGeneration)
@@ -348,5 +363,9 @@ public class Descriptor
     public int hashCode()
     {
         return hashCode;
+    }
+
+    public int TemperatureLevel() {
+        return temperatureLevel;
     }
 }

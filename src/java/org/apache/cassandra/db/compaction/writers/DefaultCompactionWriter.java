@@ -44,21 +44,21 @@ public class DefaultCompactionWriter extends CompactionAwareWriter
     @SuppressWarnings("resource")
     public DefaultCompactionWriter(ColumnFamilyStore cfs, LifecycleTransaction txn, Set<SSTableReader> nonExpiredSSTables, boolean offline, OperationType compactionType)
     {
-        this(cfs, txn, nonExpiredSSTables, offline, compactionType, false);
-    }
-
-
-    @SuppressWarnings("resource")
-    public DefaultCompactionWriter(ColumnFamilyStore cfs, LifecycleTransaction txn, Set<SSTableReader> nonExpiredSSTables, boolean offline, OperationType compactionType, boolean compactToColdStorage)
-    {
         super(cfs, txn, nonExpiredSSTables, offline);
         logger.trace("Expected bloom filter size : {}", estimatedTotalKeys);
         long expectedWriteSize = cfs.getExpectedCompactedFileSize(nonExpiredSSTables, compactionType);
+
+        // When all candidate tablets are cold, the compacted tablet should be
+        // cold. If at least one of them is hot, the compacted tablet should be
+        // hot. Analysis of temperatures of candidates could be nice to
+        // present!
+        boolean compactToColdStorage = (cfs.metadata.mtdbTable && txn.OriginalsAllCold());
         File sstableDirectory = cfs.directories.getLocationForDisk(getWriteDirectory(expectedWriteSize, compactToColdStorage));
         //if (compactToColdStorage) {
         //    logger.warn("MTDB: sstableDirectory={} getWriteDirectory({})={}",
         //            sstableDirectory, expectedWriteSize, getWriteDirectory(expectedWriteSize));
         //}
+
         @SuppressWarnings("resource")
         SSTableWriter writer = SSTableWriter.create(Descriptor.fromFilename(cfs.getTempSSTablePath(sstableDirectory)),
                                                     estimatedTotalKeys,

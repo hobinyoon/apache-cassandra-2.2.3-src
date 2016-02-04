@@ -70,6 +70,8 @@ public abstract class SSTable
     public DecoratedKey first;
     public DecoratedKey last;
 
+    private volatile boolean becameCold = false;
+
     protected SSTable(Descriptor descriptor, CFMetaData metadata, IPartitioner partitioner)
     {
         this(descriptor, new HashSet<Component>(), metadata, partitioner);
@@ -296,5 +298,19 @@ public abstract class SSTable
         Collection<Component> componentsToAdd = Collections2.filter(newComponents, Predicates.not(Predicates.in(components)));
         appendTOC(descriptor, componentsToAdd);
         components.addAll(componentsToAdd);
+    }
+
+    // The temperature of the storage that the current sstable is stored. 0 is
+    // the coldest. The bigger the number is, the hotter the storage is.
+    public int StorageTemperatureLevel() {
+        return descriptor.TemperatureLevel();
+    }
+
+    public void BecomeCold() {
+        becameCold = true;
+    }
+
+    public boolean IsCold() {
+        return ((descriptor.TemperatureLevel() > 0) || becameCold);
     }
 }

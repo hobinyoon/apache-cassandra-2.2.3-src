@@ -4,11 +4,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 import org.apache.cassandra.config.DatabaseDescriptor;
+import org.apache.cassandra.db.ColumnFamilyStore;
+import org.apache.cassandra.db.compaction.CompactionManager;
 import org.apache.cassandra.io.sstable.format.SSTableReader;
 import org.apache.cassandra.mutants.MemSsTableAccessMon;
 import org.apache.cassandra.mutants.SimTime;
@@ -17,36 +22,96 @@ import org.apache.cassandra.mutants.SimTime;
 public class SstTempMon {
     private static final Logger logger = LoggerFactory.getLogger(SstTempMon.class);
 
-    private static Map<SSTableReader, Monitor> monitors = new ConcurrentHashMap();
+    private static final Map<SSTableReader, Monitor> monitors = new ConcurrentHashMap();
+
+    private static final Set<SSTableReader> coldestSstrsReturned = new HashSet();
 
     // Called by DateTieredCompactionStrategy.addSSTable(SSTableReader
     // sstable). Seems like it is called at most once per sstable.
-    public static void Add(SSTableReader sstr) {
+    public static void StartMonitor(ColumnFamilyStore cfs, SSTableReader sstr) {
+        if (! sstr.descriptor.mtdbTable)
+            return;
+
+        // Only SSTables in hot storage are monitored
+        if (sstr.StorageTemperatureLevel() > 0)
+            return;
+
         if (monitors.containsKey(sstr)) {
             throw new RuntimeException(String.format("Unexpected: SSTableReader for %d is already in the map"
                         , sstr.descriptor.generation));
         }
-        monitors.put(sstr, new Monitor(sstr));
+        monitors.put(sstr, new Monitor(cfs, sstr));
     }
 
-    // It is called multiple times for a sstable, but harmless.
-    public static void Remove(SSTableReader sstr) {
+    // It is called multiple times for a sstable. It can be called for a
+    // sstable that doesn't have a temperature monitor started.  They are all
+    // harmless.
+    public static void StopMonitor(SSTableReader sstr) {
+        if (! sstr.descriptor.mtdbTable)
+            return;
+
         Monitor m = monitors.remove(sstr);
         if (m != null) {
             m.Stop();
         }
+
+        synchronized (coldestSstrsReturned) {
+            coldestSstrsReturned.remove(sstr);
+        }
+    }
+
+    // Get a coldest candidate that is in the hot storage and colder than the
+    // coldness threshold.
+    //
+    // I think returning a non-existant SSTableReader due to a race should be
+    // okay. Will be taken care of by CompactionManager or something.
+    //
+    // Make sure a SStable is returned at most once. A second
+    // CompactionExecutors can pull the same one as the first one and do a busy
+    // loop for quite a while.
+    public static SSTableReader GetColdest() {
+        SSTableReader coldestSstr = null;
+        long oldestBecameColdAtNs = 0;
+        for (Iterator it = monitors.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry pair = (Map.Entry) it.next();
+            SSTableReader r = (SSTableReader) pair.getKey();
+            Monitor m = (Monitor) pair.getValue();
+            if (r == null)
+                continue;
+            if (m.becameColdAt() == -1)
+                continue;
+            if (coldestSstr == null) {
+                coldestSstr = r;
+                oldestBecameColdAtNs = m.becameColdAt();
+                continue;
+            }
+            if (m.becameColdAt() < oldestBecameColdAtNs) {
+                coldestSstr = r;
+                oldestBecameColdAtNs = m.becameColdAt();
+            }
+        }
+
+        synchronized (coldestSstrsReturned) {
+            if (coldestSstrsReturned.contains(coldestSstr))
+                return null;
+            coldestSstrsReturned.add(coldestSstr);
+        }
+
+        if (coldestSstr != null)
+            logger.warn("MTDB: GetColdest()={}", coldestSstr.descriptor.generation);
+        return coldestSstr;
     }
 
     private static class Monitor {
-        private MonitorRunnable _tmr;
+        private MonitorRunnable _mr;
         private Thread _thread;
 
         // Start a temperature monitor thread. The initial thread name is
         // attached to make sure that there is only one instance per
         // SSTableReader instance.
-        Monitor(SSTableReader sstr) {
-            _tmr = new MonitorRunnable(sstr);
-            _thread = new Thread(_tmr);
+        Monitor(ColumnFamilyStore cfs, SSTableReader sstr) {
+            _mr = new MonitorRunnable(cfs, sstr);
+            _thread = new Thread(_mr);
             _thread.setName(String.format("SstTempMon-%d-%s",
                         sstr.descriptor.generation, _thread.getName()));
             _thread.start();
@@ -54,8 +119,8 @@ public class SstTempMon {
 
         // Stop the temperature monitor thread and join
         public void Stop() {
-            if (_tmr != null)
-                _tmr.Stop();
+            if (_mr != null)
+                _mr.Stop();
             try {
                 if (_thread != null) {
                     _thread.join();
@@ -64,18 +129,16 @@ public class SstTempMon {
             } catch (InterruptedException e) {
                 logger.warn("MTDB: InterruptedException {}", e);
             }
-            _tmr = null;
+            _mr = null;
+        }
+
+        public long becameColdAt() {
+            return _mr.becameColdAt();
         }
     }
 
     private static class MonitorRunnable implements Runnable {
         private static final long temperatureCheckIntervalMs;
-
-        // It is in fact when a tablet becomes available for reading
-        private final long _tabletCreationTimeNs;
-        private final SSTableReader _sstr;
-        private final Object _sleepLock = new Object();
-        private volatile boolean _stopRequested = false;
 
         static {
             temperatureCheckIntervalMs = DatabaseDescriptor.getMutantsOptions().tablet_temperature_monitor_interval_simulation_time_ms;
@@ -86,17 +149,31 @@ public class SstTempMon {
                     );
         }
 
-        MonitorRunnable(SSTableReader sstr) {
+        private final ColumnFamilyStore cfs;
+
+        // It is in fact when a tablet becomes available for reading
+        private final long _tabletCreationTimeNs;
+        private final SSTableReader _sstr;
+        private final Object _sleepLock = new Object();
+        private volatile boolean _stopRequested = false;
+        private long becameColdAtNs = -1;
+
+        public MonitorRunnable(ColumnFamilyStore cfs, SSTableReader sstr) {
+            this.cfs = cfs;
             _tabletCreationTimeNs = System.nanoTime();
             _sstr = sstr;
         }
 
-        void Stop() {
+        public void Stop() {
             synchronized (_sleepLock) {
                 //logger.warn("MTDB: gen={} stop requested", _sstr.descriptor.generation);
                 _stopRequested = true;
                 _sleepLock.notify();
             }
+        }
+
+        public long becameColdAt() {
+            return becameColdAtNs;
         }
 
         // A sliding time window that monitors the number of
@@ -126,25 +203,25 @@ public class SstTempMon {
             }
 
             private long tabletCreationTimeNs;
-            private Queue<Element> q;
+            private Queue<Element> elements;
             private long numAccessesInQ;
 
             public AccessQueue(long tabletCreationTimeNs) {
                 this.tabletCreationTimeNs = tabletCreationTimeNs;
-                q = new LinkedList();
+                elements = new LinkedList();
                 numAccessesInQ = 0;
             }
 
             public void DeqEnq(long curNs, long numAccesses) {
                 // Delete expired elements
                 while (true) {
-                    Element e = q.peek();
+                    Element e = elements.peek();
                     if (e == null)
                         break;
                     long accessTimeAgeNs = curNs - e.timeNs;
                     if (accessTimeAgeNs > coldnessMonitorTimeWindowSimulationNs) {
                         numAccessesInQ -= e.numAccesses;
-                        q.remove();
+                        elements.remove();
                     } else {
                         break;
                     }
@@ -152,7 +229,7 @@ public class SstTempMon {
 
                 // Add the new element
                 if (numAccesses > 0) {
-                    q.add(new Element(curNs, numAccesses));
+                    elements.add(new Element(curNs, numAccesses));
                     numAccessesInQ += numAccesses;
                 }
             }
@@ -169,12 +246,7 @@ public class SstTempMon {
                 //    / coldnessMonitorTimeWindowSimulationNs;
                 double numAccessesPerDay = numAccessesInQ * dayOverTimeWindowDays;
                 //logger.warn("MTDB: TempMon numAccessesPerDay={}", numAccessesPerDay);
-                if (numAccessesPerDay < coldnessThreshold) {
-                    return true;
-                } else {
-                    return false;
-                }
-
+                return (numAccessesPerDay < coldnessThreshold);
             }
         }
 
@@ -205,10 +277,13 @@ public class SstTempMon {
                 }
 
                 q.DeqEnq(curNano, nnrd - prevNnrd);
-                if (q.BelowColdnessThreshold(curNano) == true) {
-                    logger.warn("MTDB: TempMon TabletBecomeCold {}. Implement migration!", _sstr.descriptor.generation);
-                    // TODO: Stop monitoring the temperature after this.
-                    // Tablet only age. No anti-aging.
+                if (q.BelowColdnessThreshold(curNano)) {
+                    becameColdAtNs = curNano;
+                    logger.warn("MTDB: TempMon TabletBecomeCold {}", _sstr.descriptor.generation);
+                    _sstr.BecomeCold();
+                    CompactionManager.instance.submitBackground(cfs);
+                    // Stop monitoring when a SSTable becomes cold.  SSTables
+                    // only age. No anti-aging.
                     break;
                 }
 

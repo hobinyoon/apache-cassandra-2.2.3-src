@@ -22,12 +22,17 @@ import java.util.Set;
 import org.apache.cassandra.db.ColumnFamilyStore;
 import org.apache.cassandra.db.compaction.CompactionManager.CompactionExecutorStatsCollector;
 import org.apache.cassandra.db.compaction.writers.CompactionAwareWriter;
-import org.apache.cassandra.io.sstable.format.SSTableReader;
-import org.apache.cassandra.utils.WrappedRunnable;
 import org.apache.cassandra.db.lifecycle.LifecycleTransaction;
+import org.apache.cassandra.io.sstable.format.SSTableReader;
+import org.apache.cassandra.utils.Tracer;
+import org.apache.cassandra.utils.WrappedRunnable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractCompactionTask extends WrappedRunnable
 {
+    protected static final Logger logger = LoggerFactory.getLogger(AbstractCompactionTask.class);
     protected final ColumnFamilyStore cfs;
     protected LifecycleTransaction transaction;
     protected boolean isUserDefined;
@@ -47,6 +52,9 @@ public abstract class AbstractCompactionTask extends WrappedRunnable
         Set<SSTableReader> compacting = transaction.tracker.getCompacting();
         for (SSTableReader sstable : transaction.originals())
             assert compacting.contains(sstable) : sstable.getFilename() + " is not correctly marked compacting";
+        //if (cfs.metadata.mtdbTable) {
+        //    logger.warn("MTDB: transaction.originals()={}\n{}", transaction.originals(), Tracer.GetCallStack());
+        //}
     }
 
     /**
@@ -63,7 +71,7 @@ public abstract class AbstractCompactionTask extends WrappedRunnable
             transaction.close();
         }
     }
-    public abstract CompactionAwareWriter getCompactionAwareWriter(ColumnFamilyStore cfs, LifecycleTransaction txn, Set<SSTableReader> nonExpiredSSTables, boolean compactToColdStorage);
+    public abstract CompactionAwareWriter getCompactionAwareWriter(ColumnFamilyStore cfs, LifecycleTransaction txn, Set<SSTableReader> nonExpiredSSTables);
 
     protected abstract int executeInternal(CompactionExecutorStatsCollector collector);
 

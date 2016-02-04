@@ -516,4 +516,16 @@ public class LifecycleTransaction extends Transactional.AbstractTransactional
     {
         return originals.toString();
     }
+
+
+    // Returns true only when all originals are cold. Returns false when it is
+    // empty.
+    public boolean OriginalsAllCold() {
+        if (originals.size() == 0)
+            return false;
+        for (SSTableReader sstr: originals)
+            if (! sstr.IsCold())
+                return false;
+        return true;
+    }
 }

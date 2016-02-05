@@ -83,7 +83,7 @@ public class MemSsTableAccessMon
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder(80);
-            sb.append(",").append(_sstr.getReadMeter().count())
+            sb.append(_sstr.getReadMeter().count())
                 //.append(",").append(_bf_positives.get())
                 .append(",").append(_numNeedToReadDatafile.get())
                 .append(",").append(_sstr.getBloomFilterTruePositiveCount())

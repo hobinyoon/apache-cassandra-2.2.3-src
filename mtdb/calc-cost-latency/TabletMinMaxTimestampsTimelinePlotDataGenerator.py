@@ -25,34 +25,19 @@ def Gen():
 def GetTabletMinTimestamp(sst_gen):
 	if sst_gen not in _id_events:
 		raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
-	return _id_events[sst_gen].min_timestamp
+	return _id_events[sst_gen].min_ts_simulated_time
 
 
 class Events:
 	def __init__(self):
 		self.events = {}
-		self.min_timestamp = None
-		self.max_timestamp = None
+		self.min_ts_simulated_time = None
+		self.max_ts_simulated_time = None
 
 	def Add(self, e):
 		if type(e.event) not in self.events:
 			self.events[type(e.event)] = []
 		self.events[type(e.event)].append(e)
-
-	def SetTimpstamps(self, tablet_acc_stat):
-		# tablet_acc_stat is of type AccessStat.AccStat
-		if self.min_timestamp == None:
-			self.min_timestamp = tablet_acc_stat.min_timestamp
-		else:
-			if self.min_timestamp != tablet_acc_stat.min_timestamp:
-				raise RuntimeError("Unexpected: self.min_timestamp (%d) != tablet_acc_stat.min_timestamp (%d)"
-						% (self.min_timestamp, tablet_acc_stat.min_timestamp))
-		if self.max_timestamp == None:
-			self.max_timestamp = tablet_acc_stat.max_timestamp
-		else:
-			if self.max_timestamp != tablet_acc_stat.max_timestamp:
-				raise RuntimeError("Unexpected: self.max_timestamp (%d) != tablet_acc_stat.max_timestamp (%d)"
-						% (self.max_timestamp, tablet_acc_stat.max_timestamp))
 
 	def Created(self):
 		e = self.events.get(Event.SstCreated)
@@ -117,6 +102,22 @@ class Events:
 				return e1
 		return None
 
+	# Min/max timestamp can be None when a tablet is created at the end of the
+	# experiment period, but hasn't opened-normal yet.
+	def SetTimestamps(self):
+		e = self.events.get(Event.SstOpen)
+		if e == None:
+			return False
+		for e1 in e:
+			if e1.event.open_reason == "NORMAL":
+				self.min_ts_simulated_time = SimTime.SimulatedTime(datetime.datetime.strptime(e1.event.min_ts, "%y%m%d-%H%M%S.%f"))
+				self.max_ts_simulated_time = SimTime.SimulatedTime(datetime.datetime.strptime(e1.event.max_ts, "%y%m%d-%H%M%S.%f"))
+				return True
+		return False
+
+	def TimestampRange(self):
+		return self.max_ts_simulated_time - self.min_ts_simulated_time
+
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
 
@@ -131,24 +132,12 @@ def _BuildIdEventsMap():
 			_id_events[l.event.sst_gen].Add(l)
 		elif type(l.event) is Event.SstOpen:
 			_id_events[l.event.sst_gen].Add(l)
-		elif type(l.event) is Event.AccessStat:
-			for e1 in l.event.entries:
-				if type(e1) is Event.AccessStat.MemtAccStat:
-					# Memtables don't have min/max timestamps
-					pass
-				elif type(e1) is Event.AccessStat.SstAccStat:
-					sst_gen = e1.id_
-					if sst_gen not in _id_events:
-						raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
-					_id_events[sst_gen].SetTimpstamps(e1)
 		elif type(l.event) is Event.TempMon:
 			_id_events[l.event.sst_gen].Add(l)
 
-	# Filter out sstables without min/max timestamps. It can happen when the
-	# tablets are created at the end of the experiment period without any
-	# accesses to them followed.
+	# Set min/max timestamps and filter out sstables without those
 	for id_ in _id_events.keys():
-		if _id_events[id_].min_timestamp == None:
+		if _id_events[id_].SetTimestamps() == False:
 			Cons.P("SSTable %d doesn't have min/max timestamp info. Safe to delete." % id_)
 			del _id_events[id_]
 
@@ -178,10 +167,10 @@ def _WriteToFile():
 				, deleted_time0
 				, deleted_time2
 				, deleted_time1
-				, v.min_timestamp.strftime("%y%m%d-%H%M%S.%f")
-				, v.max_timestamp.strftime("%y%m%d-%H%M%S.%f")
-				, (v.min_timestamp + datetime.timedelta(seconds = (v.max_timestamp - v.min_timestamp).total_seconds()/2.0)).strftime("%y%m%d-%H%M%S.%f")
-				, (v.max_timestamp - v.min_timestamp).total_seconds()
+				, v.min_ts_simulated_time.strftime("%y%m%d-%H%M%S.%f")
+				, v.max_ts_simulated_time.strftime("%y%m%d-%H%M%S.%f")
+				, (v.min_ts_simulated_time + datetime.timedelta(seconds = (v.max_ts_simulated_time - v.min_ts_simulated_time).total_seconds()/2.0)).strftime("%y%m%d-%H%M%S.%f")
+				, (v.max_ts_simulated_time - v.min_ts_simulated_time).total_seconds()
 				, (deleted_time1_ - v.Created().simulated_time).total_seconds()
 				, SimTime.StrftimeWithOutofrange(v.OpenedEarly())
 				, SimTime.StrftimeWithOutofrange(v.OpenedNormal())

@@ -29,28 +29,23 @@ def GetBaseYCord(sst_gen):
 
 def MinTabletSize():
 	s = None
-	for id, v in _id_events.iteritems():
+	for k, v in _id_events.iteritems():
 		if s == None:
-			s = v.tablet_size
+			s = v.TabletSize()
 		else:
-			s = min(s, v.tablet_size)
+			s = min(s, v.TabletSize())
 	return s
 
 
 class Events:
 	def __init__(self):
 		self.events = {}
-		self.tablet_size = -1
 		self.y_cord = -1
 
 	def Add(self, e):
 		if type(e.event) not in self.events:
 			self.events[type(e.event)] = []
 		self.events[type(e.event)].append(e)
-
-	def SetTabletSize(self, tablet_size):
-		# tablet_acc_stat is of type AccessStat.AccStat
-		self.tablet_size = max(self.tablet_size, tablet_size)
 
 	def Created(self):
 		e = self.events.get(Event.SstCreated)
@@ -115,6 +110,17 @@ class Events:
 				return e1
 		return None
 
+	# Tablet size can be None when a tablet is created at the end of the
+	# experiment period, but hasn't opened-normal yet.
+	def TabletSize(self):
+		e = self.events.get(Event.SstOpen)
+		if e == None:
+			return None
+		for e1 in e:
+			if e1.event.open_reason == "NORMAL":
+				return e1.event.bytesOnDisk
+		return None
+
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
 
@@ -129,24 +135,12 @@ def _BuildIdEventsMap():
 			_id_events[l.event.sst_gen].Add(l)
 		elif type(l.event) is Event.SstOpen:
 			_id_events[l.event.sst_gen].Add(l)
-		elif type(l.event) is Event.AccessStat:
-			for e1 in l.event.entries:
-				if type(e1) is Event.AccessStat.MemtAccStat:
-					# We don't plot memtables for now
-					pass
-				elif type(e1) is Event.AccessStat.SstAccStat:
-					sst_gen = e1.id_
-					if sst_gen not in _id_events:
-						raise RuntimeError("Unexpected: sst_gen %d not in _id_events" % sst_gen)
-					_id_events[sst_gen].SetTabletSize(e1.size)
 		elif type(l.event) is Event.TempMon:
 			_id_events[l.event.sst_gen].Add(l)
 
-	# Filter out sstables without tablet_size info. It can happen when the
-	# tablets are created at the end of the experiment period without any
-	# accesses to them followed.
+	# Filter out sstables without tablet size
 	for id_ in _id_events.keys():
-		if _id_events[id_].tablet_size == -1:
+		if _id_events[id_].TabletSize() == None:
 			Cons.P("SSTable %d doesn't have tablet size info. Safe to delete." % id_)
 			del _id_events[id_]
 
@@ -158,7 +152,7 @@ def _CalcTabletsYCords():
 
 	max_y_cord = 0
 	for id, v in _id_events.iteritems():
-		max_y_cord = max(max_y_cord, v.y_cord + v.tablet_size)
+		max_y_cord = max(max_y_cord, v.y_cord + v.TabletSize())
 	Cons.P("max_y_cord: %d" % max_y_cord)
 	y_spacing = max_y_cord * 0.01
 	_CalcTabletsYCords0(y_spacing)
@@ -220,7 +214,7 @@ def _CalcTabletsYCords0(y_spacing):
 
 		# Fit the current area (block) while avoiding overlapping with existing areas.
 		#a0 = Area(v.Created(), v.Deleted(), 0, v.size)
-		a0 = Area(v.Deleted(), 0, v.tablet_size)
+		a0 = Area(v.Deleted(), 0, v.TabletSize())
 		for a in areas:
 			if a.Overlaps(a0):
 				a0.Moveup(a.y1 + y_spacing)
@@ -246,7 +240,7 @@ def _WriteToFile():
 				, (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else "-")
 				, SimTime.StrftimeWithOutofrange(v.Deleted())
 				, (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else SimTime._simulated_time_end.strftime("%y%m%d-%H%M%S.%f"))
-				, v.tablet_size
+				, v.TabletSize()
 				, v.y_cord
 				, SimTime.StrftimeWithOutofrange(v.OpenedEarly())
 				, SimTime.StrftimeWithOutofrange(v.OpenedNormal())

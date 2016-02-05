@@ -22,7 +22,10 @@ def Read():
 		# Parse raw lines
 		global _raw_lines, _logs
 		for line in _raw_lines:
-			_logs.append(LogEntry(line))
+			le = LogEntry(line)
+			if le.simulation_time > SimTime.SimulationTimeEnd():
+				break
+			_logs.append(le)
 
 
 def _ReadStoredCassMtdbLog():

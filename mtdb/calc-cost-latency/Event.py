@@ -34,14 +34,35 @@ class SstDeleted(Event):
 
 
 class SstOpen(Event):
-	def __init__(self, t):
-		t1 = t.split("/la-")
+	# SSTableReader desc=/mnt/s5-cass-cold-storage/mtdb-cold/mtdb1/table1-89dd85a0cbba11e59f551d822de6a4f1/la-6-big openReason=NORMAL bytesOnDisk()=19547422 minTimestamp=160204-224305.652 maxTimestamp=160204-224324.694
+
+	pattern_size = re.compile(r"bytesOnDisk\(\)=\d+")
+	pattern_min_ts = re.compile(r"minTimestamp=\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d")
+	pattern_max_ts = re.compile(r"maxTimestamp=\d\d\d\d\d\d-\d\d\d\d\d\d\.\d\d\d")
+
+	def __init__(self, line):
+		#Cons.P(line)
+		t1 = line.split("/la-")
 		self.sst_gen = int(t1[1].split("-")[0])
 		#Cons.P(self.sst_gen)
-		t2 = t.split(" openReason=")
+		t2 = line.split(" openReason=")
 		if len(t2) != 2:
-			raise RuntimeError("Unexpected format: [%s]" % t)
-		self.open_reason = t2[1]
+			raise RuntimeError("Unexpected format: [%s]" % line)
+		self.open_reason = t2[1].split(" ")[0]
+		#Cons.P(self.open_reason)
+		if self.open_reason == "NORMAL":
+			mo = re.search(SstOpen.pattern_size, line)
+			if mo != None:
+				self.bytesOnDisk = int(line[mo.start():mo.end()].split("=")[1])
+				#Cons.P(self.bytesOnDisk)
+			mo = re.search(SstOpen.pattern_min_ts, line)
+			if mo != None:
+				self.min_ts = line[mo.start():mo.end()].split("=")[1]
+				#Cons.P(self.min_ts)
+			mo = re.search(SstOpen.pattern_max_ts, line)
+			if mo != None:
+				self.max_ts = line[mo.start():mo.end()].split("=")[1]
+				#Cons.P(self.max_ts)
 
 
 class TempMon(Event):
@@ -148,29 +169,23 @@ class AccessStat(Event):
 			self.id_ = int(t[0])
 			t1 = t[1].split(",")
 			#Cons.P(t1)
-			self.size = int(t1[0])
-			self.num_reads = int(t1[1])
-			self.num_needto_read_datafile = int(t1[2])
+			self.num_reads = int(t1[0])
+			self.num_needto_read_datafile = int(t1[1])
 			# These numbers are not complete. They are not tracked when key cache is
 			# present or the tracking is not enabled, which is a per-request option.
-			self.num_tp = int(t1[3])
-			self.num_fp = int(t1[4])
-			# No need to convert these to datetime objects
-			self.min_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[5], "%y%m%d-%H%M%S.%f"))
-			self.max_timestamp = SimTime.SimulatedTime(datetime.datetime.strptime(t1[6], "%y%m%d-%H%M%S.%f"))
+			self.num_tp = int(t1[2])
+			self.num_fp = int(t1[3])
 
 	# Memtable-table1@44994146(3.251MiB serialized bytes, 9768 ops, 15%/0% of on/off-heap limit)-17144,13881
 	pattern0 = re.compile(r"( )?Memtable-table1@\d+\(\d*\.*\d*\w* serialized bytes, \d* ops, \d*%\/\d*% of on\/off-heap limit\)-\d+,\d+")
 
-	#                           04:23890266,94839,8542,77,0,160127-120726.501,160127-120809.161
-	#                           04:23890266 sst_gen:file_size
-	#                                  ,94839 num_reads
-	#                                      ,8542 num_need_to_read_dfiles
-	#                                          ,77 num_bf_tp
-	#                                              ,0 num_bf_fp
-	#                                                  ,160127-120726.501 timestamp_min
-	#                                                               ,160127-120809.161 timestamp_max
-	pattern1 = re.compile(r"( )?\d+:\d+,\d+,\d+,\d+,\d+,\d+-\d+\.\d+,\d+-\d+\.\d+")
+	#                           04:94839,8542,77,0
+	#                           04: sst_gen:
+	#                               94839 num_reads
+	#                                  ,8542 num_need_to_read_dfiles
+	#                                      ,77 num_bf_tp
+	#                                          ,0 num_bf_fp
+	pattern1 = re.compile(r"( )?\d+:\d+,\d+,\d+,\d+")
 
 	def __init__(self, t):
 		str0 = " ".join(t[8:])

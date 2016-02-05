@@ -99,7 +99,6 @@ class ProgressEntry(object):
 		self.read_cnt                        = int(t[13])
 
 
-
 def _ParseProgMonLines():
 	global _raw_lines1
 	for line in _raw_lines1:

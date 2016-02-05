@@ -96,14 +96,9 @@ class NumToTime:
 	def _SetMinTabletTimestampRange():
 		for sstgen, v in sorted(TabletMinMaxTimestampsTimelinePlotDataGenerator._id_events.iteritems()):
 			if NumToTime.min_timestamp_range == None:
-				NumToTime.min_timestamp_range = v.max_timestamp - v.min_timestamp
+				NumToTime.min_timestamp_range = v.TimestampRange()
 			else:
-				NumToTime.min_timestamp_range = min(NumToTime.min_timestamp_range, v.max_timestamp - v.min_timestamp)
-			#Cons.P("%d %s %s %s" % (sstgen
-			#	, v.min_timestamp
-			#	, v.max_timestamp
-			#	, v.max_timestamp - v.min_timestamp
-			#	))
+				NumToTime.min_timestamp_range = min(NumToTime.min_timestamp_range, v.TimestampRange())
 		Cons.P("NumToTime.min_timestamp_range: %s" % NumToTime.min_timestamp_range)
 
 	@staticmethod

@@ -8,6 +8,8 @@ _simulation_time_begin = None
 _simulation_time_end = None
 _simulated_time_begin = None
 _simulated_time_end = None
+_simulation_time_dur_sec = None
+_simulated_time_dur_sec = None
 
 def Init(simulation_time_dur_ms_first,
 		simulation_time_begin, simulated_time_begin,
@@ -16,6 +18,8 @@ def Init(simulation_time_dur_ms_first,
 	global _simulation_time_end
 	global _simulated_time_begin
 	global _simulated_time_end
+	global _simulation_time_dur_sec
+	global _simulated_time_dur_sec
 	_simulation_time_begin = simulation_time_begin
 	_simulation_time_end   = simulation_time_end
 	_simulated_time_begin  = simulated_time_begin
@@ -51,9 +55,19 @@ def Init(simulation_time_dur_ms_first,
 		# for now.
 		_simulation_time_begin = simulation_time_begin_adjusted
 		_simulated_time_begin  = simulated_time_begin_adjusted
+		_simulation_time_dur_sec = (_simulation_time_end - _simulation_time_begin).total_seconds()
+		_simulated_time_dur_sec = (_simulated_time_end - _simulated_time_begin).total_seconds()
 		Cons.P("After adjustment:")
 		Cons.P("  _simulation_time_begin: %s" % _simulation_time_begin)
+		Cons.P("  _simulation_time_end  : %s" % _simulation_time_end)
 		Cons.P("  _simulated_time_begin : %s" % _simulated_time_begin)
+		Cons.P("  _simulated_time_end   : %s" % _simulated_time_end)
+		Cons.P("  simulation time dur: %f secs" % _simulation_time_dur_sec)
+		Cons.P("  simulated time dur: %.f secs, %s, %f years"
+				% ((_simulated_time_end - _simulated_time_begin).total_seconds()
+				, datetime.timedelta(seconds = _simulated_time_dur_sec)
+				, _simulated_time_dur_sec / (365.25 * 24 * 3600))
+				)
 
 
 def SimulatedTime(simulation_time):
@@ -66,6 +80,14 @@ def SimulatedTime(simulation_time):
 
 def SimulatedTimeBegin():
 	return _simulated_time_begin
+
+
+def SimulatedTimeEnd():
+	return _simulated_time_end
+
+
+def SimulationTimeEnd():
+	return _simulation_time_end
 
 
 def StrftimeWithOutofrange(d):

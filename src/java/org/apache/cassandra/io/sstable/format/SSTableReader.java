@@ -19,6 +19,8 @@ package org.apache.cassandra.io.sstable.format;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -141,6 +143,8 @@ public abstract class SSTableReader extends SSTable implements SelfRefCounted<SS
         syncExecutor.setRemoveOnCancelPolicy(true);
     }
     private static final RateLimiter meterSyncThrottle = RateLimiter.create(100.0);
+
+    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyMMdd-HHmmss.SSS");
 
     public static final Comparator<SSTableReader> maxTimestampComparator = new Comparator<SSTableReader>()
     {
@@ -595,7 +599,12 @@ public abstract class SSTableReader extends SSTable implements SelfRefCounted<SS
         this.openReason = openReason;
         this.rowIndexEntrySerializer = descriptor.version.getSSTableFormat().getIndexSerializer(metadata);
         if (desc.mtdbTable) {
-            logger.info("MTDB: SSTableReader desc={} openReason={}", desc, openReason);
+            Timestamp min_ts = new Timestamp(sstableMetadata.minTimestamp / 1000);
+            Timestamp max_ts = new Timestamp(sstableMetadata.maxTimestamp / 1000);
+            logger.info("MTDB: SSTableReader desc={} openReason={} bytesOnDisk()={}"
+                    + " minTimestamp={} maxTimestamp={}"
+                    , desc, openReason, bytesOnDisk()
+                    , simpleDateFormat.format(min_ts), simpleDateFormat.format(max_ts));
         }
     }
 

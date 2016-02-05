@@ -121,6 +121,14 @@ class Events:
 				return e1.event.bytesOnDisk
 		return None
 
+	def Temperature(self):
+		e = self.events.get(Event.SstCreated)
+		if e == None:
+			raise RuntimeError("Unexpected:")
+		if len(e) != 1:
+			raise RuntimeError("Unexpected:")
+		return e[0].event.storage_temperature
+
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
 
@@ -226,9 +234,9 @@ def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-tablet-sizes-timeline"
 	with open(_fn_plot_data, "w") as fo:
-		fmt = "%2s %20s %20s %20s %20s %10d %10d %20s %20s %20s %20s %20s"
+		fmt = "%2d %1d %20s %20s %20s %20s %10d %10d %20s %20s %20s %20s %20s"
 		fo.write("%s\n" % Util.BuildHeader(fmt,
-			"id creation_time deletion_time deletion_time_for_plot"
+			"id temperature_level creation_time deletion_time deletion_time_for_plot"
 			" box_plot_right_bound tablet_size y_cord_base"
 			" opened_early opened_normal"
 			" temp_mon_started temp_mon_stopped temp_mon_becomd_cold"
@@ -236,6 +244,7 @@ def _WriteToFile():
 		# Note: id can be m(number) or (number) for memtables and sstables
 		for id_, v in sorted(_id_events.iteritems()):
 			fo.write((fmt + "\n") % (id_
+				, v.Temperature()
 				, v.Created().simulated_time.strftime("%y%m%d-%H%M%S.%f")
 				, (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else "-")
 				, SimTime.StrftimeWithOutofrange(v.Deleted())

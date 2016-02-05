@@ -118,6 +118,14 @@ class Events:
 	def TimestampRange(self):
 		return self.max_ts_simulated_time - self.min_ts_simulated_time
 
+	def Temperature(self):
+		e = self.events.get(Event.SstCreated)
+		if e == None:
+			raise RuntimeError("Unexpected:")
+		if len(e) != 1:
+			raise RuntimeError("Unexpected:")
+		return e[0].event.storage_temperature
+
 	def __str__(self):
 		return "Events: " + ", ".join("%s: %s" % item for item in vars(self).items())
 
@@ -146,8 +154,8 @@ def _WriteToFile():
 	global _fn_plot_data
 	_fn_plot_data = os.path.dirname(__file__) + "/plot-data/" + Desc.ExpDatetime() + "-tablet-min-max-timestamps-timeline"
 	with open(_fn_plot_data, "w") as fo:
-		fmt = "%2s %20s %20s %20s %20s %20s %20s %20s %10.0f %10.0f %20s %20s %20s %20s %20s"
-		fo.write("%s\n" % Util.BuildHeader(fmt, "id creation_time deletion_time"
+		fmt = "%2d %1d %20s %20s %20s %20s %20s %20s %20s %10.0f %10.0f %20s %20s %20s %20s %20s"
+		fo.write("%s\n" % Util.BuildHeader(fmt, "id temperature_level creation_time deletion_time"
 			" deletion_time_for_plot box_plot_right_bound"
 			" timestamp_min timestamp_max timestamp_mid timestamp_dur_in_sec"
 			" tablet_lifespan_in_sec"
@@ -163,6 +171,7 @@ def _WriteToFile():
 			deleted_time2 = SimTime.StrftimeWithOutofrange(v.Deleted())
 
 			fo.write((fmt + "\n") % (id_
+				, v.Temperature()
 				, v.Created().simulated_time.strftime("%y%m%d-%H%M%S.%f")
 				, deleted_time0
 				, deleted_time2

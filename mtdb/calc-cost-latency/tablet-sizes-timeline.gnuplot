@@ -16,7 +16,7 @@ set terminal unknown
 set xdata time
 set timefmt "%y%m%d-%H%M%S"
 plot \
-FN_IN_CD u 2:7:2:5:7:($7+$6) w boxxyerrorbars
+FN_IN_CD u 3:8:3:6:8:($8+$7) w boxxyerrorbars
 X_MIN=GPVAL_DATA_X_MIN
 X_MAX=GPVAL_DATA_X_MAX
 Y_MIN=GPVAL_DATA_Y_MIN
@@ -139,24 +139,24 @@ set style fill transparent solid TRANSP0 noborder
 
 # x  y  xlow  xhigh  ylow  yhigh
 plot \
-FN_IN_CD u 2:7:2:5:7:($7+$6):(color($1)) w boxxyerrorbars lc variable not, \
+FN_IN_CD u 3:8:3:6:8:($8+$7):(color($1)) w boxxyerrorbars lc variable not, \
 FN_IN_AC u 3:($2 + AccessCountHeight($6)):(color($1)) w points pointsize 0.05 lc variable not, \
-FN_IN_CD u 2:7:(0):6:(color($1)) w vectors nohead lc variable not, \
-FN_IN_CD u 2:($7+$6/2.0):1:(color($1)) w labels right offset -0.5,0 font ",8" tc variable not, \
-FN_IN_CD u 8 :($7+$6-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 9 :($7+$6-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 10:($7+$6-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 11:($7+$6-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 12:($7+$6-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 8 :($7+$6-2*y1p):("OE")  w labels tc rgb "black" rotate by 90 right font ",7" not, \
-FN_IN_CD u 9 :($7+$6+  y1p):("ON")  w labels tc rgb "black" rotate by 90 left  font ",7" not, \
-FN_IN_CD u 10:($7+$6-2*y1p):("TM0") w labels tc rgb "black" rotate by 90 right font ",7" not, \
-FN_IN_CD u 12:($7+$6+  y1p):("BC")  w labels tc rgb "black" rotate by 90 left  font ",7" not, \
-FN_IN_CD u 11:($7+$6-2*y1p):("TM1") w labels tc rgb "black" rotate by 90 right font ",7" not, \
+FN_IN_CD u 3:8:(0):7:(color($1)) w vectors nohead lc variable not, \
+FN_IN_CD u 3:($8+$7/2.0):(sprintf("%2d %d", $1, $2)):(color($1)) w labels center offset -0.2,0 font ",8" tc variable not, \
+FN_IN_CD u 9 :($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_CD u 10:($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_CD u 11:($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_CD u 12:($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_CD u 13:($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_CD u 9 :($8+$7-2*y1p):("OE")  w labels tc rgb "black" rotate by 90 right font ",7" not, \
+FN_IN_CD u 10:($8+$7+  y1p):("ON")  w labels tc rgb "black" rotate by 90 left  font ",7" not, \
+FN_IN_CD u 11:($8+$7-2*y1p):("TM0") w labels tc rgb "black" rotate by 90 right font ",7" not, \
+FN_IN_CD u 13:($8+$7+  y1p):("BC")  w labels tc rgb "black" rotate by 90 left  font ",7" not, \
+FN_IN_CD u 12:($8+$7-2*y1p):("TM1") w labels tc rgb "black" rotate by 90 right font ",7" not, \
 legendAccesses(x) w lines lc rgb "black" not
 
 # dotted line doesn't work with lc variable
-#FN_IN_CD u 4:7:(0):6:(color($1)) w vectors nohead lw 2 lt 0 lc variable not, \
+#FN_IN_CD u 5:8:(0):7:(color($1)) w vectors nohead lw 2 lt 0 lc variable not, \
 
 # steps doesn't work with lc variable
 #FN_IN_AC u 3:($2 + AccessCountHeight($6)):(color($1)) w steps lc variable not, \

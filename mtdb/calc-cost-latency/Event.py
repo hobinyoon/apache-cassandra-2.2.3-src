@@ -18,12 +18,19 @@ class Event(object):
 
 # A tmp table is created
 class SstCreated(Event):
+	# SstCreated bin/../data/data/mtdb1/table1-89dd85a0cbba11e59f551d822de6a4f1/tmp-la-2-big
+	cold_storage_dir = "/mnt/s5-cass-cold-storage/mtdb-cold"
+
 	def __init__(self, t):
 		if "tmp-la-" not in t[8]:
 			raise RuntimeError("A tmp table is expected: %s" % t[8])
 		t1 = t[8].split("tmp-la-")
 		#Cons.P(t1)
 		self.sst_gen = int(t1[1].split("-")[0])
+		if t[8].startswith(SstCreated.cold_storage_dir):
+			self.storage_temperature = 1
+		else:
+			self.storage_temperature = 0
 
 
 class SstDeleted(Event):

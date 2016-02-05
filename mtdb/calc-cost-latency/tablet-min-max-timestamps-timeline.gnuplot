@@ -23,8 +23,8 @@ set timefmt "%y%m%d-%H%M%S"
 # Get the plot range
 set terminal unknown
 plot \
-FN_IN_TS u 2:6:2:5:6:7:1 w boxxyerrorbars, \
-FN_IN_TS u 2:8:1:1 w labels right offset -0.5,0
+FN_IN_TS u 3:7:3:6:7:8:1 w boxxyerrorbars, \
+FN_IN_TS u 3:9:1:1 w labels right offset -0.5,0
 X_MIN=GPVAL_DATA_X_MIN
 X_MAX=GPVAL_DATA_X_MAX
 Y_MIN=GPVAL_DATA_Y_MIN
@@ -130,27 +130,27 @@ color(a) = mod(a, 6)
 set style fill transparent solid 0.10 noborder
 
 plot \
-FN_IN_TS u 2:6:2:5:6:7:(color($1)) w boxxyerrorbars lc variable not, \
-FN_IN_TS u 2:6:(0):9:(color($1)) w vectors nohead lc variable not, \
-FN_IN_TS u 2:8:1:(color($1)) w labels right offset -0.5,0 textcolor variable font ",8" not, \
+FN_IN_TS u 3:7:3:6:7:8:(color($1)) w boxxyerrorbars lc variable not, \
+FN_IN_TS u 3:7:(0):10:(color($1)) w vectors nohead lc variable not, \
+FN_IN_TS u 3:9:(sprintf("%2d %d", $1, $2)):(color($1)) w labels offset -0.2,0 tc variable font ",8" not, \
 legendAccesses(x) w lines lc rgb "black" not, \
-FN_IN_TS u 11:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 12:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 13:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 14:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 15:7:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 11:7:("OE")  w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
-FN_IN_TS u 12:7:("ON")  w labels tc rgb "black" rotate by 90 left  offset 0, 0.2 font ",7" not, \
-FN_IN_TS u 13:7:("TM0") w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
-FN_IN_TS u 15:7:("BC")  w labels tc rgb "black" rotate by 90 left  offset 0, 0.2 font ",7" not, \
-FN_IN_TS u 14:7:("TM1") w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
+FN_IN_TS u 12:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 13:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 14:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 15:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 16:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
+FN_IN_TS u 12:8:("OE")  w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
+FN_IN_TS u 13:8:("ON")  w labels tc rgb "black" rotate by 90 left  offset 0, 0.2 font ",7" not, \
+FN_IN_TS u 14:8:("TM0") w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
+FN_IN_TS u 16:8:("BC")  w labels tc rgb "black" rotate by 90 left  offset 0, 0.2 font ",7" not, \
+FN_IN_TS u 15:8:("TM1") w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
 FN_IN_AC u 2:9:(color($1)) w points pointsize 0.05 lc variable not # "# of accesses"
 
 # "vectors" doesn't have dotted line... dang
-#FN_IN_TS u 4:6:(0):9:(color($1)) w vectors nohead lc variable lt -1 not, \
+#FN_IN_TS u 5:7:(0):10:(color($1)) w vectors nohead lc variable lt -1 not, \
 
 # 3rd and 4th columns of "vectors" takes number, not date format... dang.
-#FN_IN_TS u 2:6:(0):9:(color($1)) w vectors nohead lc variable not, \
+#FN_IN_TS u 3:7:(0):10:(color($1)) w vectors nohead lc variable not, \
 
 # steps doesn't work with lc variable... dang
 #FN_IN_AC u 2:8:(color($1)) w steps lc variable t "# of accesses"

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 
 import Conf
@@ -14,6 +15,9 @@ import TabletAccessesForTabletMinMaxTimestampsTimelinePlotDataGenerator
 
 
 def main(argv):
+	# Change the current working path to where this file is
+	os.chdir(os.path.dirname(__file__))
+
 	Conf.Init()
 
 	LoadgenLogReader.Read()

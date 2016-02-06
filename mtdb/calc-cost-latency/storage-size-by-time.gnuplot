@@ -9,11 +9,15 @@ set xdata time
 set timefmt "%y%m%d-%H%M%S"
 set format x "'%y"
 
-plot FN_IN u 1:($2/1000000) w fsteps
+plot FN_IN u 1:($2/1000000) w fsteps, \
+FN_IN u 1:($4+$5) w lines axes x1y2
+
 X_MIN=GPVAL_DATA_X_MIN
 X_MAX=GPVAL_DATA_X_MAX
 Y_MIN=GPVAL_DATA_Y_MIN
 Y_MAX=GPVAL_DATA_Y_MAX
+Y2_MIN=GPVAL_DATA_Y2_MIN
+Y2_MAX=GPVAL_DATA_Y2_MAX
 
 set terminal pdfcairo enhanced size 3in, 2in
 set output FN_OUT
@@ -25,20 +29,30 @@ set output FN_OUT
 
 set xlabel "Time" offset 0,0.3
 set ylabel "Storage size (MB)" offset 1.3,0
+set y2label "Storage cost ($)"
 
-set border (1 + 2) back lc rgb "#808080"
+set border (1 + 2 + 8) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,(365.25*24*3600)
 
-yMaxOneMagSmaller=10**floor(log10(Y_MAX))
-yTicsStep(i)=floor(floor(Y_MAX / i) / yMaxOneMagSmaller) * yMaxOneMagSmaller
-set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,yTicsStep(2)
+OneMagSmaller(x)=10**floor(log10(x))
+yTicsStep(a, b)=floor(floor(a / b) / OneMagSmaller(a)) * OneMagSmaller(a)
+set ytics  nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,yTicsStep(Y_MAX, 2)
+set y2tics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,yTicsStep(Y2_MAX, 2)
 set tics front
 
 set xrange [X_MIN:X_MAX]
 set yrange [Y_MIN:Y_MAX]
+set y2range [Y2_MIN:Y2_MAX]
 
 set key top left
 
+set pointsize 0.1
+
 plot \
-FN_IN u 1:($2/1000000) w fillsteps fs solid 0.15 noborder not, \
-FN_IN u 1:($2/1000000) w steps lw 0.1 lc rgb "red" t "Hot"
+FN_IN u 1:($2/1000000) w steps lc rgb "red" t "Hot", \
+FN_IN u 1:($3/1000000) w steps lc rgb "blue" t "Cold", \
+FN_IN u 1:4 w linespoints axes x1y2 pt 7 lc rgb "red" not, \
+FN_IN u 1:5 w linespoints axes x1y2 pt 7 lc rgb "blue" not, \
+FN_IN u 1:($4+$5) w linespoints axes x1y2 pt 7 lc rgb "black" not
+
+#FN_IN u 1:($2/1000000) w fillsteps fs solid 0.15 noborder not, \

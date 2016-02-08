@@ -97,16 +97,16 @@ public class Reqs
 
 	public static void GenWRs() throws InterruptedException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime(
-					String.format("Generating %d WRs(s) ...", Conf.global.writes))) {
-			_WRs = new ArrayList(Conf.global.writes);
-			if (Conf.global.write_time_dist.equals("Same")) {
-				for (int i = 1; i <= Conf.global.writes; i ++) {
-					long es = SimTime.SimulatedTimeBeginEs() + SimTime.SimulatedTimeDurEs() * i / Conf.global.writes;
+					String.format("Generating %d WRs(s) ...", Conf.NumWrites()))) {
+			_WRs = new ArrayList(Conf.NumWrites());
+			if (Conf.mutantsLoadgenOptions.global.write_time_dist.equals("Same")) {
+				for (int i = 1; i <= Conf.NumWrites(); i ++) {
+					long es = SimTime.SimulatedTimeBeginEs() + SimTime.SimulatedTimeDurEs() * i / Conf.NumWrites();
 					_WRs.add(new WRs(es));
 				}
-			} else if (Conf.global.write_time_dist.equals("Uniform")) {
+			} else if (Conf.mutantsLoadgenOptions.global.write_time_dist.equals("Uniform")) {
 				ThreadLocalRandom tlr = ThreadLocalRandom.current();
-				for (int i = 1; i <= Conf.global.writes; i ++) {
+				for (int i = 1; i <= Conf.NumWrites(); i ++) {
 					long es = tlr.nextLong(SimTime.SimulatedTimeBeginEs(), SimTime.SimulatedTimeEndEs() + 1);
 					_WRs.add(new WRs(es));
 				}
@@ -121,14 +121,14 @@ public class Reqs
 				Collections.sort(_WRs);
 			}
 
-			//Cons.P(String.format("Write times (%s):", Conf.global.write_time_dist));
+			//Cons.P(String.format("Write times (%s):", Conf.mutantsLoadgenOptions.global.write_time_dist));
 			//for (WRs wrs: _WRs)
 			//	Cons.P(wrs);
 		}
 	}
 
 	public static void DumpWRsForPlot() throws FileNotFoundException {
-		String fn = Conf.global.fn_dump_wrs;
+		String fn = Conf.mutantsLoadgenOptions.global.fn_dump_wrs;
 		PrintWriter writer = new PrintWriter(fn);
 		for (WRs wrs: _WRs)
 			writer.println(wrs.toStringForPlot());

@@ -112,7 +112,7 @@ public class DbCli
 						SimTime.SleepUntilSimulatedTime(op.epoch_sec);
 						dbCli.DbReadMeasureTime(op);
 					} else if (op instanceof OpEndmarkW) {
-						for (int i = 0; i < Conf.db.num_threads; i ++) {
+						for (int i = 0; i < Conf.mutantsLoadgenOptions.db.num_threads; i ++) {
 							dbCli._q.put(new OpEndmarkR());
 						}
 					} else if (op instanceof OpEndmarkR) {
@@ -137,11 +137,11 @@ public class DbCli
 		// Start a consumer (DB client) thread one by one to prevent a bunch of
 		// writes happening before any reads. Design is similar to test and
 		// test-and-set.
-		if (Conf.db.num_threads <= _threads.size())
+		if (Conf.mutantsLoadgenOptions.db.num_threads <= _threads.size())
 			return;
 		Thread t;
 		synchronized (_threads) {
-			if (Conf.db.num_threads <= _threads.size())
+			if (Conf.mutantsLoadgenOptions.db.num_threads <= _threads.size())
 				return;
 			t = new Thread(new DbClientThread(this));
 			_threads.add(t);

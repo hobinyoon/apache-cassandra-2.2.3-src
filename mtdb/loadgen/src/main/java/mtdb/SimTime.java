@@ -31,7 +31,7 @@ class SimTime {
 
 	public static void Init() {
 		_simulatedTimeBegin = LocalDateTime.of(2010, 1, 1, 0, 0);
-		_simulatedTimeEnd = _simulatedTimeBegin.plusSeconds((long)(Conf.global.simulated_time_years * 365.25 * 24 * 3600));
+		_simulatedTimeEnd = _simulatedTimeBegin.plusSeconds((long)(Conf.mutantsOptions.simulated_time_years * 365.25 * 24 * 3600));
 
 		_zoneId = ZoneId.systemDefault();
 
@@ -67,7 +67,7 @@ class SimTime {
 	}
 
 	public static void StartSimulation() {
-		_simulationTimeDurNano = (long) (Conf.global.simulation_time_mins * 60 * 1000000000);
+		_simulationTimeDurNano = (long) (Conf.mutantsOptions.simulation_time_mins * 60 * 1000000000);
 		_simulationTimeBeginNano = System.nanoTime();
 		_simulationTimeBeginMilli = System.currentTimeMillis();
 		_simulationTimeEndNano = _simulationTimeBeginNano + _simulationTimeDurNano;

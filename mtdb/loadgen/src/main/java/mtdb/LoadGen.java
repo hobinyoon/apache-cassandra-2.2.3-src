@@ -5,11 +5,11 @@ public class LoadGen
 	public static void main(String[] args) {
 		try {
 			Conf.Init(args);
-			if (Conf.global.fn_test_num_reads_per_obj.length() > 0) {
+			if (Conf.mutantsLoadgenOptions.global.fn_test_num_reads_per_obj.length() > 0) {
 				NumReadsPerObj.Test();
 				return;
 			}
-			if (Conf.global.fn_test_obj_ages.length() > 0) {
+			if (Conf.mutantsLoadgenOptions.global.fn_test_obj_ages.length() > 0) {
 				ReadTimes.Test();
 				return;
 			}
@@ -20,10 +20,10 @@ public class LoadGen
 
 			Reqs.GenWRs();
 
-			if (Conf.global.fn_dump_wrs.length() > 0) {
+			if (Conf.mutantsLoadgenOptions.global.fn_dump_wrs.length() > 0) {
 				Reqs.DumpWRsForPlot();
 			}
-			if (Conf.db.requests) {
+			if (Conf.mutantsLoadgenOptions.db.requests) {
 				DbCli dbCli = CassCli.GetInstance();
 				dbCli.Run();
 			}

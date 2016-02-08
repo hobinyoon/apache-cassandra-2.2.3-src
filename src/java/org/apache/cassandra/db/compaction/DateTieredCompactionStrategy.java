@@ -54,10 +54,12 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
         {
             disableTombstoneCompactions = true;
             logger.trace("Disabling tombstone compactions for DTCS");
+            logger.warn("MTDB: Disabling tombstone compactions for DTCS");
         }
-        else
+        else {
             logger.trace("Enabling tombstone compactions for DTCS");
-
+            logger.warn("MTDB: Enabling tombstone compactions for DTCS");
+        }
     }
 
     @Override
@@ -88,14 +90,76 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
      * @param gcBefore
      * @return
      */
+    private String toString(List<SSTableReader> l) {
+        StringBuilder sb = new StringBuilder(100);
+        boolean first = true;
+        for (SSTableReader s: l) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(" ");
+            }
+            sb.append(s.descriptor.generation).append("-").append(s.StorageTemperatureLevel());
+        }
+        return sb.toString();
+    }
+
     private List<SSTableReader> getNextBackgroundSSTables(final int gcBefore)
     {
         List<SSTableReader> candidates = getNextBackgroundSSTables0(gcBefore);
-        if (candidates.isEmpty() && cfs.metadata.mtdbTable) {
-            SSTableReader coldestSstr = SstTempMon.GetColdest();
-            if (coldestSstr != null)
-                candidates.add(coldestSstr);
+
+        if (cfs.metadata.mtdbTable) {
+            // Do not mix SSTables of different temperatures.
+            // Option 1. Ignore the compaction. The SSTables will be selected later on.
+            //   - Depending on the migration threshold, there will be many
+            //   small cold SSTables and they will be merged together.
+            // Option 2. Keep only the hottest SSTables from the list and drop
+            // the others. Return them only when there are more than 1
+            // SSTable. This sounds like a better idea.
+            //   - Some hot tablets are merged together. Cold tablets will be
+            //   excluded from the list of hot tablets.
+            //   - When they become cold, they will be merged eventually.
+            if (! candidates.isEmpty()) {
+                int hottestTempLevel = -1;
+                boolean first = true;
+                for (SSTableReader s: candidates) {
+                    if (first) {
+                        hottestTempLevel = s.StorageTemperatureLevel();
+                        first = false;
+                    } else {
+                        hottestTempLevel = Math.min(hottestTempLevel, s.StorageTemperatureLevel());
+                    }
+                }
+
+                List<SSTableReader> c_keep = new ArrayList();
+                List<SSTableReader> c_drop = new ArrayList();
+                for (SSTableReader s: candidates) {
+                    if (s.StorageTemperatureLevel() == hottestTempLevel) {
+                        c_keep.add(s);
+                    } else {
+                        c_drop.add(s);
+                    }
+                }
+                // Do not compact when there is only one left.
+                if (c_keep.size() == 1)
+                    c_drop.add(c_keep.remove(0));
+
+                if (c_drop.size() > 0) {
+                    logger.warn("MTDB: New_candidates=[{}] Dropped=[{}]",
+                            toString(c_keep), toString(c_drop));
+                    candidates = c_keep;
+                }
+            }
+
+            // If still empty, return the coldest among cold sstables so that
+            // it migrates to cold storage
+            if (candidates.isEmpty()) {
+                SSTableReader coldestSstr = SstTempMon.GetColdest();
+                if (coldestSstr != null)
+                    candidates.add(coldestSstr);
+            }
         }
+
         return candidates;
     }
 

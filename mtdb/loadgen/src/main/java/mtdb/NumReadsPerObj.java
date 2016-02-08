@@ -35,9 +35,9 @@ public class NumReadsPerObj
 	public static void Init() throws FileNotFoundException, IOException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("NumReadsPerObj.Init ...")) {
 			_ornrs = new ArrayList();
-			if (Conf.per_obj.num_reads_dist.startsWith("Custom: ")) {
+			if (Conf.mutantsLoadgenOptions.per_obj.num_reads_dist.startsWith("Custom: ")) {
 				//                                       01234567
-				String fn = "data/" + Conf.per_obj.num_reads_dist.substring(8);
+				String fn = "data/" + Conf.mutantsLoadgenOptions.per_obj.num_reads_dist.substring(8);
 				long sum = 0;
 				long obj_rank = 0;
 				long obj_rank_prev = 0;
@@ -91,7 +91,7 @@ public class NumReadsPerObj
 		//
 		// a = (target_avg - 1) / (cur_avg - 1)
 
-		double a = (Conf.per_obj.avg_reads - 1.0) / (_raw_avg_num_reqs - 1.0);
+		double a = (Conf.mutantsLoadgenOptions.per_obj.avg_reads - 1.0) / (_raw_avg_num_reqs - 1.0);
 		Cons.P(String.format("a=%f", a));
 
 		for (ObjRankNumReqs o: _ornrs) {
@@ -170,7 +170,7 @@ public class NumReadsPerObj
 
 	private static void _TestNumReads() throws FileNotFoundException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("Test GetNext() ...")) {
-			String fn = Conf.global.fn_test_num_reads_per_obj;
+			String fn = Conf.mutantsLoadgenOptions.global.fn_test_num_reads_per_obj;
 			PrintWriter writer = new PrintWriter(fn);
 			for (int i = 0; i < 1000000; i ++)
 				writer.println(GetNext());

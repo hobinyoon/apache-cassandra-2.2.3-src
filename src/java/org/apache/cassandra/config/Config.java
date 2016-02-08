@@ -265,6 +265,7 @@ public class Config
     public int windows_timer_interval = 0;
 
     public MutantsOptions mutants_options = new MutantsOptions();
+    public MutantsLoadgenOptions mutants_loadgen_options = new MutantsLoadgenOptions();
 
     public boolean enable_user_defined_functions = false;
 

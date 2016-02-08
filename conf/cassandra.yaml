@@ -887,7 +887,49 @@ mutants_options:
     # Number of need-to-read-dfiles per day (tablet_coldness_threshold) in
     # simulated time tablet_coldness_monitor_time_window_simulated_time_days
     tablet_coldness_monitor_time_window_simulated_time_days: 45
-    tablet_coldness_threshold: 0.01
+    tablet_coldness_threshold: 0.05
 
-    # Tablet access stat report interval. Plotting tools use this report
-    tablet_access_stat_report_interval_simulation_time_ms: 500
+    # Tablet access stat report interval. Not needed for the functionality of
+    # Mutants. Plotting tools use this report
+    tablet_access_stat_report_interval_simulation_time_ms: 100
+
+
+# TODO: print these in the description too
+# Load generator for long-running applications
+mutants_loadgen_options:
+    global:
+        # Total number of writes
+        num_writes_per_simulation_time_mins: 20000
+
+        # Write time distribution
+        # - Same: The same inter-arrival intervals between writes.
+        # - Uniform: Random distribution with a uniform distribution probability.
+        write_time_dist: Uniform
+
+    # Per-object options
+    per_obj:
+        # Average number of reads per object, e.g., 1000
+        # Not used for now.
+        avg_reads: 1000
+
+        # Distribution of the number of reads per object
+        # - Uniform: Uniform between min and max
+        # - Custom: Use a file that has the number of reads per object distribution
+        #           in CDF. E.g., Huang ’14, Figure 5. number of requests per each
+        #           object
+        num_reads_dist: "Custom: facebook-num-reqs-by-rank"
+
+        # Read time distribution
+        # - Custom: Use a file that has a read time distribution by age in CDF.
+        #           E.g., Kumar. Efficiency at Scale. ’14.
+        read_time_dist: "Custom: facebook-num-reads-by-age"
+
+        # Object size in bytes. E.g., a tweet is about 1KB big.
+        obj_size: 3000
+
+    db:
+        # Request IO to the database server
+        requests: True
+
+        # Number of client threads
+        num_threads: 500

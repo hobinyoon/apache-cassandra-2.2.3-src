@@ -37,9 +37,9 @@ public class ReadTimes
 	public static void Init() throws FileNotFoundException, IOException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("ReadTimes.Init ...")) {
 			_aas = new ArrayList();
-			if (Conf.per_obj.read_time_dist.startsWith("Custom: ")) {
+			if (Conf.mutantsLoadgenOptions.per_obj.read_time_dist.startsWith("Custom: ")) {
 				//                                       01234567
-				String fn = "data/" + Conf.per_obj.read_time_dist.substring(8);
+				String fn = "data/" + Conf.mutantsLoadgenOptions.per_obj.read_time_dist.substring(8);
 				try (BufferedReader br = new BufferedReader(new FileReader(fn))) {
 					String line;
 					while ((line = br.readLine()) != null) {
@@ -141,7 +141,7 @@ public class ReadTimes
 
 	private static void _TestReadTimes() throws FileNotFoundException {
 		try (Cons.MeasureTime _ = new Cons.MeasureTime("Test GetNext() ...")) {
-			String fn = Conf.global.fn_test_obj_ages;
+			String fn = Conf.mutantsLoadgenOptions.global.fn_test_obj_ages;
 			PrintWriter writer = new PrintWriter(fn);
 			for (int i = 0; i < 1000000; i ++) {
 				long age = GetNext();

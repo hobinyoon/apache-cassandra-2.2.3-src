@@ -19,9 +19,6 @@ Y_MAX=GPVAL_DATA_Y_MAX
 Y2_MIN=GPVAL_DATA_Y2_MIN
 Y2_MAX=GPVAL_DATA_Y2_MAX
 
-#set print "-"
-#print (sprintf("Y_MAX: %f", Y_MAX))
-#print (sprintf("Y2_MAX: %f", Y2_MAX))
 
 set terminal pdfcairo enhanced size 3in, 2in
 set output FN_OUT
@@ -40,11 +37,15 @@ set xtics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,(365.25*24*3600)
 
 # Not sure if this is what I wanted. Not important.
 x1(a)=(10**floor(log10(a)))
-x2(a)=floor(a/x1(a)/2)*x1(a)*2
-yTicsStep(a, b)=x2(a/b)
+x2(a)=floor(a/x1(a))*x1(a)
+x3(a)=floor(a/x1(a)/2)*x1(a)*2
+yTicsStep(a, b)=(x2(a/b) == 1 ? x2(a/b) : x3(a/b))
 
-#print (sprintf("yTicsStep(Y_MAX, 2)=%f", yTicsStep(Y_MAX, 2)))
-#print (sprintf("yTicsStep(Y2_MAX, 2)=%f", yTicsStep(Y2_MAX, 2)))
+set print "-"
+print (sprintf("Y_MAX: %f", Y_MAX))
+print (sprintf("Y2_MAX: %f", Y2_MAX))
+print (sprintf("yTicsStep(Y_MAX, 2)=%f", yTicsStep(Y_MAX, 2)))
+print (sprintf("yTicsStep(Y2_MAX, 2)=%f", yTicsStep(Y2_MAX, 2)))
 set ytics  nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,yTicsStep(Y_MAX, 2)
 set y2tics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,yTicsStep(Y2_MAX, 2)
 set tics front

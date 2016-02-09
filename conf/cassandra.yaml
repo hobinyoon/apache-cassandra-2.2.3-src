@@ -883,6 +883,9 @@ mutants_options:
 
     tablet_temperature_monitor_interval_simulation_time_ms: 100
 
+    # Switch to turn on/off Mutants to compare the performance
+    migrate_to_cold_storage: false
+
     cold_storage_dir: /mnt/s5-cass-cold-storage/mtdb-cold
 
     # Number of need-to-read-dfiles per day (tablet_coldness_threshold) in

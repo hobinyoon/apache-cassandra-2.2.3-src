@@ -7,6 +7,8 @@ public class MutantsOptions
 
     public int tablet_temperature_monitor_interval_simulation_time_ms;
 
+    public boolean migrate_to_cold_storage;
+
     public String cold_storage_dir;
 
     public double tablet_coldness_monitor_time_window_simulated_time_days;

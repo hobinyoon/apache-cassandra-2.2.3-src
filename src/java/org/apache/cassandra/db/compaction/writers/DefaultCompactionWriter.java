@@ -24,6 +24,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.db.ColumnFamilyStore;
 import org.apache.cassandra.db.compaction.AbstractCompactedRow;
 import org.apache.cassandra.db.compaction.OperationType;
@@ -49,10 +50,10 @@ public class DefaultCompactionWriter extends CompactionAwareWriter
         long expectedWriteSize = cfs.getExpectedCompactedFileSize(nonExpiredSSTables, compactionType);
 
         // When all candidate tablets are cold, the compacted tablet should be
-        // cold. If at least one of them is hot, the compacted tablet should be
-        // hot. Analysis of temperatures of candidates could be nice to
-        // present!
-        boolean compactToColdStorage = (cfs.metadata.mtdbTable && txn.OriginalsAllCold());
+        // cold. Mutants does not compact hot and cold tablets together.
+        boolean compactToColdStorage = (DatabaseDescriptor.getMutantsOptions().migrate_to_cold_storage
+                && cfs.metadata.mtdbTable && txn.OriginalsAllCold());
+
         File sstableDirectory = cfs.directories.getLocationForDisk(getWriteDirectory(expectedWriteSize, compactToColdStorage));
         //if (compactToColdStorage) {
         //    logger.warn("MTDB: sstableDirectory={} getWriteDirectory({})={}",

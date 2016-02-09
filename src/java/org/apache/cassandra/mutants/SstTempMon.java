@@ -29,7 +29,8 @@ public class SstTempMon {
     // Called by DateTieredCompactionStrategy.addSSTable(SSTableReader
     // sstable). Seems like it is called at most once per sstable.
     public static void StartMonitor(ColumnFamilyStore cfs, SSTableReader sstr) {
-        if (! sstr.descriptor.mtdbTable)
+        if ((! DatabaseDescriptor.getMutantsOptions().migrate_to_cold_storage)
+                || (! sstr.descriptor.mtdbTable))
             return;
 
         // Only SSTables in hot storage are monitored
@@ -47,7 +48,8 @@ public class SstTempMon {
     // sstable that doesn't have a temperature monitor started.  They are all
     // harmless.
     public static void StopMonitor(SSTableReader sstr) {
-        if (! sstr.descriptor.mtdbTable)
+        if ((! DatabaseDescriptor.getMutantsOptions().migrate_to_cold_storage)
+                || (! sstr.descriptor.mtdbTable))
             return;
 
         Monitor m = monitors.remove(sstr);
@@ -90,6 +92,8 @@ public class SstTempMon {
                 oldestBecameColdAtNs = m.becameColdAt();
             }
         }
+        if (coldestSstr == null)
+            return null;
 
         synchronized (coldestSstrsReturned) {
             if (coldestSstrsReturned.contains(coldestSstr))

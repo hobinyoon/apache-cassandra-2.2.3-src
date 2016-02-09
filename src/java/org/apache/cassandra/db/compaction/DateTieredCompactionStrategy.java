@@ -26,6 +26,7 @@ import com.google.common.collect.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.cassandra.config.DatabaseDescriptor;
 import org.apache.cassandra.cql3.statements.CFPropDefs;
 import org.apache.cassandra.db.ColumnFamilyStore;
 import org.apache.cassandra.db.lifecycle.LifecycleTransaction;
@@ -181,7 +182,8 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
     {
         List<SSTableReader> candidates = getNextBackgroundSSTables0(gcBefore);
 
-        if (cfs.metadata.mtdbTable) {
+        if (DatabaseDescriptor.getMutantsOptions().migrate_to_cold_storage
+                && cfs.metadata.mtdbTable) {
             // Do not mix SSTables of different temperatures.
             // Option 1. Ignore the compaction. The SSTables will be selected later on.
             //   - Depending on the migration threshold, there will be many

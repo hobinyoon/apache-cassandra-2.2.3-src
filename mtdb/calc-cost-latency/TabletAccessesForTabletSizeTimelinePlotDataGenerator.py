@@ -8,6 +8,7 @@ import Util
 import CassLogReader
 import Desc
 import Event
+import SimTime
 import TabletSizeTimelinePlotDataGenerator
 
 _fn_plot_data = None
@@ -73,6 +74,9 @@ def _WriteToFile():
 			num_tp_prev = 0
 			num_fp_prev = 0
 			for time_, cnts in sorted(v.time_cnts.iteritems()):
+				if time_ > SimTime.SimulatedTimeEnd():
+					continue
+
 				num_negatives = cnts.num_reads - cnts.num_needto_read_datafile
 				if time_prev == None:
 					# We ignore the first time window, i.e., we don't print anything for

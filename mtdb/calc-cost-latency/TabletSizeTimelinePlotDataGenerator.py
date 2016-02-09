@@ -175,7 +175,7 @@ def _CalcTabletsYCords0(y_spacing):
 			# x0, lower bound of x, is not used
 			#self.x0 = x0.simulated_time
 			# x1 can be None, if the tablet is still in use (not deleted yet)
-			self.x1 = (SimTime._simulated_time_end if x1 == None else x1.simulated_time)
+			self.x1 = (SimTime.SimulatedTimeEnd() if x1 == None else x1.simulated_time)
 			self.y0 = y0
 			self.y1 = y1
 
@@ -243,12 +243,15 @@ def _WriteToFile():
 			))
 		# Note: id can be m(number) or (number) for memtables and sstables
 		for id_, v in sorted(_id_events.iteritems()):
+			if v.Created().simulated_time > SimTime.SimulatedTimeEnd():
+				continue
+
 			fo.write((fmt + "\n") % (id_
 				, v.Temperature()
 				, v.Created().simulated_time.strftime("%y%m%d-%H%M%S.%f")
 				, (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else "-")
 				, SimTime.StrftimeWithOutofrange(v.Deleted())
-				, (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else SimTime._simulated_time_end.strftime("%y%m%d-%H%M%S.%f"))
+				, (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else SimTime.SimulatedTimeEnd().strftime("%y%m%d-%H%M%S.%f"))
 				, v.TabletSize()
 				, v.y_cord
 				, SimTime.StrftimeWithOutofrange(v.OpenedEarly())

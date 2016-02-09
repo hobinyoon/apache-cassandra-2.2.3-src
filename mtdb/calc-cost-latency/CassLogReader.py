@@ -23,8 +23,10 @@ def Read():
 		global _raw_lines, _logs
 		for line in _raw_lines:
 			le = LogEntry(line)
-			if le.simulation_time > SimTime.SimulationTimeEnd():
-				break
+			# Read past the simulation time end to get sstable sizes and timestamp
+			# ranges that are available when first SSTable open-normal
+			#if le.simulation_time > SimTime.SimulationTimeEnd():
+			#	break
 			_logs.append(le)
 
 

@@ -163,10 +163,13 @@ def _WriteToFile():
 			" temp_mon_started temp_mon_stopped temp_mon_becomd_cold"
 			))
 		for id_, v in sorted(_id_events.iteritems()):
+			if v.Created().simulated_time > SimTime.SimulatedTimeEnd():
+				continue
+
 			# If not defined, "-"
 			deleted_time0 = (v.Deleted().simulated_time.strftime("%y%m%d-%H%M%S.%f") if v.Deleted() != None else "-")
-			# If not defined, SimTime._simulated_time_end
-			deleted_time1_ = v.Deleted().simulated_time if v.Deleted() != None else SimTime._simulated_time_end
+			# If not defined, SimTime.SimulatedTimeEnd()
+			deleted_time1_ = v.Deleted().simulated_time if v.Deleted() != None else SimTime.SimulatedTimeEnd()
 			deleted_time1 = deleted_time1_.strftime("%y%m%d-%H%M%S.%f")
 			deleted_time2 = SimTime.StrftimeWithOutofrange(v.Deleted())
 

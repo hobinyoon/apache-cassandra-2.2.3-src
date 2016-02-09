@@ -79,33 +79,40 @@ def _Write():
 			, total_cost_hot, total_cost_cold, "sim_begin"))
 
 		for l in CassLogReader._logs:
-			if (type(l.event) is not Event.SstCreated) and (type(l.event) is not Event.SstDeleted):
-				continue
+			try:
+				if l.simulated_time > SimTime.SimulatedTimeEnd():
+					continue
 
-			cur_time_dur = l.simulated_time - last_cost_calc_time
-			size = _sstgen_csd[l.event.sst_gen].size
+				if (type(l.event) is not Event.SstCreated) and (type(l.event) is not Event.SstDeleted):
+					continue
 
-			total_cost_hot += StgCost.InstStore(cur_hot_stg_size, cur_time_dur)
-			total_cost_cold += StgCost.EbsSsd(cur_cold_stg_size, cur_time_dur)
+				cur_time_dur = l.simulated_time - last_cost_calc_time
+				size = _sstgen_csd[l.event.sst_gen].size
 
-			temperature_level = _sstgen_csd[l.event.sst_gen].temperature_level
+				total_cost_hot += StgCost.InstStore(cur_hot_stg_size, cur_time_dur)
+				total_cost_cold += StgCost.EbsSsd(cur_cold_stg_size, cur_time_dur)
 
-			if type(l.event) is Event.SstCreated:
-				if temperature_level == 0:
-					cur_hot_stg_size += size
-				else:
-					cur_cold_stg_size += size
-				desc = "%d-created-%s" % (l.event.sst_gen, ("hot" if temperature_level == 0 else "cold"))
-			elif type(l.event) is Event.SstDeleted:
-				if temperature_level == 0:
-					cur_hot_stg_size -= size
-				else:
-					cur_cold_stg_size -= size
-				desc = "%d-deleted" % l.event.sst_gen
+				temperature_level = _sstgen_csd[l.event.sst_gen].temperature_level
 
-			last_cost_calc_time = l.simulated_time
-			FileOrCons(fo, fmt % (l.simulated_time.strftime("%y%m%d-%H%M%S.%f")
-				, cur_hot_stg_size, cur_cold_stg_size, total_cost_hot, total_cost_cold, desc))
+				if type(l.event) is Event.SstCreated:
+					if temperature_level == 0:
+						cur_hot_stg_size += size
+					else:
+						cur_cold_stg_size += size
+					desc = "%d-created-%s" % (l.event.sst_gen, ("hot" if temperature_level == 0 else "cold"))
+				elif type(l.event) is Event.SstDeleted:
+					if temperature_level == 0:
+						cur_hot_stg_size -= size
+					else:
+						cur_cold_stg_size -= size
+					desc = "%d-deleted" % l.event.sst_gen
+
+				last_cost_calc_time = l.simulated_time
+				FileOrCons(fo, fmt % (l.simulated_time.strftime("%y%m%d-%H%M%S.%f")
+					, cur_hot_stg_size, cur_cold_stg_size, total_cost_hot, total_cost_cold, desc))
+			except AttributeError as e:
+				Cons.P("AttributeError: l.event.sst_gen=%d" % l.event.sst_gen)
+				raise
 
 		cur_time_dur = l.simulated_time - last_cost_calc_time
 		total_cost_hot += StgCost.InstStore(cur_hot_stg_size, cur_time_dur)

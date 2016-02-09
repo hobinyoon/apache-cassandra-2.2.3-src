@@ -7,6 +7,7 @@ FN_IN_AC = system("echo $FN_IN_AC")
 FN_OUT = system("echo $FN_OUT")
 MAX_NUM_ACCESSES = system("echo $MAX_NUM_ACCESSES")
 MIN_TIMESTAMP_RANGE = system("echo $MIN_TIMESTAMP_RANGE")
+SIMULATED_TIME_END = system("echo $SIMULATED_TIME_END")
 DESC = system("echo $DESC")
 
 load "../conf/colorscheme.gnuplot"
@@ -48,7 +49,8 @@ y1p = (Y_MAX - Y_MIN) / 100
 
 # Give some margin on the left and at the bottom
 x0=X_MIN - 3*x1p
-x1=X_MAX + 2*x1p
+#x1=X_MAX + 1*x1p
+x1=SIMULATED_TIME_END
 y0=Y_MIN - y1p
 y1=Y_MAX
 set xrange [x0:x1]

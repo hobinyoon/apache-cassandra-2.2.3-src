@@ -878,7 +878,8 @@ mutants_options:
     # Simulated time in years and simulation time in mimutes. These were for
     # loadgen, but also used for tablet coldness detection.
     simulated_time_years: 8
-    simulation_time_mins: 0.5
+    #simulation_time_mins: 0.5
+    simulation_time_mins: 3
 
     tablet_temperature_monitor_interval_simulation_time_ms: 100
 
@@ -887,14 +888,13 @@ mutants_options:
     # Number of need-to-read-dfiles per day (tablet_coldness_threshold) in
     # simulated time tablet_coldness_monitor_time_window_simulated_time_days
     tablet_coldness_monitor_time_window_simulated_time_days: 45
-    tablet_coldness_threshold: 0.05
+    tablet_coldness_threshold: 1
 
     # Tablet access stat report interval. Not needed for the functionality of
     # Mutants. Plotting tools use this report
     tablet_access_stat_report_interval_simulation_time_ms: 100
 
 
-# TODO: print these in the description too
 # Load generator for long-running applications
 mutants_loadgen_options:
     global:

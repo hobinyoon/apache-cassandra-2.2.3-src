@@ -15,6 +15,7 @@ _cs = None
 _cs_options = None
 _memtable_heap_space_in_mb = None
 _mutants_options = None
+_mutants_loadgen_options = None
 
 
 def SetExpDatetime(dt):
@@ -48,6 +49,20 @@ def SetNodeConfiguration(line_from_op):
 					, mo["tablet_coldness_threshold"]
 					)
 
+	global _mutants_loadgen_options
+	mlo = nc["mutants_loadgen_options"]
+	_mutants_loadgen_options = "global.num_writes_per_simulation_time_mins: %s" \
+			"\nper_obj.avg_reads: %s" \
+			"\nper_obj.read_time_dist: %s" \
+			"\nper_obj.obj_size: %s" \
+			"\ndb.num_threads: %s" \
+			% (mlo["global"]["num_writes_per_simulation_time_mins"]
+					, mlo["per_obj"]["avg_reads"]
+					, mlo["per_obj"]["read_time_dist"]
+					, mlo["per_obj"]["obj_size"]
+					, mlo["db"]["num_threads"]
+					)
+
 
 def SetCassMetadata(line):
 	global _cs, _cs_options
@@ -73,9 +88,11 @@ def GnuplotDesc():
 			"\ncompaction strategy options: %s" \
 			"\nmemtable heap space in mb: %s" \
 			"\n%s" \
+			"\n%s" \
 			% (_exp_datetime
 					, _cs
 					, _cs_options
 					, _memtable_heap_space_in_mb
-					, _mutants_options)
+					, _mutants_options
+					, _mutants_loadgen_options)
 	return desc.replace("\n", "\\n").replace("_", "\_")

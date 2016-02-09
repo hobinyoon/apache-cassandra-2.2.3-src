@@ -8,6 +8,7 @@ FN_OUT = system("echo $FN_OUT")
 DESC = system("echo $DESC")
 MIN_TABLET_SIZE = system("echo $MIN_TABLET_SIZE")
 MAX_NEEDTO_READ_DATAFILE_PER_DAY = system("echo $MAX_NEEDTO_READ_DATAFILE_PER_DAY")
+SIMULATED_TIME_END = system("echo $SIMULATED_TIME_END")
 
 load "../conf/colorscheme.gnuplot"
 
@@ -36,7 +37,8 @@ y1p = (Y_MAX - Y_MIN) / 100
 
 # Give some margin on the left and at the bottom
 x0=X_MIN-x1p
-x1=X_MAX+x1p
+#x1=X_MAX+x1p
+x1=SIMULATED_TIME_END
 y0=Y_MIN-y1p
 y1=Y_MAX+2*y1p
 

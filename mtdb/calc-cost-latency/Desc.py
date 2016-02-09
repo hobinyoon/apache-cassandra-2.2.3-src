@@ -1,9 +1,12 @@
+import pprint
 import re
 import sys
 
 sys.path.insert(0, "../util/python")
 import Cons
 import Util
+
+import ListMapParser
 
 _exp_datetime = None
 
@@ -25,15 +28,25 @@ def ExpDatetime():
 
 
 def SetNodeConfiguration(line_from_op):
-	mo = re.search(re.compile(r"memtable_heap_space_in_mb=\d+"), line_from_op)
-	#Cons.P(mo.group(0))
-	global _memtable_heap_space_in_mb
-	_memtable_heap_space_in_mb = mo.group(0)
+	nc = ListMapParser.Parse(line_from_op)
 
-	mo = re.search(re.compile(r"mutants_options={[^}]+}"), line_from_op)
-	#Cons.P(mo.group(0))
+	global _memtable_heap_space_in_mb
+	_memtable_heap_space_in_mb = nc["memtable_heap_space_in_mb"]
+
 	global _mutants_options
-	_mutants_options = mo.group(0).replace("{", "\n  ").replace(", ", "\n  ").replace("}", "")
+	#_mutants_options = pprint.pformat(nc["mutants_options"], indent=2)
+	mo = nc["mutants_options"]
+	_mutants_options = "cold storage dir: %s" \
+			"\nsimulated_time_years: %s" \
+			"\nsimulation_time_mins: %s" \
+			"\ntablet_coldness_monitor_time_window_simulated_time_days: %s" \
+			"\ntablet_coldness_threshold: %s" \
+			% (mo["cold_storage_dir"]
+					, mo["simulated_time_years"]
+					, mo["simulation_time_mins"]
+					, mo["tablet_coldness_monitor_time_window_simulated_time_days"]
+					, mo["tablet_coldness_threshold"]
+					)
 
 
 def SetCassMetadata(line):
@@ -58,7 +71,7 @@ def GnuplotDesc():
 	desc = "exp datetime: %s" \
 			"\ncompaction strategy: %s" \
 			"\ncompaction strategy options: %s" \
-			"\n%s" \
+			"\nmemtable heap space in mb: %s" \
 			"\n%s" \
 			% (_exp_datetime
 					, _cs

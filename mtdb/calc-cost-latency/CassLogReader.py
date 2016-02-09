@@ -133,7 +133,7 @@ class LogEntry(object):
 		elif self.op == "TempMon":
 			self.event = Event.TempMon(line)
 		elif line_from_op.startswith("Node configuration:"):
-			Desc.SetNodeConfiguration(line_from_op)
+			Desc.SetNodeConfiguration(line_from_op[len("Node configuration:"):])
 		elif self.op.startswith("metadata="):
 			Desc.SetCassMetadata(line)
 		else:

@@ -310,7 +310,11 @@ public abstract class SSTable
         becameCold = true;
     }
 
-    public boolean IsCold() {
-        return ((descriptor.TemperatureLevel() > 0) || becameCold);
+    public int TemperatureLevel() {
+        if (becameCold) {
+            return 1;
+        } else {
+            return StorageTemperatureLevel();
+        }
     }
 }

@@ -524,7 +524,7 @@ public class LifecycleTransaction extends Transactional.AbstractTransactional
         if (originals.size() == 0)
             return false;
         for (SSTableReader sstr: originals)
-            if (! sstr.IsCold())
+            if (sstr.TemperatureLevel() == 0)
                 return false;
         return true;
     }

@@ -99,9 +99,82 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
             } else {
                 sb.append(" ");
             }
-            sb.append(s.descriptor.generation).append("-").append(s.StorageTemperatureLevel());
+            sb.append(s.descriptor.generation)
+                .append("-").append(s.StorageTemperatureLevel())
+                .append("-").append(s.TemperatureLevel())
+                .append("-").append(s.getMinTimestamp())
+                .append("-").append(s.getMaxTimestamp())
+                //s.bytesOnDisk()
+                ;
         }
         return sb.toString();
+    }
+
+    // Tests if timestamp ranges of c_drop are in between those of c_keep
+    private boolean MakesHole(List<SSTableReader> c_keep, List<SSTableReader> c_drop) {
+        if (c_keep.size() <= 1)
+            return false;
+
+        for (SSTableReader d: c_drop) {
+            double d_ts_mid = (((double) d.getMinTimestamp()) + d.getMaxTimestamp()) / 2;
+
+            boolean first = true;
+            // Initial value is not used. To avoid the compilation error.
+            boolean d_smaller_than_k = true;
+
+            for (SSTableReader k: c_keep) {
+                double k_ts_mid = (((double) k.getMinTimestamp()) + k.getMaxTimestamp()) / 2;
+                if (first) {
+                    d_smaller_than_k = (d_ts_mid < k_ts_mid);
+                    first = false;
+                } else {
+                    if (d_smaller_than_k != (d_ts_mid < k_ts_mid)) {
+                        // A dropped SSTable lies in between two keep-SSTables.
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private List<SSTableReader> FilterCandidates(List<SSTableReader> candidates) {
+        int hottestTempLevel = -1;
+        boolean first = true;
+        for (SSTableReader s: candidates) {
+            if (first) {
+                hottestTempLevel = s.TemperatureLevel();
+                first = false;
+            } else {
+                hottestTempLevel = Math.min(hottestTempLevel, s.TemperatureLevel());
+            }
+        }
+
+        List<SSTableReader> c_keep = new ArrayList();
+        List<SSTableReader> c_drop = new ArrayList();
+        for (SSTableReader s: candidates) {
+            if (s.TemperatureLevel() == hottestTempLevel) {
+                c_keep.add(s);
+            } else {
+                c_drop.add(s);
+            }
+        }
+
+        // Do not compact when there is one or less, hottest SSTables left.
+        if (c_keep.size() <= 1) {
+            logger.warn("MTDB: No compaction. Keep=[{}] Drop=[{}]",
+                    toString(c_keep), toString(c_drop));
+            return Collections.emptyList();
+        }
+
+        // Make sure the candidate SSTables are adjacent to each other
+        if (MakesHole(c_keep, c_drop)) {
+            logger.warn("MTDB: No compaction. Dropping [{}] make a hole in [{}].",
+                    toString(c_keep), toString(c_drop));
+            return Collections.emptyList();
+        }
+
+        return c_keep;
     }
 
     private List<SSTableReader> getNextBackgroundSSTables(final int gcBefore)
@@ -119,44 +192,17 @@ public class DateTieredCompactionStrategy extends AbstractCompactionStrategy
             //   - Some hot tablets are merged together. Cold tablets will be
             //   excluded from the list of hot tablets.
             //   - When they become cold, they will be merged eventually.
-            if (! candidates.isEmpty()) {
-                int hottestTempLevel = -1;
-                boolean first = true;
-                for (SSTableReader s: candidates) {
-                    if (first) {
-                        hottestTempLevel = s.StorageTemperatureLevel();
-                        first = false;
-                    } else {
-                        hottestTempLevel = Math.min(hottestTempLevel, s.StorageTemperatureLevel());
-                    }
-                }
-
-                List<SSTableReader> c_keep = new ArrayList();
-                List<SSTableReader> c_drop = new ArrayList();
-                for (SSTableReader s: candidates) {
-                    if (s.StorageTemperatureLevel() == hottestTempLevel) {
-                        c_keep.add(s);
-                    } else {
-                        c_drop.add(s);
-                    }
-                }
-                // Do not compact when there is only one left.
-                if (c_keep.size() == 1)
-                    c_drop.add(c_keep.remove(0));
-
-                if (c_drop.size() > 0) {
-                    logger.warn("MTDB: New_candidates=[{}] Dropped=[{}]",
-                            toString(c_keep), toString(c_drop));
-                    candidates = c_keep;
-                }
-            }
+            if (! candidates.isEmpty())
+                candidates = FilterCandidates(candidates);
 
             // If still empty, return the coldest among cold sstables so that
             // it migrates to cold storage
             if (candidates.isEmpty()) {
                 SSTableReader coldestSstr = SstTempMon.GetColdest();
-                if (coldestSstr != null)
+                if (coldestSstr != null) {
+                    candidates = new ArrayList();
                     candidates.add(coldestSstr);
+                }
             }
         }
 

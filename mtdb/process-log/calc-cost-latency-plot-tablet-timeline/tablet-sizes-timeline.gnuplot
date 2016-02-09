@@ -10,7 +10,7 @@ MIN_TABLET_SIZE = system("echo $MIN_TABLET_SIZE")
 MAX_NEEDTO_READ_DATAFILE_PER_DAY = system("echo $MAX_NEEDTO_READ_DATAFILE_PER_DAY")
 SIMULATED_TIME_END = system("echo $SIMULATED_TIME_END")
 
-load "../conf/colorscheme.gnuplot"
+load "../../conf/colorscheme.gnuplot"
 
 # Get the plot range
 set terminal unknown

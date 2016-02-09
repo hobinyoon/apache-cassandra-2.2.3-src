@@ -10,7 +10,7 @@ MIN_TIMESTAMP_RANGE = system("echo $MIN_TIMESTAMP_RANGE")
 SIMULATED_TIME_END = system("echo $SIMULATED_TIME_END")
 DESC = system("echo $DESC")
 
-load "../conf/colorscheme.gnuplot"
+load "../../conf/colorscheme.gnuplot"
 
 set xdata time
 set ydata time

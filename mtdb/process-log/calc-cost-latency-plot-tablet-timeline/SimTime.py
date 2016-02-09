@@ -1,7 +1,7 @@
 import sys
 import datetime
 
-sys.path.insert(0, "../util/python")
+sys.path.insert(0, "../../util/python")
 import Cons
 
 _simulation_time_begin = None

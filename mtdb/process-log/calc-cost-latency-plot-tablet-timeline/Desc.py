@@ -2,7 +2,7 @@ import pprint
 import re
 import sys
 
-sys.path.insert(0, "../util/python")
+sys.path.insert(0, "../../util/python")
 import Cons
 import Util
 

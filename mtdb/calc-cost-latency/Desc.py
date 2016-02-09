@@ -40,11 +40,13 @@ def SetNodeConfiguration(line_from_op):
 	_mutants_options = "cold storage dir: %s" \
 			"\nsimulated_time_years: %s" \
 			"\nsimulation_time_mins: %s" \
+			"\nmigrate_to_cold_storage: %s" \
 			"\ntablet_coldness_monitor_time_window_simulated_time_days: %s" \
 			"\ntablet_coldness_threshold: %s" \
 			% (mo["cold_storage_dir"]
 					, mo["simulated_time_years"]
 					, mo["simulation_time_mins"]
+					, mo["migrate_to_cold_storage"]
 					, mo["tablet_coldness_monitor_time_window_simulated_time_days"]
 					, mo["tablet_coldness_threshold"]
 					)

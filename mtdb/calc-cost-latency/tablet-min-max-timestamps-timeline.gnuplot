@@ -132,19 +132,19 @@ set style fill transparent solid 0.10 noborder
 plot \
 FN_IN_TS u 3:7:3:6:7:8:(color($1)) w boxxyerrorbars lc variable not, \
 FN_IN_TS u 3:7:(0):10:(color($1)) w vectors nohead lc variable not, \
-FN_IN_TS u 3:9:(sprintf("%2d %d", $1, $2)):(color($1)) w labels offset -0.2,0 tc variable font ",8" not, \
 legendAccesses(x) w lines lc rgb "black" not, \
-FN_IN_TS u 12:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 13:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 14:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 15:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 16:8:(0):(-y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_TS u 12:8:("OE")  w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
-FN_IN_TS u 13:8:("ON")  w labels tc rgb "black" rotate by 90 left  offset 0, 0.2 font ",7" not, \
-FN_IN_TS u 14:8:("TM0") w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
-FN_IN_TS u 16:8:("BC")  w labels tc rgb "black" rotate by 90 left  offset 0, 0.2 font ",7" not, \
-FN_IN_TS u 15:8:("TM1") w labels tc rgb "black" rotate by 90 right offset 0,-0.4 font ",7" not, \
-FN_IN_AC u 2:9:(color($1)) w points pointsize 0.05 lc variable not # "# of accesses"
+FN_IN_TS u 12:8:(0):(-y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_TS u 13:8:(0):(-y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_TS u 14:8:(0):(-y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_TS u 15:8:(0):(-y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_TS u 16:8:(0):(-y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_AC u 2:9:(color($1)) w points pointsize 0.05 lc variable not, \
+FN_IN_TS u 12:8:("OE") :(color($1)) w labels rotate by 90 right offset 0,-0.4 font ",7" tc variable not, \
+FN_IN_TS u 13:8:("ON") :(color($1)) w labels rotate by 90 left  offset 0, 0.2 font ",7" tc variable not, \
+FN_IN_TS u 14:8:("TM0"):(color($1)) w labels rotate by 90 right offset 0,-0.4 font ",7" tc variable not, \
+FN_IN_TS u 16:8:("BC") :(color($1)) w labels rotate by 90 left  offset 0, 0.2 font ",7" tc variable not, \
+FN_IN_TS u 15:8:("TM1"):(color($1)) w labels rotate by 90 right offset 0,-0.4 font ",7" tc variable not, \
+FN_IN_TS u 3:9:(sprintf("%2d %d", $1, $2)):(color($1)) w labels offset -0.2,0 tc variable font ",8" not
 
 # "vectors" doesn't have dotted line... dang
 #FN_IN_TS u 5:7:(0):10:(color($1)) w vectors nohead lc variable lt -1 not, \

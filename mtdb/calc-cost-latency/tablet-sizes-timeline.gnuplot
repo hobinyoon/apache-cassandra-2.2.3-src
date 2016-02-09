@@ -60,9 +60,9 @@ set label DESC at x0, y0 left tc rgb "black" font ",7"
 TRANSP0=0.06
 
 # Legend
-x1 = X_MIN + 78*x1p
+x1 = X_MIN + 50*x1p
 x2 = x1 + 7*x1p
-y2 = Y_MAX - 8*y1p
+y2 = Y_MAX - 1*y1p
 y1 = y2 - 10*y1p
 set object rect from x1, y1 to x2, y2 fc rgb "black" fs transparent solid TRANSP0 noborder
 set arrow from x1, y1 to x1, y2 lc rgb "black" nohead
@@ -141,19 +141,19 @@ set style fill transparent solid TRANSP0 noborder
 plot \
 FN_IN_CD u 3:8:3:6:8:($8+$7):(color($1)) w boxxyerrorbars lc variable not, \
 FN_IN_AC u 3:($2 + AccessCountHeight($6)):(color($1)) w points pointsize 0.05 lc variable not, \
+legendAccesses(x) w lines lc rgb "black" not, \
 FN_IN_CD u 3:8:(0):7:(color($1)) w vectors nohead lc variable not, \
-FN_IN_CD u 3:($8+$7/2.0):(sprintf("%2d %d", $1, $2)):(color($1)) w labels center offset -0.2,0 font ",8" tc variable not, \
-FN_IN_CD u 9 :($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 10:($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 11:($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 12:($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 13:($8+$7-y1p):(0):(y1p) w vectors nohead lc rgb "black" not, \
-FN_IN_CD u 9 :($8+$7-2*y1p):("OE")  w labels tc rgb "black" rotate by 90 right font ",7" not, \
-FN_IN_CD u 10:($8+$7+  y1p):("ON")  w labels tc rgb "black" rotate by 90 left  font ",7" not, \
-FN_IN_CD u 11:($8+$7-2*y1p):("TM0") w labels tc rgb "black" rotate by 90 right font ",7" not, \
-FN_IN_CD u 13:($8+$7+  y1p):("BC")  w labels tc rgb "black" rotate by 90 left  font ",7" not, \
-FN_IN_CD u 12:($8+$7-2*y1p):("TM1") w labels tc rgb "black" rotate by 90 right font ",7" not, \
-legendAccesses(x) w lines lc rgb "black" not
+FN_IN_CD u 9 :($8+$7-y1p):(0):(y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_CD u 10:($8+$7-y1p):(0):(y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_CD u 11:($8+$7-y1p):(0):(y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_CD u 12:($8+$7-y1p):(0):(y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_CD u 13:($8+$7-y1p):(0):(y1p):(color($1)) w vectors nohead lc variable not, \
+FN_IN_CD u 9 :($8+$7-2*y1p):("OE") :(color($1)) w labels tc variable rotate by 90 right font ",7" not, \
+FN_IN_CD u 10:($8+$7+  y1p):("ON") :(color($1)) w labels tc variable rotate by 90 left  font ",7" not, \
+FN_IN_CD u 11:($8+$7-2*y1p):("TM0"):(color($1)) w labels tc variable rotate by 90 right font ",7" not, \
+FN_IN_CD u 13:($8+$7+  y1p):("BC") :(color($1)) w labels tc variable rotate by 90 left  font ",7" not, \
+FN_IN_CD u 12:($8+$7-2*y1p):("TM1"):(color($1)) w labels tc variable rotate by 90 right font ",7" not, \
+FN_IN_CD u 3:($8+$7/2.0):(sprintf("%2d %d", $1, $2)):(color($1)) w labels center offset -0.2,0 font ",8" tc variable not
 
 # dotted line doesn't work with lc variable
 #FN_IN_CD u 5:8:(0):7:(color($1)) w vectors nohead lw 2 lt 0 lc variable not, \

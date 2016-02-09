@@ -39,7 +39,8 @@ set xtics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,(365.25*24*3600)
 x1(a)=(10**floor(log10(a)))
 x2(a)=floor(a/x1(a))*x1(a)
 x3(a)=floor(a/x1(a)/2)*x1(a)*2
-yTicsStep(a, b)=(x2(a/b) == 1 ? x2(a/b) : x3(a/b))
+startsWith1(a)=(a == x1(a))
+yTicsStep(a, b)=(startsWith1(x2(a/b)) ? x2(a/b) : x3(a/b))
 
 set print "-"
 print (sprintf("Y_MAX: %f", Y_MAX))

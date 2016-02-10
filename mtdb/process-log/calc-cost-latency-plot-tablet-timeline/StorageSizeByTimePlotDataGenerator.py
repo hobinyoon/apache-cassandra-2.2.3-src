@@ -86,9 +86,13 @@ def _Write():
 				if (type(l.event) is not Event.SstCreated) and (type(l.event) is not Event.SstDeleted):
 					continue
 
-				cur_time_dur = l.simulated_time - last_cost_calc_time
-				size = _sstgen_csd[l.event.sst_gen].size
+				# An SSTable may not have a size info, when it is not opened-normal yet
+				if not hasattr(_sstgen_csd[l.event.sst_gen], "size"):
+					Cons.P("skipping sstable %d, which doesn't have size info yet" % l.event.sst_gen)
+					continue
 
+				size = _sstgen_csd[l.event.sst_gen].size
+				cur_time_dur = l.simulated_time - last_cost_calc_time
 				total_cost_hot += StgCost.InstStore(cur_hot_stg_size, cur_time_dur)
 				total_cost_cold += StgCost.EbsSsd(cur_cold_stg_size, cur_time_dur)
 

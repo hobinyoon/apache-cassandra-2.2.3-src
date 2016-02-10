@@ -71,10 +71,12 @@ public class Conf
 			String fn_dump_wrs = "";
 
 			double num_writes_per_simulation_time_mins;
+			int progress_report_interval_ms;
 			String write_time_dist;
 
 			Global(Map m) {
 				num_writes_per_simulation_time_mins = Double.parseDouble(m.get("num_writes_per_simulation_time_mins").toString());
+				progress_report_interval_ms = Integer.parseInt(m.get("progress_report_interval_ms").toString());
 				write_time_dist = m.get("write_time_dist").toString();
 			}
 
@@ -86,8 +88,10 @@ public class Conf
 				return String.format(
 						"global:"
 						+ "\n  num_writes_per_simulation_time_mins: %.1f"
+						+ "\n  progress_report_interval_ms: %d"
 						+ "\n  write_time_dist: %s"
 						, num_writes_per_simulation_time_mins
+						, progress_report_interval_ms
 						, write_time_dist
 						);
 			}

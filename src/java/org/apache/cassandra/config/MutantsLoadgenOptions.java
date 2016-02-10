@@ -9,6 +9,7 @@ public class MutantsLoadgenOptions
 
 class Global {
     public long num_writes_per_simulation_time_mins;
+    public int progress_report_interval_ms;
     public String write_time_dist;
 }
 

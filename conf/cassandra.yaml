@@ -904,6 +904,8 @@ mutants_loadgen_options:
         # Total number of writes
         num_writes_per_simulation_time_mins: 20000
 
+        progress_report_interval_ms: 100
+
         # Write time distribution
         # - Same: The same inter-arrival intervals between writes.
         # - Uniform: Random distribution with a uniform distribution probability.

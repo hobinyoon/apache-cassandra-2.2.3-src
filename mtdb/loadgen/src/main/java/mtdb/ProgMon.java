@@ -36,7 +36,8 @@ class ProgMon {
 							));
 				while (true) {
 					try {
-						Thread.sleep(1000);
+						// TODO: make sure it doesn't have a side effect
+						Thread.sleep(Conf.mutantsLoadgenOptions.global.progress_report_interval_ms);
 					} catch (InterruptedException e) {
 						// sleep() can be interrupted when w == w_total
 					}
@@ -149,6 +150,8 @@ class ProgMon {
 
 	public static void Stop() throws InterruptedException {
 		// Interrupt the monitoring thread so that it finishes sleep() early.
+		// TODO: may want to switch to wait/notify so that it doesn't get
+		// interrupted at possibly any place
 		_monThread.interrupt();
 		_monThread.join();
 	}

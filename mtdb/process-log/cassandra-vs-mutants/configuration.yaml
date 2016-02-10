@@ -1,0 +1,6 @@
+#cassandra_experiment_datetime: 160209-165819
+#mutants_experiment_datetime:   160209-130329
+cassandra_experiment_datetime: 160209-211439
+mutants_experiment_datetime:   160209-205630
+
+simulation_time_exclude_first_secs: 10

@@ -3,13 +3,19 @@
 #cqlsh fails sometimes
 #set -e
 
-set -u
+if [ -z "$CASSANDRA_SERVER_ADDR" ]; then
+	echo "CASSANDRA_SERVER_ADDR is not set."
+	exit 1
+fi
+printf "CASSANDRA_SERVER_ADDR=%s\n" $CASSANDRA_SERVER_ADDR
 
 SRC_DIR=`dirname $BASH_SOURCE`
 pushd $SRC_DIR > /dev/null
 
+set -u
+
 while [ 1 ]; do
-	~/work/cassandra/bin/cqlsh -f create-keyspace.cql
+	~/work/cassandra/bin/cqlsh -f create-keyspace.cql $CASSANDRA_SERVER_ADDR
 	RESULT=$?
 	if [ $RESULT -eq 0 ]; then
 		break

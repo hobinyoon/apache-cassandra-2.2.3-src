@@ -47,12 +47,12 @@ import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.cassandra.utils.Tracer;
 import org.apache.thrift.TException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 public abstract class CqlOperation<V> extends PredefinedOperation
 {
-    static Logger logger = LogManager.getLogger(CqlOperation.class);
+    //static Logger logger = LogManager.getLogger(CqlOperation.class);
 
     protected abstract List<Object> getQueryParameters(byte[] key);
     protected abstract String buildQuery();

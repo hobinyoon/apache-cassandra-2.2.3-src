@@ -31,12 +31,12 @@ import org.apache.cassandra.thrift.*;
 import org.apache.cassandra.thrift.ConsistencyLevel;
 import org.apache.cassandra.utils.ByteBufferUtil;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 public class SettingsSchema implements Serializable
 {
-    static Logger logger = LogManager.getLogger(SettingsSchema.class);
+    //static Logger logger = LogManager.getLogger(SettingsSchema.class);
 
     public static final String DEFAULT_VALIDATOR  = "BytesType";
 
@@ -177,7 +177,7 @@ public class SettingsSchema implements Serializable
 
         b.append(";\n");
 
-        logger.info(b.toString());
+        //logger.info(b.toString());
         return b.toString();
     }
 

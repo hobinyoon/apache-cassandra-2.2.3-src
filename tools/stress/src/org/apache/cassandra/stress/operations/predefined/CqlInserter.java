@@ -38,12 +38,12 @@ import org.apache.cassandra.stress.settings.StressSettings;
 import org.apache.cassandra.stress.util.Timer;
 import org.apache.cassandra.utils.Tracer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 public class CqlInserter extends CqlOperation<Integer>
 {
-    static Logger logger = LogManager.getLogger(CqlInserter.class);
+    //static Logger logger = LogManager.getLogger(CqlInserter.class);
     static List<byte[]> keys = new ArrayList();
 
     public CqlInserter(Timer timer, PartitionGenerator generator, SeedManager seedManager, StressSettings settings)

@@ -27,15 +27,15 @@ import com.google.common.base.Function;
 import org.apache.cassandra.config.CFMetaData;
 import org.apache.cassandra.exceptions.ConfigurationException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 /**
  * For specifying replication options
  */
 class OptionCompaction extends OptionMulti
 {
-    static Logger logger = LogManager.getLogger(OptionCompaction.class);
+    //static Logger logger = LogManager.getLogger(OptionCompaction.class);
 
     private final OptionSimple strategy =
         new OptionSimple("strategy=", new StrategyAdapter(),

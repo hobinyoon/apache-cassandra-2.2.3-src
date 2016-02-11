@@ -40,12 +40,12 @@ import org.apache.cassandra.stress.settings.StressSettings;
 import org.apache.cassandra.stress.util.Timer;
 import org.apache.cassandra.utils.Tracer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 public class CqlReader extends CqlOperation<ByteBuffer[][]>
 {
-    static Logger logger = LogManager.getLogger(CqlReader.class);
+    //static Logger logger = LogManager.getLogger(CqlReader.class);
     static List<ByteBuffer> keys = new ArrayList();
 
     public CqlReader(Timer timer, PartitionGenerator generator, SeedManager seedManager, StressSettings settings)

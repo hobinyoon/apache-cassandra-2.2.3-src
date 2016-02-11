@@ -42,7 +42,7 @@ if [ "x$JAVA" = "x" ]; then
     exit 1
 fi
 
-export CLASSPATH="$CLASSPATH:/usr/share/java/log4j-api.jar:/usr/share/java/log4j-core.jar:$CASSANDRA_HOME/tools/stress/src/resources"
+#export CLASSPATH="$CLASSPATH:/usr/share/java/log4j-api.jar:/usr/share/java/log4j-core.jar:$CASSANDRA_HOME/tools/stress/src/resources"
 
 "$JAVA" -server -ea -cp "$CLASSPATH" \
       -Dcassandra.storagedir="$cassandra_storagedir" \

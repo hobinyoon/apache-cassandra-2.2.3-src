@@ -25,15 +25,15 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 /**
  * For specifying multiple grouped sub-options in the form: group(arg1=,arg2,arg3) etc.
  */
 abstract class OptionMulti extends Option
 {
-    static Logger logger = LogManager.getLogger(OptionMulti.class);
+    //static Logger logger = LogManager.getLogger(OptionMulti.class);
 
     private static final Pattern ARGS = Pattern.compile("([^,]+)", Pattern.CASE_INSENSITIVE);
 

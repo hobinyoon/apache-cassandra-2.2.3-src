@@ -1,5 +1,6 @@
 import pprint
 import re
+import socket
 import sys
 
 sys.path.insert(0, "../../util/python")
@@ -86,12 +87,14 @@ def SetCassMetadata(line):
 
 def GnuplotDesc():
 	desc = "exp datetime: %s" \
+			"\nhostname: %s" \
 			"\ncompaction strategy: %s" \
 			"\ncompaction strategy options: %s" \
 			"\nmemtable heap space in mb: %s" \
 			"\n%s" \
 			"\n%s" \
 			% (_exp_datetime
+					, socket.gethostname()
 					, _cs
 					, _cs_options
 					, _memtable_heap_space_in_mb

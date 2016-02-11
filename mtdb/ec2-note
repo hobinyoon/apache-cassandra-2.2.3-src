@@ -1,0 +1,25 @@
+Running on EC2 VM
+
+sudo add-apt-repository -y ppa:webupd8team/java \
+&& sudo apt-get update \
+&& sudo apt-get install oracle-java8-installer git ctags ant htop tree maven gnuplot-nox -y \
+&& sudo apt-get autoremove -y vim-tiny
+(will be prompted for an Oracle binary code license)
+
+mkdir work \
+&& cd work \
+&& git clone git@github.com:hobinyoon/linux-home.git \
+&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
+&& ln -s apache-cassandra-2.2.3-src cassandra \
+&& cd linux-home \
+&& ./setup-linux.sh
+(will be prompted for if you trust the server)
+
+exit and login back
+
+sudo mkdir -p /mnt/s5-cass-cold-storage/mtdb-cold \
+&& sudo chown ubuntu /mnt/s5-cass-cold-storage/mtdb-cold \
+&& cdcass \
+&& time ant
+
+~/work/cassandra$ time ant && bin/cassandra -f | grep --color -E '^|MTDB:'

@@ -1,25 +1,42 @@
 Running on EC2 VM
 
-sudo add-apt-repository -y ppa:webupd8team/java \
-&& sudo apt-get update \
-&& sudo apt-get install oracle-java8-installer git ctags ant htop tree maven gnuplot-nox -y \
-&& sudo apt-get autoremove -y vim-tiny
-(will be prompted for an Oracle binary code license)
+Set hostname
+	Dot in the hostname doesn't work, i.e., hostname0=ec2-m3.xlarge.s0
+	Excute both for export ec2-s0-m3-xlarge ec2-c0-m3-xlarge
 
-mkdir work \
-&& cd work \
-&& git clone git@github.com:hobinyoon/linux-home.git \
-&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
-&& ln -s apache-cassandra-2.2.3-src cassandra \
-&& cd linux-home \
-&& ./setup-linux.sh
-(will be prompted for if you trust the server)
+	export hostname0=ec2-s0-m3-xlarge \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+  && sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
 
-exit and login back
+	exit and login back
 
-sudo mkdir -p /mnt/s5-cass-cold-storage/mtdb-cold \
-&& sudo chown ubuntu /mnt/s5-cass-cold-storage/mtdb-cold \
-&& cdcass \
-&& time ant
 
-~/work/cassandra$ time ant && bin/cassandra -f | grep --color -E '^|MTDB:'
+Install packages
+  (will be prompted for an Oracle binary code license)
+
+  sudo add-apt-repository -y ppa:webupd8team/java \
+  && sudo apt-get update \
+  && sudo apt-get install oracle-java8-installer git ctags ant htop tree maven gnuplot-nox -y \
+  && sudo apt-get autoremove -y vim-tiny
+
+
+Set up repositories and dev envs
+  (will be prompted for if you trust the server)
+
+  mkdir work \
+  && cd work \
+  && git clone git@github.com:hobinyoon/linux-home.git \
+  && git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
+  && ln -s apache-cassandra-2.2.3-src cassandra \
+  && cd linux-home \
+  && ./setup-linux.sh \
+  && sudo mkdir -p /mnt/s5-cass-cold-storage/mtdb-cold \
+  && sudo chown ubuntu /mnt/s5-cass-cold-storage/mtdb-cold \
+
+  exit and login back
+
+
+Running Cassandra server
+  screen
+  cdcass && time ant && bin/cassandra -f | grep --color -E '^|MTDB:'

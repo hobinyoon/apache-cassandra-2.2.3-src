@@ -70,6 +70,7 @@ public class Conf
 			String fn_test_obj_ages = "";
 			String fn_dump_wrs = "";
 
+			String server_addr = "127.0.0.1";
 			double num_writes_per_simulation_time_mins;
 			int progress_report_interval_ms;
 			String write_time_dist;
@@ -80,16 +81,15 @@ public class Conf
 				write_time_dist = m.get("write_time_dist").toString();
 			}
 
-			public void AddCassandraMutantsLoadgenOptions(Object obj_) {
-			}
-
 			@Override
 			public String toString() {
 				return String.format(
 						"global:"
+						+ "\n  server_addr: %s"
 						+ "\n  num_writes_per_simulation_time_mins: %.1f"
 						+ "\n  progress_report_interval_ms: %d"
 						+ "\n  write_time_dist: %s"
+						, server_addr
 						, num_writes_per_simulation_time_mins
 						, progress_report_interval_ms
 						, write_time_dist
@@ -191,6 +191,8 @@ public class Conf
 				.withRequiredArg().ofType(Integer.class).defaultsTo(mutantsLoadgenOptions.db.num_threads);
 			accepts("obj_size", "Object size in bytes.")
 				.withRequiredArg().ofType(Integer.class).defaultsTo(mutantsLoadgenOptions.per_obj.obj_size);
+			accepts("server", "Server address")
+				.withRequiredArg().ofType(String.class).defaultsTo(mutantsLoadgenOptions.global.server_addr);
 		}};
 
 		OptionSet options = _opt_parser.parse(args);
@@ -213,6 +215,7 @@ public class Conf
 		mutantsLoadgenOptions.global.fn_test_num_reads_per_obj = (String) options.valueOf("test_num_reads_per_obj");
 		mutantsLoadgenOptions.global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");
 		mutantsLoadgenOptions.global.fn_dump_wrs = (String) options.valueOf("dump_wr");
+		mutantsLoadgenOptions.global.server_addr = (String) options.valueOf("server");
 		mutantsLoadgenOptions.db.requests = (boolean) options.valueOf("db");
 		mutantsLoadgenOptions.db.num_threads = (int) options.valueOf("db_threads");
 		mutantsLoadgenOptions.per_obj.obj_size = (int) options.valueOf("obj_size");

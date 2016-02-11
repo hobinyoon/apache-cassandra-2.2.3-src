@@ -886,7 +886,7 @@ mutants_options:
     # Switch to turn on/off Mutants to compare the performance
     migrate_to_cold_storage: true
 
-    cold_storage_dir: /mnt/s5-cass-cold-storage/mtdb-cold
+    cold_storage_dir: /mnt/cold-storage/mtdb-cold
 
     # Number of need-to-read-dfiles per day (tablet_coldness_threshold) in
     # simulated time tablet_coldness_monitor_time_window_simulated_time_days

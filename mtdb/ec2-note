@@ -21,6 +21,15 @@ Install packages
 	&& sudo apt-get autoremove -y vim-tiny
 
 
+One-time synchronization of clocks both on server and client
+
+	Check if additional port needs to be opened
+
+	sudo service ntp stop \
+	&& sudo ntpdate -bv 0.ubuntu.pool.ntp.org \
+	&& sudo service ntp start
+
+
 Set up repositories and dev envs
 	(will be prompted for if you trust the server)
 
@@ -38,6 +47,8 @@ Set up repositories and dev envs
 
 
 Set firewall rules
+(123 may not be necessary)
+
 	Server
 	  Allow client machine to connect to server machine on AWS console
 	  Open ntp port
@@ -56,11 +67,35 @@ Set server address on client machine
 	vi ~/.bashrc
 		export CASSANDRA_CLIENT_ADDR=10.152.33.227
 
-	
-One-time synchronization of clocks both on server and client
-	sudo service ntp stop \
-	&& sudo ntpdate -bv 0.ubuntu.pool.ntp.org \
-	&& sudo service ntp start
+
+Prepare a local SSD volume and an EBS volume
+	lsblk
+
+	sudo mkfs.ext4 -m 0 /dev/xvdd
+	sudo mkfs.ext4 -m 0 /dev/xvdf
+
+	sudo vi /etc/fstab
+		/dev/xvdb	/mnt/local-ssd	auto	defaults,nobootwait,comment=cloudconfig	0	2
+		/dev/xvdd	/mnt/ebs-ssd-gp2	auto	defaults,nobootwait,comment=cloudconfig	0	2
+		/dev/xvdf	/mnt/ebs-mag	auto	defaults,nobootwait,comment=cloudconfig	0	2
+
+
+	sudo mkdir -p /mnt/local-ssd \
+	&& sudo mkdir -p /mnt/ebs-ssd-gp2 \
+	&& sudo mkdir /mnt/ebs-mag \
+	&& sudo chown -R ubuntu /mnt/local-ssd \
+	&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
+	&& sudo chown -R ubuntu /mnt/ebs-mag \
+	&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage
+
+	sudo umount mnt \
+	&& sudo mount /mnt/local-ssd \
+	&& sudo mount /mnt/ebs-ssd-gp2
+
+	move cassandra directory, if it was not created on local-ssd
+	~/work$ sudo mv apache-cassandra-2.2.3-src /mnt/local-ssd/
+	$ rm cassandra
+	$ ln -s /mnt/local-ssd/apache-cassandra-2.2.3-src cassandra
 
 
 Running Cassandra server
@@ -77,40 +112,6 @@ Run loadgen client
 Get loadgen client log to server machine. Better do this on the server node,
 which is likely to have bigger log files
 	rsync -av $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs
-
-
-TODO: move up
-Prepare a local SSD volume and an EBS volume
-	sudo mkfs.ext4 -m 0 -L ebsssdgp2 /dev/xvdd
-
-	sudo vi /etc/fstab
-		/dev/xvdb	/mnt/local-ssd	auto	defaults,nobootwait,comment=cloudconfig	0	2
-		/dev/xvdd	/mnt/ebs-ssd-gp2	auto	defaults,nobootwait,comment=cloudconfig	0	2
-
-	sudo mkdir -p /mnt/local-ssd \
-	&& sudo mkdir -p /mnt/ebs-ssd-gp2 \
-	&& sudo chown -R ubuntu /mnt/local-ssd \
-	&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
-	&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage
-
-	sudo umount mnt \
-	&& sudo mount /mnt/local-ssd \
-	&& sudo mount /mnt/ebs-ssd-gp2
-
-	move cassandra directory, if it was not created on local-ssd
-	~/work$ sudo mv apache-cassandra-2.2.3-src /mnt/local-ssd/
-	$ rm cassandra
-	$ ln -s /mnt/local-ssd/apache-cassandra-2.2.3-src cassandra
-
-	TODO
-
-	sudo mkdir /mnt/ebs-mag
-	sudo chown -R ubuntu /mnt/ebs-mag
-
-	sudo mkfs.ext4 -m 0 /dev/xvdf
-
-	sudo vi /etc/fstab
-		/dev/xvdf	/mnt/ebs-mag	auto	defaults,nobootwait,comment=cloudconfig	0	2
 
 
 Copy logs to mts7

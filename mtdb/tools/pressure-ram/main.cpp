@@ -7,10 +7,10 @@
 #include <regex>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
+#include "conf.h"
 #include "util.h"
 
 using namespace std;
-
 
 // Cached memory size in mb
 void GetFreeAndCachedMemorySizeMb(int& free, int& cached) {
@@ -23,7 +23,7 @@ void GetFreeAndCachedMemorySizeMb(int& free, int& cached) {
 	// Swap:            0          0          0
 	// Total:       11991      11576        415
 
-	// TODO: think about what to do with swap
+	// TODO: think about what to do with swap. better disable.
 	stringstream ss(lines);
 	regex rgx("^Mem:\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+");
 
@@ -47,29 +47,68 @@ void GetFreeAndCachedMemorySizeMb(int& free, int& cached) {
 }
 
 
-// TODO: good name?
-class SubProcPipe {
+// A child process is pre-created and serves memory pressure requests. Parent
+// process is free to call fork() without having to worry about duplicating the
+// child process's memory.
+class MemPressurer {
 private:
 	// pipefd[0] refers to the read end of the pipe. pipefd[1] refers to the
 	// write end of the pipe.
 	// Parent-to-child and child-to-parent pipes
 	int pipe_pc[2];
 	int pipe_cp[2];
+	vector<char*> allocated_mem;
 
 	// Child process
 	void _ServeRequests() {
 		while (true) {
 			char cmd;
-			Util::readn(pipe_pc[0], &cmd, 1);
-			if (cmd != 'w')
-				throw runtime_error(str(boost::format("Unexpected cmd=[%c]") % cmd));
-			//cout << "C: received a request\n";
-			int free, cached;
-			GetFreeAndCachedMemorySizeMb(free, cached);
+			Util::readn(pipe_pc[0], &cmd, sizeof(cmd));
+			if (cmd == 'a') {
+				int to_alloc_mb;
+				Util::readn(pipe_pc[0], &to_alloc_mb, sizeof(to_alloc_mb));
 
-			Util::writen(pipe_cp[1], &free, sizeof(free));
-			Util::writen(pipe_cp[1], &cached, sizeof(cached));
-			//cout << boost::format("C: returned %d, %d\n") % free % cached;
+				boost::timer::cpu_timer timer;
+				int allocated = 0;
+				for (int i = 0; i < (to_alloc_mb / Conf::mem_alloc_chunk_mb); i ++) {
+					char* c = new (nothrow) char[Conf::mem_alloc_chunk_mb * 1024 * 1024];
+					if (c == NULL) {
+						cout << boost::format("Could not allocate. i=%d\n") % i;
+						break;
+					}
+					// It works with just initializing the memory, without
+					// randomization. The kernel doesn't have compressed memory on.
+					memset(c, 0, Conf::mem_alloc_chunk_mb * 1024 * 1024);
+					allocated_mem.push_back(c);
+					allocated += Conf::mem_alloc_chunk_mb;
+				}
+				//cout << boost::format("C: Allocated %d MB of memory in %f sec\n")
+				//	% allocated % (timer.elapsed().wall / 1000000000.0);
+				cout << boost::format("a:%d ") % allocated << flush;
+			} else if (cmd == 'f') {
+				int to_free_mb;
+				Util::readn(pipe_pc[0], &to_free_mb, sizeof(to_free_mb));
+
+				boost::timer::cpu_timer timer;
+				int freed = 0;
+				for (int i = 0; i < (to_free_mb / Conf::mem_alloc_chunk_mb); i ++) {
+					if (allocated_mem.size() == 0)
+						break;
+					char* c = allocated_mem.back();
+					allocated_mem.pop_back();
+					delete[] c;
+					freed += Conf::mem_alloc_chunk_mb;
+				}
+				//cout << boost::format("C: Freed %d MB of memory in %f sec\n")
+				//	% freed % (timer.elapsed().wall / 1000000000.0);
+				cout << boost::format("f:%d ") % freed << flush;
+			} else {
+				throw runtime_error(str(boost::format("Unexpected cmd=[%c]") % cmd));
+			}
+
+			// Done
+			char response = 'd';
+			Util::writen(pipe_cp[1], &response, sizeof(response));
 		}
 	}
 
@@ -95,94 +134,73 @@ private:
 	}
 
 public:
-	SubProcPipe() {
+	MemPressurer() {
 		_PipeAndFork();
 	}
 
-	// Called by parent
-	void GetFreeMem(int& free, int& cached) {
-		// "w": work, child.
-		Util::writen(pipe_pc[1], "w", 1);
+	// These two are called by parent
 
-		Util::readn(pipe_cp[0], &free, sizeof(free));
-		Util::readn(pipe_cp[0], &cached, sizeof(cached));
+	void AllocMemory(int to_alloc_mb) {
+		const char cmd = 'a';
+		Util::writen(pipe_pc[1], &cmd, sizeof(cmd));
+		Util::writen(pipe_pc[1], &to_alloc_mb, sizeof(int));
+
+		char response;
+		Util::readn(pipe_cp[0], &response, sizeof(response));
+		if (response != 'd')
+			throw runtime_error(str(boost::format("Unexpected response [%c]") % response));
+	}
+
+	void FreeMemory(int to_free_mb) {
+		const char cmd = 'f';
+		Util::writen(pipe_pc[1], &cmd, sizeof(cmd));
+		Util::writen(pipe_pc[1], &to_free_mb, sizeof(int));
+
+		char response;
+		Util::readn(pipe_cp[0], &response, sizeof(response));
+		if (response != 'd')
+			throw runtime_error(str(boost::format("Unexpected response [%c]") % response));
 	}
 };
 
 
 int main() {
-	SubProcPipe spp;
-	vector<char*> allocated_mem;
+	MemPressurer mp;
 
 	while (true) {
 		int free, cached;
-		spp.GetFreeMem(free, cached);
-		cout << boost::format("S: %d, %d\n") % free % cached;
+		GetFreeAndCachedMemorySizeMb(free, cached);
+		// cout << boost::format("S: %d, %d\n") % free % cached;
 
-		try {
-			const int cached_memory_allowance_mb = 128;
-			const int free_memory_allowance_mb = 256;
-			int to_alloc = std::min(free - free_memory_allowance_mb, cached - cached_memory_allowance_mb);
-
-			//const int _1mb = 1024 * 1024;
-			const int mem_alloc_chunk_mb = 10;
-
-			if (to_alloc > 0) {
-				cout << boost::format("Allocating %d MB of memory ... ") % to_alloc << flush;
-				boost::timer::cpu_timer timer;
-
-				for (int j = 0; j < (to_alloc / mem_alloc_chunk_mb); j ++) {
-					char* c = new (nothrow) char[mem_alloc_chunk_mb * 1024 * 1024];
-					if (c == NULL) {
-						cout << boost::format("Could not allocate. j=%d\n") % j;
-						break;
-					}
-					// Need to randomize content?
-					memset(c, 0, mem_alloc_chunk_mb * 1024 * 1024);
-					allocated_mem.push_back(c);
-				}
-				//cout << boost::format("\n");
-
-				cout << boost::format("%f sec\n") % (timer.elapsed().wall / 1000000000.0);
-			} else {
-				// TODO: lower the pressure
+		// When cached is higher than the threshold, pressure memory.
+		// When cached is no higher than the threshold, release memory to meet
+		// free_memory_target.
+		bool size_changed = false;
+		int to_alloc_mb = ((cached - Conf::cached_memory_target_mb) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+		if (to_alloc_mb > 0) {
+			mp.AllocMemory(to_alloc_mb);
+			size_changed = true;
+		} else {
+			int to_free_mb = ((Conf::free_memory_target_mb - free) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+			if (to_free_mb > 0) {
+				mp.FreeMemory(to_free_mb);
+				size_changed = true;
 			}
-		} catch (const Util::ErrorNoMem& e) {
-				cout << "ErrorNoMem\n";
 		}
 
-		// Sleep for 0.1 sec
-		// TODO: make it configurable.
-		struct timespec req;
-		req.tv_sec = 0;
-		req.tv_nsec = 500000000;
-		nanosleep(&req, NULL);
+		if (! size_changed) {
+			// Sleep for a while when memory size has changed.
+			struct timespec req;
+			req.tv_sec = 0;
+			req.tv_nsec = Conf::sleep_nsec;
+			nanosleep(&req, NULL);
+		}
 	}
-
-
-
-
-//	while (true) {
-//		int free, cached;
-//		try {
-//			GetFreeAndCachedMemorySizeMb(free, cached);
-//			//cout << boost::format("%ld\n") % cached;
-//
-//
-//		// Sleep for 0.1 sec
-//		// TODO: make it configurable.
-//		struct timespec req;
-//		req.tv_sec = 0;
-//		req.tv_nsec = 100000000;
-//		nanosleep(&req, NULL);
-//	}
 
 	// TODO: Keep the cached memory size to proportional to the shrinked heap size
 	// c3.2xlarge has 15 GB of memory.
-	// @ Measure the heap memory size of unmodified Cassandra, and calculate the shrink ratio
-	//
-	//
-	// like 100 MB
+	// @ Measure the heap memory size of unmodified Cassandra and cached size.
+	// Should have a better idea then.
 
 	return 0;
 }

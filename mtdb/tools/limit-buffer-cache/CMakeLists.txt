@@ -14,5 +14,5 @@ FIND_PACKAGE( Boost
 	COMPONENTS system timer REQUIRED )
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-ADD_EXECUTABLE ( pressure-ram main.cpp util.cpp )
-TARGET_LINK_LIBRARIES ( pressure-ram ${Boost_LIBRARIES} )
+ADD_EXECUTABLE ( limit-buffer-cache main.cpp util.cpp )
+TARGET_LINK_LIBRARIES ( limit-buffer-cache ${Boost_LIBRARIES} )

@@ -164,37 +164,54 @@ public:
 };
 
 
+void _SleepABit() {
+	// Sleep for a while when memory size has changed.
+	struct timespec req;
+	req.tv_sec = 0;
+	req.tv_nsec = Conf::sleep_nsec;
+	nanosleep(&req, NULL);
+}
+
+
 int main() {
 	MemPressurer mp;
 
 	while (true) {
 		int free, cached;
-		GetFreeAndCachedMemorySizeMb(free, cached);
-		// cout << boost::format("S: %d, %d\n") % free % cached;
+		try {
+			GetFreeAndCachedMemorySizeMb(free, cached);
+			// cout << boost::format("S: %d, %d\n") % free % cached;
+		} catch (const Util::ErrorNoMem& e) {
+			cout << "S: ErrorNoMem\n";
+			exit(-1);
+		}
+
+		// Careful not to trigger OOM killer. If the free memory is too small, no
+		// more allocation.
+		if (free < Conf::free_lower_bound_mb) {
+			_SleepABit();
+			continue;
+		}
 
 		// When cached is higher than the threshold, pressure memory.
 		// When cached is no higher than the threshold, release memory to meet
 		// free_memory_target.
-		bool size_changed = false;
+		bool pressure_size_changed = false;
 		int to_alloc_mb = ((cached - Conf::cached_memory_target_mb) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
 		if (to_alloc_mb > 0) {
-			mp.AllocMemory(to_alloc_mb);
-			size_changed = true;
+			// Allocate little by little
+			mp.AllocMemory(Conf::mem_alloc_chunk_mb);
+			pressure_size_changed = true;
 		} else {
 			int to_free_mb = ((Conf::free_memory_target_mb - free) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
 			if (to_free_mb > 0) {
 				mp.FreeMemory(to_free_mb);
-				size_changed = true;
+				pressure_size_changed = true;
 			}
 		}
 
-		if (! size_changed) {
-			// Sleep for a while when memory size has changed.
-			struct timespec req;
-			req.tv_sec = 0;
-			req.tv_nsec = Conf::sleep_nsec;
-			nanosleep(&req, NULL);
-		}
+		if (! pressure_size_changed)
+			_SleepABit();
 	}
 
 	// TODO: Keep the cached memory size to proportional to the shrinked heap size

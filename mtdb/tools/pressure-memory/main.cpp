@@ -188,24 +188,21 @@ int main() {
 
 		// Careful not to trigger OOM killer. If the free memory is too small, no
 		// more allocation.
-		if (free < Conf::free_lower_bound_mb) {
-			_SleepABit();
-			continue;
-		}
-
-		// When cached is higher than the threshold, pressure memory.
-		// When cached is no higher than the threshold, release memory to meet
-		// free_memory_target.
 		bool pressure_size_changed = false;
-		int to_alloc_mb = ((cached - Conf::cached_memory_target_mb) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-		if (to_alloc_mb > 0) {
-			// Allocate little by little
-			mp.AllocMemory(Conf::mem_alloc_chunk_mb);
+		int room_to_take_from_free_mb = free - Conf::free_lower_bound_mb;
+		room_to_take_from_free_mb = (room_to_take_from_free_mb / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+		int to_return_to_free_mb = Conf::free_lower_bound_mb - free;
+		to_return_to_free_mb = (to_return_to_free_mb / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+		if (to_return_to_free_mb > 0) {
+			mp.FreeMemory(to_return_to_free_mb);
 			pressure_size_changed = true;
-		} else {
-			int to_free_mb = ((Conf::free_memory_target_mb - free) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-			if (to_free_mb > 0) {
-				mp.FreeMemory(to_free_mb);
+		}
+		else if (room_to_take_from_free_mb > 0) {
+			int pressure_cached_mb = cached - Conf::cached_memory_target_mb;
+			pressure_cached_mb = std::min(pressure_cached_mb, room_to_take_from_free_mb);
+			pressure_cached_mb = (pressure_cached_mb / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+			if (pressure_cached_mb > 0) {
+				mp.AllocMemory(pressure_cached_mb);
 				pressure_size_changed = true;
 			}
 		}

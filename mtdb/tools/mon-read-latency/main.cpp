@@ -76,15 +76,14 @@ int main() {
 	cout << boost::format("%s %d\n") % fn % file_size;
 
 	//int fd = open(fn, O_RDONLY | O_DIRECT);
-	// read() makes EINVAL error with O_DIRECT
 	int fd = open(fn, O_RDONLY);
 
 	const int bufsize = 4 * 1024;
-	char buf[bufsize];
 	
-	//static char buf[bufsize] __attribute__ ((__aligned__ (4*1024)));
-	// Still doesn't work
+	// buffer Needs to be aligned for direct IO
 	// http://stackoverflow.com/questions/10996539/read-from-a-hdd-with-o-direct-fails-with-22-einval-invalid-argument
+	//char buf[bufsize] __attribute__ ((__aligned__ (4*1024)));
+	char buf[bufsize] __attribute__ ((__aligned__ (512)));
 
 	// http://stackoverflow.com/questions/13445688/how-do-generate-a-random-number-in-c
 	std::mt19937 rng;

@@ -1,0 +1,13 @@
+exp_hostname: ec2-s0-m3-medium
+
+#exp_datetime: 160218-191733
+#exp_datetime: 160218-210421
+exp_datetime: 160218-210657
+
+# $ / GB / Month
+# IO request cost is not considered
+# US East. N. Virginia
+stg_cost:
+  local-ssd:   0.5103
+  ebs-ssd-gp2: 0.1
+  ebs-mag:     0.05

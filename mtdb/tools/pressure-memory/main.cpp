@@ -211,6 +211,9 @@ int main() {
 			_SleepABit();
 	}
 
+	// TODO: How does OOM killer selects a victim process? Can a child of this
+	// process be always selected?
+
 	// TODO: Keep the cached memory size to proportional to the shrinked heap size
 	// c3.2xlarge has 15 GB of memory.
 	// @ Measure the heap memory size of unmodified Cassandra and cached size.

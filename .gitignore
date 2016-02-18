@@ -7,3 +7,5 @@ pylib/cqlshlib/*.pyc
 
 cass-stress-trace.log
 cassandra.logdir_IS_UNDEFINED/
+
+hs_err_pid*.log

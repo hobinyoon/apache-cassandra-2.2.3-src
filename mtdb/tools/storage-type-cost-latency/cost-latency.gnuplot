@@ -18,30 +18,22 @@ set output FN_OUT
 #set rmargin at screen 0.940
 
 set xlabel "Storage cost ($/GB/Month)" #offset 1.6,0
-set ylabel "Latency (ms)" #offset 0,0.3
+set ylabel "Latency (ms)" offset 1,0
 
 set border (1 + 2) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080" #rotate by -90
 set ytics nomirror scale 0.5,0 tc rgb "#808080"
 
-# TODO
+# TODO: legend
 #set style arrow 8 heads back nofilled lc rgb "#FF0000" size screen 0.004,90.000,90.000
-
-# with yerrorbars
-#   (x, y, ylow, yhigh)
-
-#set xrange [0:]
-#set yrange [0:]
-
-#set sample 5000
 
 
 set logscale xy
 
+# with yerrorbars
+#   (x, y, ylow, yhigh)
 plot \
-FN_IN u 5:2:3:4 with yerrorbars not
-
-# TODO: strange end marks. alloying.
+FN_IN u 5:($2/1000):($3/1000):($4/1000) with yerrorbars pt 7 pointsize 0.2 not
 
 #X_RANGE=GPVAL_DATA_X_MAX-GPVAL_DATA_X_MIN
 #print X_RANGE

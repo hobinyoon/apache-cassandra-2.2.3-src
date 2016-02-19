@@ -1,0 +1,49 @@
+ubuntu@ec2-s0-m3-medium:~$ dd bs=256M count=1 if=/dev/zero of=/mnt/local-ssd/dd-test
+0.603698 s, 445 MB/s
+0.604334 s, 444 MB/s
+0.608531 s, 441 MB/s
+0.59829 s, 449 MB/s
+0.603119 s, 445 MB/s
+0.603105 s, 445 MB/s
+0.597584 s, 449 MB/s
+0.604572 s, 444 MB/s
+0.600434 s, 447 MB/s
+0.610191 s, 440 MB/s
+0.612951 s, 438 MB/s
+0.608912 s, 441 MB/s
+0.59688 s, 450 MB/s
+0.655742 s, 409 MB/s
+0.591176 s, 454 MB/s
+
+ubuntu@ec2-s0-m3-medium:~$ dd bs=256M count=1 if=/dev/zero of=/mnt/ebs-ssd-gp2/dd-test
+0.454834 s, 590 MB/s
+4.2121 s, 63.7 MB/s
+6.76588 s, 39.7 MB/s
+6.76618 s, 39.7 MB/s
+6.76585 s, 39.7 MB/s
+6.65705 s, 40.3 MB/s
+6.76096 s, 39.7 MB/s
+6.76552 s, 39.7 MB/s
+6.76722 s, 39.7 MB/s
+6.76932 s, 39.7 MB/s
+6.65775 s, 40.3 MB/s
+
+ubuntu@ec2-s0-m3-medium:~$ dd bs=256M count=1 if=/dev/zero of=/mnt/ebs-mag/dd-test
+0.480022 s, 559 MB/s
+15.9354 s, 16.8 MB/s
+18.9236 s, 14.2 MB/s
+16.8922 s, 15.9 MB/s
+19.1743 s, 14.0 MB/s
+18.0598 s, 14.9 MB/s
+16.4248 s, 16.3 MB/s
+19.9051 s, 13.5 MB/s
+12.177 s, 22.0 MB/s
+17.3956 s, 15.4 MB/s
+14.6419 s, 18.3 MB/s
+15.6445 s, 17.2 MB/s
+
+The first couple write requests are absorbed by the page cache, from the 3rd
+one, you can see the sustainable performance. Anyway, a huge difference.
+
+# http://stackoverflow.com/questions/7044863/how-to-change-kernel-i-o-buffer-size
+# http://stackoverflow.com/questions/9662425/whats-the-proper-buffer-size-for-write-function

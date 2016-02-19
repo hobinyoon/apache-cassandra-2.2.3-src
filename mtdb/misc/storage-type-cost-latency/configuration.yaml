@@ -2,7 +2,9 @@ exp_hostname: ec2-s0-m3-medium
 
 #exp_datetime: 160218-191733
 #exp_datetime: 160218-210421
-exp_datetime: 160218-210657
+#exp_datetime: 160218-210657
+#exp_datetime: 160219-040931
+exp_datetime: 160219-042849
 
 # $ / GB / Month
 # IO request cost is not considered
@@ -10,4 +12,18 @@ exp_datetime: 160218-210657
 stg_cost:
   local-ssd:   0.5103
   ebs-ssd-gp2: 0.1
+
+  # 3000 IOPS. $195/100G = $1.95/G.
+  #   $0.065 per provisioned IOPS-month
+  # 2.1 = 0.15 + 1.95
+  # More expensive than the instance store!
+  #
+  # With 300 IOPS
+  #   0.345 = 0.15 + 0.195
+  # With 150 IOPS
+  #   0.2475 = 0.15 + 0.0975
+  #
+  # Not trivial to see if there is a price-performance sweetspot of this.
+  ebs-ssd-iop: 0.15
+
   ebs-mag:     0.05

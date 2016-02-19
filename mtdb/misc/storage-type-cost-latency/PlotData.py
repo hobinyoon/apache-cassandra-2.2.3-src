@@ -16,6 +16,7 @@ _fn_plot_data = None
 _latencies = []
 
 def _LoadData():
+	#storage_types = ["local-ssd", "ebs-ssd-iop", "ebs-ssd-gp2", "ebs-mag"]
 	storage_types = ["local-ssd", "ebs-ssd-gp2", "ebs-mag"]
 	c_or_d = ["cached", "direct"]
 
@@ -31,7 +32,7 @@ def _GenPlotData():
 	with Cons.MeasureTime("Generating plot data ..."):
 		_fn_plot_data = "data/stg-cost-latency-%s.%s" % (Conf.Get("exp_hostname"), Conf.Get("exp_datetime"))
 		with open(_fn_plot_data, "w") as fo:
-			fmt = "%9s %9.3f %7.1f %7.1f %8.6f"
+			fmt = "%13s %9.3f %7.1f %7.1f %8.6f"
 			#Cons.P(Util.BuildHeader(fmt, "storage_type avg_read_us read_1p_us read_99p_us cost($/GB/Month)"))
 			fo.write("%s\n" % Util.BuildHeader(fmt, "storage_type avg_read_us read_1p_us read_99p_us cost($/GB/Month)"))
 			for l in _latencies:
@@ -56,6 +57,8 @@ class ReadLat(object):
 		self.plot_label = None
 		if storage_type == "local-ssd":
 			self.plot_label = "Ins SSD"
+		elif storage_type == "ebs-ssd-iop":
+			self.plot_label = "EBS SSD PIO"
 		elif storage_type == "ebs-ssd-gp2":
 			self.plot_label = "EBS SSD"
 		elif storage_type == "ebs-mag":

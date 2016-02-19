@@ -4,7 +4,11 @@
 
 #include <algorithm>
 #include <iostream>
-#include <regex>
+#include <sstream>
+
+// Not implemented on Ubuntu 14.04, g++ 4.8.4
+// #include <regex>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include "conf.h"
@@ -12,7 +16,43 @@
 
 using namespace std;
 
-// Cached memory size in mb
+//void GetFreeAndCachedMemorySizeMbCpp11(int& free, int& cached) {
+//	free = cached = 0;
+//
+//	string lines = Util::exec("free -mt");
+//	//              total       used       free     shared    buffers     cached
+//	// Mem:         11991      11576        415         16        116      10938
+//	// -/+ buffers/cache:        521      11469
+//	// Swap:            0          0          0
+//	// Total:       11991      11576        415
+//
+//	// swap partition better be disabled. EC2 EBS-backed instances don't have swap. Good.
+//	stringstream ss(lines);
+//
+//	// On Ubuntu 14.04, g++ 4.8.4, this throws an regex_error. Interesting that it compiles.
+//	// http://stackoverflow.com/questions/15671536/why-does-this-c11-stdregex-example-throw-a-regex-error-exception
+//	regex rgx("^Mem:\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+");
+//
+//	string line;
+//	const auto sep = boost::is_any_of(" ");
+//	while (getline(ss, line, '\n')) {
+//		//cout << boost::format("[%s]\n") % line;
+//		smatch match;
+//		if (regex_search(line, match, rgx)) {
+//			vector<string> tokens;
+//			boost::split(tokens, line, sep, boost::token_compress_on);
+//			if (tokens.size() != 7)
+//				throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
+//			free = atoi(tokens[3].c_str());
+//			cached = atoi(tokens[6].c_str());
+//			return;
+//		}
+//	}
+//
+//	throw runtime_error(str(boost::format("Unexpected format [%s]") % lines));
+//}
+
+
 void GetFreeAndCachedMemorySizeMb(int& free, int& cached) {
 	free = cached = 0;
 
@@ -23,24 +63,23 @@ void GetFreeAndCachedMemorySizeMb(int& free, int& cached) {
 	// Swap:            0          0          0
 	// Total:       11991      11576        415
 
-	// TODO: think about what to do with swap. better disable.
+	// swap partition better be disabled. EC2 EBS-backed instances don't have swap. Good.
 	stringstream ss(lines);
-	regex rgx("^Mem:\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+");
 
-	string line;
 	const auto sep = boost::is_any_of(" ");
+	string line;
 	while (getline(ss, line, '\n')) {
-		//cout << boost::format("[%s]\n") % line;
-		smatch match;
-		if (regex_search(line, match, rgx)) {
-			vector<string> tokens;
-			boost::split(tokens, line, sep, boost::token_compress_on);
-			if (tokens.size() != 7)
-				throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
-			free = atoi(tokens[3].c_str());
-			cached = atoi(tokens[6].c_str());
-			return;
-		}
+		vector<string> tokens;
+		boost::split(tokens, line, sep, boost::token_compress_on);
+		if (tokens.size() == 0)
+			continue;
+		if (tokens[0] != "Mem:")
+			continue;
+		if (tokens.size() != 7)
+			throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
+		free = atoi(tokens[3].c_str());
+		cached = atoi(tokens[6].c_str());
+		return;
 	}
 
 	throw runtime_error(str(boost::format("Unexpected format [%s]") % lines));
@@ -216,7 +255,7 @@ int main() {
 
 	// TODO: Keep the cached memory size to proportional to the shrinked heap size
 	// c3.2xlarge has 15 GB of memory.
-	// @ Measure the heap memory size of unmodified Cassandra and cached size.
+	// Measure the heap memory size of unmodified Cassandra and cached size.
 	// Should have a better idea then.
 
 	return 0;

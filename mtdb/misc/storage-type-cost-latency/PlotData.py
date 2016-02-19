@@ -31,14 +31,14 @@ def _GenPlotData():
 	with Cons.MeasureTime("Generating plot data ..."):
 		_fn_plot_data = "data/stg-cost-latency-%s.%s" % (Conf.Get("exp_hostname"), Conf.Get("exp_datetime"))
 		with open(_fn_plot_data, "w") as fo:
-			fmt = "%11s %9.3f %7.1f %7.1f %8.6f"
+			fmt = "%9s %9.3f %7.1f %7.1f %8.6f"
 			#Cons.P(Util.BuildHeader(fmt, "storage_type avg_read_us read_1p_us read_99p_us cost($/GB/Month)"))
 			fo.write("%s\n" % Util.BuildHeader(fmt, "storage_type avg_read_us read_1p_us read_99p_us cost($/GB/Month)"))
 			for l in _latencies:
 				if l.c_or_d == "cached":
 					continue
 				#Cons.P(fmt % (l.storage_type, l.read_avg, l.read_1, l.read_99, _StgCost(l.storage_type)))
-				fo.write((fmt + "\n") % (l.storage_type, l.read_avg, l.read_1, l.read_99, _StgCost(l.storage_type)))
+				fo.write((fmt + "\n") % ("\"%s\"" % l.plot_label, l.read_avg, l.read_1, l.read_99, _StgCost(l.storage_type)))
 		Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))
 
 
@@ -53,6 +53,14 @@ class ReadLat(object):
 		self.storage_type = storage_type
 		self.fn = "data/%s.%s.%s-%s" % (Conf.Get("exp_hostname"), Conf.Get("exp_datetime"), storage_type, c_or_d)
 		self.read_times_us = []
+		self.plot_label = None
+		if storage_type == "local-ssd":
+			self.plot_label = "Ins SSD"
+		elif storage_type == "ebs-ssd-gp2":
+			self.plot_label = "EBS SSD"
+		elif storage_type == "ebs-mag":
+			self.plot_label = "EBS Mag"
+
 		self.ReadFile()
 	
 	def ReadFile(self):

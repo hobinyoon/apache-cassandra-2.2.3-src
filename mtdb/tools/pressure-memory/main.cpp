@@ -3,8 +3,12 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
+#include <queue>
 #include <sstream>
+#include <thread>
 
 // Not implemented on Ubuntu 14.04, g++ 4.8.4
 // #include <regex>
@@ -179,85 +183,98 @@ MemPressurer _mp;
 class OutputQueue {
 private:
 	queue<string> _q;
+	mutex _q_lock;
+	condition_variable _cv;
+	//int cnt = 0;
 
 public:
 	void Put(char* line) {
-		// TODO: lock
-		_q.push(line);
+		if (strlen(line) == 0)
+			return;
+		if (strncmp(line, "Mem:", 4) != 0)
+			return;
+
+		{
+			lock_guard<mutex> _(_q_lock);
+			_q.push(line);
+		}
+		_cv.notify_one();
+		//cnt ++;
+		//cout << boost::format("Put([%s]) cnt=%d\n") % line % cnt << flush;
 	}
 
-	string Get() {
+	string GetLatest() {
 		string latest_line;
-
-		while (!_q.empty()) {
-			latest_line = _q.front();
-			myqueue.pop();
-
-			_q.pop();
-		}
-
+		//cout << "GetLatest() -->\n" << flush;
 		while (_q.empty()) {
-			// TODO: wait for a notification
+			unique_lock<mutex> lk(_q_lock);
+			_cv.wait(lk);
 		}
-		_q.pop();
-		// TODO: get the latest one.
+
+		{
+			lock_guard<mutex> _(_q_lock);
+			while (!_q.empty()) {
+				latest_line = _q.front();
+				_q.pop();
+			}
+		}
+		//cout << "GetLatest() <--\n" << flush;
+		return latest_line;
 	}
 };
 
-OutputQueue output_q;
 
+void PressureMemory(OutputQueue* output_q) {
+	while (true) {
+		string line = output_q->GetLatest();
 
-void PressureMemory() {
-	string line = output_q.GetLatest();
+		// Careful not to trigger OOM killer. If the free memory is too small, no
+		// more allocation.
 
-	// Careful not to trigger OOM killer. If the free memory is too small, no
-	// more allocation.
+		// swap partition better be disabled. EC2 EBS-backed instances don't have
+		// swap. Good.
+		static const auto sep = boost::is_any_of(" ");
+		vector<string> tokens;
+		boost::split(tokens, line, sep, boost::token_compress_on);
+		if (tokens.size() != 7 || tokens[0] != "Mem:")
+			throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
+		int free = atoi(tokens[3].c_str());
+		int cached = atoi(tokens[6].c_str());
+		//cout << boost::format("%d %d\n") % free % cached << flush;
+		cout << "." << flush;
 
-	// swap partition better be disabled. EC2 EBS-backed instances don't have
-	// swap. Good.
-	static const auto sep = boost::is_any_of(" ");
-	vector<string> tokens;
-	boost::split(tokens, line, sep, boost::token_compress_on);
-	if (tokens.size() == 0)
-		return;
-	if (tokens[0] != "Mem:")
-		return;
-	if (tokens.size() != 7)
-		throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
-	int free = atoi(tokens[3].c_str());
-	int cached = atoi(tokens[6].c_str());
-
-	// 1. Initial pressure. Pressure till there is (128MB) free memory left
-	// 2. Pressure till cached becomes below (16MB), while making sure free is above (64MB)
-	//   2.1 After pressuing, back off to secure (512MB) of free memory.
-	//   Go back to step 2
-	static int phase = 1;
-	if (phase == 1) {
-		int to_pressure = free - Conf::initial_pressure_free_mb;
-		to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-		_mp.Alloc(to_pressure);
-		// TODO: I see the problem. This takes too long and the next free, cached are outdated.
-		cout << boost::format("\nS: switch to phase=%d\n") % phase;
-		phase = 2;
-	} else if (phase == 2) {
-		int need_to_return = Conf::pressure_free_lower_bound_mb - free;
-		need_to_return = (need_to_return / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-		if (need_to_return > 0) {
-			_mp.Free(need_to_return);
-		} else {
-			int to_pressure = cached - Conf::cached_memory_target_mb;
-			if (to_pressure < 0) {
-				// Back off
-				int free_back_off = ((Conf::free_back_off_mb - free) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-				if (free_back_off > 0)
-					_mp.Free(free_back_off);
+		// 1. Initial pressure. Pressure till there is (128MB) free memory left
+		// 2. Pressure till cached becomes below (16MB), while making sure free is above (64MB)
+		//   2.1 After pressuing, back off to secure (512MB) of free memory.
+		//   Go back to step 2
+		static int phase = 1;
+		if (phase == 1) {
+			int to_pressure = free - Conf::initial_pressure_free_mb;
+			to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+			_mp.Alloc(to_pressure);
+			// When this takes too long, some output from "free" need to be skipped.
+			cout << "to_phase_2 " << flush;
+			phase = 2;
+		} else if (phase == 2) {
+			int need_to_return = Conf::pressure_free_lower_bound_mb - free;
+			need_to_return = (need_to_return / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+			if (need_to_return > 0) {
+				_mp.Free(need_to_return);
 			} else {
-				int room_to_pressure = free - Conf::pressure_free_lower_bound_mb;
-				room_to_pressure = (room_to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-				to_pressure = std::min(to_pressure, room_to_pressure);
-				to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-				if (to_pressure > 0)
-					_mp.Alloc(to_pressure);
+				int to_pressure = cached - Conf::cached_memory_target_mb;
+				if (to_pressure < 0) {
+					// Back off
+					int free_back_off = ((Conf::free_back_off_mb - free) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+					if (free_back_off > 0)
+						_mp.Free(free_back_off);
+				} else {
+					int room_to_pressure = free - Conf::pressure_free_lower_bound_mb;
+					room_to_pressure = (room_to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+					to_pressure = std::min(to_pressure, room_to_pressure);
+					to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+					if (to_pressure > 0)
+						_mp.Alloc(to_pressure);
+				}
 			}
 		}
 	}
@@ -288,7 +305,8 @@ int main() {
 		}
 	}
 
-	thread t_pm(PressureMemory);
+	OutputQueue output_q;
+	thread t_pm(PressureMemory, &output_q);
 
 	// 1024 is enough for the output of free, since I know the output.
 	const int bufsize = 1024;

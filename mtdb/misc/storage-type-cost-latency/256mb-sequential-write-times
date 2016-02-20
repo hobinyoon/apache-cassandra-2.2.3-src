@@ -1,3 +1,5 @@
+# for ((i=0; i<10; i++)); do dd bs=256M count=1 if=/dev/zero of=/mnt/ebs-ssd-gp2/dd-test; done
+
 ubuntu@ec2-s0-m3-medium:~$ dd bs=256M count=1 if=/dev/zero of=/mnt/local-ssd/dd-test
 0.603698 s, 445 MB/s
 0.604334 s, 444 MB/s

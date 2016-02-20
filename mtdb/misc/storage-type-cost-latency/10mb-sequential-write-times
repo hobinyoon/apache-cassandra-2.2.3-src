@@ -1,0 +1,23 @@
+ubuntu@ec2-s0-c3-large:~/work/cassandra/mtdb/misc/storage-type-cost-latency$ for ((i=0; i<10; i++)); do dd bs=10M count=1 if=/dev/zero of=/mnt/local-ssd/dd-test; sleep 3; done
+	0.0152511 s, 688 MB/s
+	0.0351719 s, 298 MB/s
+	0.0133835 s, 783 MB/s
+	0.0160252 s, 654 MB/s
+	0.0202723 s, 517 MB/s
+	0.0168149 s, 624 MB/s
+	0.0133822 s, 784 MB/s
+	0.0195655 s, 536 MB/s
+	0.0198427 s, 528 MB/s
+	0.0171589 s, 611 MB/s
+
+ubuntu@ec2-s0-c3-large:~/work/cassandra/mtdb/misc/storage-type-cost-latency$ for ((i=0; i<10; i++)); do dd bs=10M count=1 if=/dev/zero of=/mnt/ebs-ssd-gp2/dd-test; sleep 3; done
+	0.0111322 s, 942 MB/s
+	0.010689 s, 981 MB/s
+	0.0105351 s, 995 MB/s
+	0.0124229 s, 844 MB/s
+	0.0105696 s, 992 MB/s
+	0.0103869 s, 1.0 GB/s
+	0.0118119 s, 888 MB/s
+	0.0104564 s, 1.0 GB/s
+	0.0104529 s, 1.0 GB/s
+	0.0104946 s, 999 MB/s

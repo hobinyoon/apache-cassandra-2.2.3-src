@@ -879,12 +879,12 @@ mutants_options:
     # loadgen, but also used for tablet coldness detection.
     simulated_time_years: 8
     #simulation_time_mins: 0.5
-    simulation_time_mins: 5
+    simulation_time_mins: 1
 
     tablet_temperature_monitor_interval_simulation_time_ms: 100
 
     # Switch to turn on/off Mutants to compare the performance
-    migrate_to_cold_storage: true
+    migrate_to_cold_storage: false
 
     cold_storage_dir: /mnt/cold-storage/mtdb-cold
 

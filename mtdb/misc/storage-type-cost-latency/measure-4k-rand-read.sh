@@ -26,22 +26,23 @@ time dd bs=1024 count=262144 < /dev/urandom > $DN_LOCAL_SSD/ioping-test \
 ## Cwd should be on local ssd.
 #echo
 #echo "Measuing direct/cached IO latencies ..."
+# -q is needed so that it doesn't stress local SSD
 vmtouch -t $DN_LOCAL_SSD/ioping-test
 vmtouch $DN_LOCAL_SSD/ioping-test
-#time ioping -C -c 1000 -i 0.0001 $DN_LOCAL_SSD/ioping-test > $FN_PREFIX"local-ssd-cached"
-time ioping -D -c 1000 -i 0.0001 $DN_LOCAL_SSD/ioping-test > $FN_PREFIX"local-ssd-direct"
+#time ioping -Cq -c 1000 -i 0.0001 $DN_LOCAL_SSD/ioping-test > $FN_PREFIX"local-ssd-cached"
+time ioping -Dq -c 1000 -i 0.0001 $DN_LOCAL_SSD/ioping-test > $FN_PREFIX"local-ssd-direct"
 
 vmtouch -t $DN_EBS_SSD_GP2/ioping-test
 vmtouch $DN_EBS_SSD_GP2/ioping-test
-#time ioping -C -c 1000 -i 0.0001 $DN_EBS_SSD_GP2/ioping-test > $FN_PREFIX"ebs-ssd-gp2-cached"
-time ioping -D -c 1000 -i 0.0001 $DN_EBS_SSD_GP2/ioping-test > $FN_PREFIX"ebs-ssd-gp2-direct"
+#time ioping -Cq -c 1000 -i 0.0001 $DN_EBS_SSD_GP2/ioping-test > $FN_PREFIX"ebs-ssd-gp2-cached"
+time ioping -Dq -c 1000 -i 0.0001 $DN_EBS_SSD_GP2/ioping-test > $FN_PREFIX"ebs-ssd-gp2-direct"
 
 #vmtouch -t $DN_EBS_SSD_IOP/ioping-test
 #vmtouch $DN_EBS_SSD_IOP/ioping-test
-#time ioping -C -c 1000 -i 0.0001 $DN_EBS_SSD_IOP/ioping-test > $FN_PREFIX"ebs-ssd-iop-cached"
-#time ioping -D -c 1000 -i 0.0001 $DN_EBS_SSD_IOP/ioping-test > $FN_PREFIX"ebs-ssd-iop-direct"
+#time ioping -Cq -c 1000 -i 0.0001 $DN_EBS_SSD_IOP/ioping-test > $FN_PREFIX"ebs-ssd-iop-cached"
+#time ioping -Dq -c 1000 -i 0.0001 $DN_EBS_SSD_IOP/ioping-test > $FN_PREFIX"ebs-ssd-iop-direct"
 
 #vmtouch -t $DN_EBS_MAG/ioping-test
 #vmtouch $DN_EBS_MAG/ioping-test
-#time ioping -C -c 1000 -i 0.0001 $DN_EBS_MAG/ioping-test > $FN_PREFIX"ebs-mag-cached"
-#time ioping -D -c 1000 -i 0.0001 $DN_EBS_MAG/ioping-test > $FN_PREFIX"ebs-mag-direct"
+#time ioping -Cq -c 1000 -i 0.0001 $DN_EBS_MAG/ioping-test > $FN_PREFIX"ebs-mag-cached"
+#time ioping -Dq -c 1000 -i 0.0001 $DN_EBS_MAG/ioping-test > $FN_PREFIX"ebs-mag-direct"

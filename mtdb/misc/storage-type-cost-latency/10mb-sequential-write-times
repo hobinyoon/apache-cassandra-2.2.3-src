@@ -24,8 +24,78 @@ ebs-ssd-gp2
 	0.017758 s, 590 MB/s
 	0.00952623 s, 1.1 GB/s
 
-@ What if I have a faster processor?
+i2.xlarge. 3 sec sleep. whether buffered or synced. Local SSD is a win here.
+	Local SSD
+		0.0144287 s, 727 MB/s
+		0.0143464 s, 731 MB/s
+		0.0143701 s, 730 MB/s
+		0.0146148 s, 717 MB/s
+		0.0143873 s, 729 MB/s
+		0.0144532 s, 725 MB/s
+		0.0141401 s, 742 MB/s
+		0.0144271 s, 727 MB/s
+		0.0143074 s, 733 MB/s
+		0.0148987 s, 704 MB/s
+		0.0139328 s, 753 MB/s
+		0.0142809 s, 734 MB/s
+		0.01448 s, 724 MB/s
+		0.0141072 s, 743 MB/s
+		0.0142545 s, 736 MB/s
+		0.0140471 s, 746 MB/s
+		0.0142281 s, 737 MB/s
+		0.0177971 s, 589 MB/s
+		0.0142369 s, 737 MB/s
+		0.0140121 s, 748 MB/s
 
+	EBS SSD
+		0.0145006 s, 723 MB/s
+		0.0143217 s, 732 MB/s
+		0.0150561 s, 696 MB/s
+		0.0140682 s, 745 MB/s
+		0.0142364 s, 737 MB/s
+		0.0144168 s, 727 MB/s
+		0.0142529 s, 736 MB/s
+		0.0145199 s, 722 MB/s
+		0.0141764 s, 740 MB/s
+		0.0139751 s, 750 MB/s
+		0.0140346 s, 747 MB/s
+		0.0142257 s, 737 MB/s
+		0.0141625 s, 740 MB/s
+		0.01441 s, 728 MB/s
+		0.0144263 s, 727 MB/s
+
+	Local SSD. with conv=fdatasync
+		0.0352154 s, 298 MB/s
+		0.0353314 s, 297 MB/s
+		0.0349697 s, 300 MB/s
+		0.0354634 s, 296 MB/s
+		0.0351322 s, 298 MB/s
+		0.0353629 s, 297 MB/s
+		0.0350487 s, 299 MB/s
+		0.0351734 s, 298 MB/s
+		0.0350504 s, 299 MB/s
+		0.0349374 s, 300 MB/s
+		0.0352742 s, 297 MB/s
+
+	EBS SSD. with conv=fdatasync
+		0.0847166 s, 124 MB/s
+		0.0790885 s, 133 MB/s
+		0.0799086 s, 131 MB/s
+		0.076649 s, 137 MB/s
+		0.0840414 s, 125 MB/s
+		0.0917173 s, 114 MB/s
+		0.0805151 s, 130 MB/s
+		0.0971056 s, 108 MB/s
+		0.0822656 s, 127 MB/s
+		0.0836268 s, 125 MB/s
+		0.083455 s, 126 MB/s
+		0.077911 s, 135 MB/s
+		0.0806195 s, 130 MB/s
+		0.0814036 s, 129 MB/s
+		0.0804439 s, 130 MB/s
+		0.0766183 s, 137 MB/s
+		0.0786767 s, 133 MB/s
+		0.0775384 s, 135 MB/s
 
 
 ubuntu@ec2-s0-c3-large:~/work/cassandra/mtdb/misc/storage-type-cost-latency$ for ((i=0; i<10; i++)); do dd bs=10M count=1 if=/dev/zero of=/mnt/local-ssd/dd-test; sleep 3; done

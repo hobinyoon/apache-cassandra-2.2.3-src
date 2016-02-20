@@ -879,7 +879,7 @@ mutants_options:
     # loadgen, but also used for tablet coldness detection.
     simulated_time_years: 8
     #simulation_time_mins: 0.5
-    simulation_time_mins: 3
+    simulation_time_mins: 5
 
     tablet_temperature_monitor_interval_simulation_time_ms: 100
 
@@ -901,7 +901,9 @@ mutants_options:
 # Load generator for long-running applications
 mutants_loadgen_options:
     global:
-        # Total number of writes
+        # Number of writes per simulation time minute
+        # This and per_obj.obj_size are configured so that EBS magnetic volume
+        # can handle the simulation
         num_writes_per_simulation_time_mins: 20000
 
         progress_report_interval_ms: 100
@@ -930,7 +932,7 @@ mutants_loadgen_options:
         read_time_dist: "Custom: facebook-num-reads-by-age"
 
         # Object size in bytes. E.g., a tweet is about 1KB big.
-        obj_size: 3000
+        obj_size: 4000
 
     db:
         # Request IO to the database server

@@ -243,6 +243,13 @@ int main() {
 			if (pressure_cached_mb > 0) {
 				mp.AllocMemory(pressure_cached_mb);
 				pressure_size_changed = true;
+			} else {
+				// Back off a bit, when cached is low enough
+				int free_back_off = ((Conf::free_back_off_mb - free) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
+				if (free_back_off > 0) {
+					mp.FreeMemory(free_back_off);
+					pressure_size_changed = true;
+				}
 			}
 		}
 

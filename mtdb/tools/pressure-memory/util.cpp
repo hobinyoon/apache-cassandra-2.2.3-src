@@ -9,12 +9,9 @@ using namespace std;
 namespace Util {
 	std::string exec(const char* cmd) {
 		// http://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c
-		// std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
-		// TODO
 
 		// fork(), which is called by popen(), fails when the parent process
 		// already consumes a lot of memory.
-		// TODO: need a pre-forking.
 		FILE* pipe = popen(cmd, "r");
 		if (pipe == NULL) {
 			if (errno == ENOMEM) {

@@ -1,3 +1,33 @@
+m3-medium. EBS SSD is still a win. 10MB write. 3 sec sleep
+
+local-ssd
+	0.021797 s, 481 MB/s
+	0.0196522 s, 534 MB/s
+	0.0114191 s, 918 MB/s
+	0.0237404 s, 442 MB/s
+	0.0197774 s, 530 MB/s
+	0.0114973 s, 912 MB/s
+	0.0196921 s, 532 MB/s
+	0.0196836 s, 533 MB/s
+	0.0199772 s, 525 MB/s
+	0.0115298 s, 909 MB/s
+
+ebs-ssd-gp2
+	0.0245578 s, 427 MB/s
+	0.00954022 s, 1.1 GB/s
+	0.0116973 s, 896 MB/s
+	0.00958063 s, 1.1 GB/s
+	0.00964766 s, 1.1 GB/s
+	0.00952297 s, 1.1 GB/s
+	0.00974927 s, 1.1 GB/s
+	0.00959486 s, 1.1 GB/s
+	0.017758 s, 590 MB/s
+	0.00952623 s, 1.1 GB/s
+
+@ What if I have a faster processor?
+
+
+
 ubuntu@ec2-s0-c3-large:~/work/cassandra/mtdb/misc/storage-type-cost-latency$ for ((i=0; i<10; i++)); do dd bs=10M count=1 if=/dev/zero of=/mnt/local-ssd/dd-test; sleep 3; done
 	0.0152511 s, 688 MB/s
 	0.0351719 s, 298 MB/s

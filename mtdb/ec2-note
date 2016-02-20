@@ -4,7 +4,7 @@ Set hostname
 	Dot in the hostname doesn't work, i.e., hostname0=ec2-m3.xlarge.s0
 	Excute both for export ec2-s0-m3-xlarge ec2-c0-m3-xlarge
 
-	export hostname0=ec2-s0-m3-medium \
+	export hostname0=ec2-s0-c3-large \
 	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
 	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
 	&& sudo hostname --file /etc/hostname
@@ -12,20 +12,22 @@ Set hostname
 	exit and login back
 
 
-Install packages
+Install packages, vmtouch, one-time synchronization of clocks both on server and client
 	(will be prompted for an Oracle binary code license)
 
 	sudo add-apt-repository -y ppa:webupd8team/java \
 	&& sudo apt-get update \
-	&& sudo apt-get install oracle-java8-installer git ctags ant htop tree maven gnuplot-nox ntp ioping realpath make gcc -y \
-	&& sudo apt-get autoremove -y vim-tiny
-
-
-One-time synchronization of clocks both on server and client
-
-	Check if additional port needs to be opened
-
-	sudo service ntp stop \
+	&& sudo apt-get install oracle-java8-installer git ctags ant htop tree maven \
+	gnuplot-nox ntp ioping realpath make gcc cmake g++ \
+	libboost-dev libboost-system-dev libboost-timer-dev -y \
+	&& sudo apt-get autoremove -y vim-tiny \
+	&& mkdir -p ~/work \
+	&& cd ~/work \
+	&& git clone https://github.com/hoytech/vmtouch.git \
+	&& cd vmtouch \
+	&& make -j \
+	&& sudo make install \
+	&& sudo service ntp stop \
 	&& sudo ntpdate -bv 0.ubuntu.pool.ntp.org \
 	&& sudo service ntp start
 
@@ -33,101 +35,114 @@ One-time synchronization of clocks both on server and client
 Setup repositories and dev envs
 	(will be prompted for if you trust the server)
 
-	mkdir work \
-	&& cd work \
+	cd ~/work \
 	&& git clone git@github.com:hobinyoon/linux-home.git \
 	&& cd linux-home \
 	&& ./setup-linux.sh \
-	&& sudo mkdir -p /mnt/s5-cass-cold-storage/mtdb-cold \
-	&& sudo chown -R ubuntu /mnt/s5-cass-cold-storage/mtdb-cold
 
 	exit and login back
 
 
-Set firewall rules
-(123 may not be necessary)
-
-	Server
-	  Allow client machine to connect to server machine on AWS console
-	  Open ntp port (not sure if this is needed)
-
-		Allow inbound TCP 9042 10.152.33.227/32
-		Allow inbound UCP 123  0.0.0.0/0
-
-	Client
-		Allow inbound UCP 123  0.0.0.0/0
+Set firewall rules on Server. Allow client machine to connect to server machine
+on AWS console
+	Allow inbound TCP 9042 10.152.33.227/32
 
 
 Set server address on client machine
-	vi ~/.bashrc
-		export CASSANDRA_SERVER_ADDR=10.139.123.60
+	On server:
+		vi ~/.bashrc
+			export CASSANDRA_CLIENT_ADDR=54.161.154.100
 
-	vi ~/.bashrc
-		export CASSANDRA_CLIENT_ADDR=10.152.33.227
+	On client:
+		vi ~/.bashrc
+			export CASSANDRA_SERVER_ADDR=54.144.216.199
+
+	exit and login back to make them take effect
 
 
 Prepare a local SSD volume and an EBS volume
 	lsblk
+		NAME    MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
+		xvda    202:0    0     8G  0 disk
+		└─xvda1 202:1    0     8G  0 part /
+		xvdb    202:16   0  15.3G  0 disk /mnt
+		xvdc    202:32   0  15.3G  0 disk
+		xvdd    202:48   0     8G  0 disk
 
 	sudo mkfs.ext4 -m 0 /dev/xvdc
 	(xvdb is already formatted)
 
 	sudo vi /etc/fstab
-		/dev/xvdb /mnt/local-ssd  auto  defaults,nobootwait,comment=cloudconfig 0 2 
-		/dev/xvdc /mnt/ebs-mag  auto  defaults,nobootwait,comment=cloudconfig 0 2
+		/dev/xvdb /mnt/local-ssd  auto  defaults,nobootwait,comment=cloudconfig 0 2
+		/dev/xvdd /mnt/ebs-mag  auto  defaults,nobootwait,comment=cloudconfig 0 2
 		(EBS-SSD-GP2 is already mounted at /)
 
-	sudo umount mnt \
-	&& sudo mkdir -p /mnt/local-ssd \
-	&& sudo mkdir -p /mnt/ebs-mag \
-	&& sudo chown -R ubuntu /mnt/local-ssd \
-	&& sudo chown -R ubuntu /mnt/ebs-mag \
-	&& sudo mount /mnt/local-ssd \
-	&& sudo mount /mnt/ebs-mag \
-	&& mkdir ~/cass-data-vol \
-	&& sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2
+	On the server machine:
+		sudo umount /mnt \
+		&& sudo mkdir -p /mnt/local-ssd \
+		&& sudo mkdir -p /mnt/ebs-mag \
+		&& sudo mount /mnt/local-ssd \
+		&& sudo mount /mnt/ebs-mag \
+		&& sudo chown -R ubuntu /mnt/local-ssd \
+		&& sudo chown -R ubuntu /mnt/ebs-mag \
+		&& mkdir ~/cass-data-vol \
+		&& sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2
+
+	On the client machine:
+		sudo umount /mnt \
+		&& sudo mkdir -p /mnt/local-ssd \
+		&& sudo mount /mnt/local-ssd \
+		&& sudo chown -R ubuntu /mnt/local-ssd \
+		&& mkdir ~/cass-data-vol \
+		&& sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2
 
 
-Setup Cassandra directory
+Setup Cassandra directory both on server and client
 	cd /mnt/local-ssd \
 	&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
 	&& ln -s /mnt/local-ssd/apache-cassandra-2.2.3-src ~/work/cassandra
 
 
-Running Cassandra server
-	screen
-	cdcass && time ant && bin/cassandra -f | grep --color -E '^|MTDB:'
+Run Mutants server
+	Setup cold storage
+		sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold \
+		&& sudo mkdir -p /mnt/ebs-mag/mtdb-cold \
+		&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
+		&& sudo chown -R ubuntu /mnt/cold-storage \
+
+		cdcass \
+		&& vi conf/cassandra.yaml
+			cold_storage_dir: /mnt/cold-storage/mtdb-cold
+
+	Run server
+		screen
+		cdcass && time ant && bin/cassandra -f | grep --color -E '^|MTDB:'
+
+		Change data directory to ebs-ssd
+		mkdir -p /mnt/ebs-ssd-gp2/cass-data \
+		&& ln -s /mnt/ebs-ssd-gp2/cass-data ~/work/cassandra/data
 
 
 Run loadgen client, preferrably on a different machine
+	It read the env var CASSANDRA_SERVER_ADDR.
+
 	cd ~/work/cassandra/mtdb/loadgen \
 	&& ./create-db.sh \
 	&& ./loadgen
 
+	Monitor it's not running behind.
+
+	Pressure memory on server. Run loadgen again on client.
+
 
 Get loadgen client log to server machine. Better do this on the server node,
-which is likely to have bigger log files
-	rsync -av $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs
+which is likely to have bigger log files. Process the experiment.
+	rsync -av $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs \
+	&& cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline \
+	&& (\rm *.pdf || true) \
+	&& ./plot-cost-latency-tablet-timelines.py \
+	&& scp -P 20022 *.pdf hobin@localhost:
 
 
 Copy logs to mts7
-	rsync -av ubuntu@ec2-54-173-255-188.compute-1.amazonaws.com:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/
-
-
-vmtouch
-	cd ~/work \
-	&& git clone https://github.com/hoytech/vmtouch.git \
-	&& cd vmtouch \
-	&& make -j \
-	&& sudo make install
-
-
-ioping test
-	Make a 256MB file on each of the storage type
-		time dd bs=1024 count=262144 < /dev/urandom > /mnt/local-ssd/ioping-test \
-		&& time cp /mnt/local-ssd/ioping-test /mnt/ebs-ssd-gp2/ioping-test \
-		&& time cp /mnt/local-ssd/ioping-test /mnt/ebs-mag/ioping-test
-
-	ioping -C -i 0 /mnt/local-ssd/ioping-test
-	ioping -C -i 0 /mnt/ebs-ssd-gp2/ioping-test
-	ioping -C -i 0 /mnt/ebs-mag/ioping-test
+	rsync -av ubuntu@54.144.216.199:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/

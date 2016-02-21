@@ -3,8 +3,12 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
+#include <queue>
 #include <sstream>
+#include <thread>
 
 // Not implemented on Ubuntu 14.04, g++ 4.8.4
 // #include <regex>
@@ -15,75 +19,6 @@
 #include "util.h"
 
 using namespace std;
-
-//void GetFreeAndCachedMemorySizeMbCpp11(int& free, int& cached) {
-//	free = cached = 0;
-//
-//	string lines = Util::exec("free -mt");
-//	//              total       used       free     shared    buffers     cached
-//	// Mem:         11991      11576        415         16        116      10938
-//	// -/+ buffers/cache:        521      11469
-//	// Swap:            0          0          0
-//	// Total:       11991      11576        415
-//
-//	// swap partition better be disabled. EC2 EBS-backed instances don't have swap. Good.
-//	stringstream ss(lines);
-//
-//	// On Ubuntu 14.04, g++ 4.8.4, this throws an regex_error. Interesting that it compiles.
-//	// http://stackoverflow.com/questions/15671536/why-does-this-c11-stdregex-example-throw-a-regex-error-exception
-//	regex rgx("^Mem:\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+");
-//
-//	string line;
-//	const auto sep = boost::is_any_of(" ");
-//	while (getline(ss, line, '\n')) {
-//		//cout << boost::format("[%s]\n") % line;
-//		smatch match;
-//		if (regex_search(line, match, rgx)) {
-//			vector<string> tokens;
-//			boost::split(tokens, line, sep, boost::token_compress_on);
-//			if (tokens.size() != 7)
-//				throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
-//			free = atoi(tokens[3].c_str());
-//			cached = atoi(tokens[6].c_str());
-//			return;
-//		}
-//	}
-//
-//	throw runtime_error(str(boost::format("Unexpected format [%s]") % lines));
-//}
-
-
-void GetFreeAndCachedMemorySizeMb(int& free, int& cached) {
-	free = cached = 0;
-
-	string lines = Util::exec("free -mt");
-	//              total       used       free     shared    buffers     cached
-	// Mem:         11991      11576        415         16        116      10938
-	// -/+ buffers/cache:        521      11469
-	// Swap:            0          0          0
-	// Total:       11991      11576        415
-
-	// swap partition better be disabled. EC2 EBS-backed instances don't have swap. Good.
-	stringstream ss(lines);
-
-	const auto sep = boost::is_any_of(" ");
-	string line;
-	while (getline(ss, line, '\n')) {
-		vector<string> tokens;
-		boost::split(tokens, line, sep, boost::token_compress_on);
-		if (tokens.size() == 0)
-			continue;
-		if (tokens[0] != "Mem:")
-			continue;
-		if (tokens.size() != 7)
-			throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
-		free = atoi(tokens[3].c_str());
-		cached = atoi(tokens[6].c_str());
-		return;
-	}
-
-	throw runtime_error(str(boost::format("Unexpected format [%s]") % lines));
-}
 
 
 // A child process is pre-created and serves memory pressure requests. Parent
@@ -203,29 +138,112 @@ public:
 };
 
 
-void _SleepABit() {
-	// Sleep for a while when memory size has changed.
-	struct timespec req;
-	req.tv_sec = 0;
-	req.tv_nsec = Conf::sleep_nsec;
-	nanosleep(&req, NULL);
-}
+// Pre-fork memory pressurer sub process
+MemPressurer _mp;
 
 
-void PressureBasedOnCached() {
-	MemPressurer mp;
+//void GetFreeAndCachedMemorySizeMbCpp11(int& free, int& cached) {
+//	free = cached = 0;
+//
+//	string lines = Util::exec("free -mt");
+//	//              total       used       free     shared    buffers     cached
+//	// Mem:         11991      11576        415         16        116      10938
+//	// -/+ buffers/cache:        521      11469
+//	// Swap:            0          0          0
+//	// Total:       11991      11576        415
+//
+//	// swap partition better be disabled. EC2 EBS-backed instances don't have swap. Good.
+//	stringstream ss(lines);
+//
+//	// On Ubuntu 14.04, g++ 4.8.4, this throws an regex_error. Interesting that it compiles.
+//	// http://stackoverflow.com/questions/15671536/why-does-this-c11-stdregex-example-throw-a-regex-error-exception
+//	regex rgx("^Mem:\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+");
+//
+//	string line;
+//	const auto sep = boost::is_any_of(" ");
+//	while (getline(ss, line, '\n')) {
+//		//cout << boost::format("[%s]\n") % line;
+//		smatch match;
+//		if (regex_search(line, match, rgx)) {
+//			vector<string> tokens;
+//			boost::split(tokens, line, sep, boost::token_compress_on);
+//			if (tokens.size() != 7)
+//				throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
+//			free = atoi(tokens[3].c_str());
+//			cached = atoi(tokens[6].c_str());
+//			return;
+//		}
+//	}
+//
+//	throw runtime_error(str(boost::format("Unexpected format [%s]") % lines));
+//}
+
+
+// A thread-safe queue
+class OutputQueue {
+private:
+	queue<string> _q;
+	mutex _q_lock;
+	condition_variable _cv;
+	//int cnt = 0;
+
+public:
+	void Put(char* line) {
+		if (strlen(line) == 0)
+			return;
+		if (strncmp(line, "Mem:", 4) != 0)
+			return;
+
+		{
+			lock_guard<mutex> _(_q_lock);
+			_q.push(line);
+		}
+		_cv.notify_one();
+		//cnt ++;
+		//cout << boost::format("Put([%s]) cnt=%d\n") % line % cnt << flush;
+	}
+
+	string GetLatest() {
+		string latest_line;
+		//cout << "GetLatest() -->\n" << flush;
+		while (_q.empty()) {
+			unique_lock<mutex> lk(_q_lock);
+			_cv.wait(lk);
+		}
+
+		{
+			lock_guard<mutex> _(_q_lock);
+			while (!_q.empty()) {
+				latest_line = _q.front();
+				_q.pop();
+			}
+		}
+		//cout << "GetLatest() <--\n" << flush;
+		return latest_line;
+	}
+};
+
+
+void PressureMemory(OutputQueue* output_q) {
 	int phase = 1;
 	int pressure_not_changed_cnt = 0;
 
 	while (true) {
-		int free, cached;
-		try {
-			GetFreeAndCachedMemorySizeMb(free, cached);
-			// cout << boost::format("S: %d, %d\n") % free % cached;
-		} catch (const Util::ErrorNoMem& e) {
-			cout << "S: ErrorNoMem\n";
-			exit(-1);
-		}
+		string line = output_q->GetLatest();
+
+		// Careful not to trigger OOM killer. If the free memory is too small, no
+		// more allocation.
+
+		// swap partition better be disabled. EC2 EBS-backed instances don't have
+		// swap. Good.
+		static const auto sep = boost::is_any_of(" ");
+		vector<string> tokens;
+		boost::split(tokens, line, sep, boost::token_compress_on);
+		if (tokens.size() != 7 || tokens[0] != "Mem:")
+			throw runtime_error(str(boost::format("Unexpected format [%s]") % line));
+		int free = atoi(tokens[3].c_str());
+		int cached = atoi(tokens[6].c_str());
+		//cout << boost::format("%d %d\n") % free % cached << flush;
 
 		// 1. Initial pressure. Pressure till there is (128MB) free memory left
 		// 2. Pressure till cached becomes below (16MB), while making sure free is above (64MB)
@@ -234,7 +252,7 @@ void PressureBasedOnCached() {
 		if (phase == 1) {
 			int to_pressure = free - Conf::initial_pressure_free_mb;
 			to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-			mp.Alloc(to_pressure);
+			_mp.Alloc(to_pressure);
 			pressure_not_changed_cnt = 0;
 			// When this takes too long, some output from "free" need to be skipped.
 			cout << " to_phase_2" << flush;
@@ -243,7 +261,7 @@ void PressureBasedOnCached() {
 			int need_to_return = Conf::pressure_free_lower_bound_mb - free;
 			need_to_return = (need_to_return / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
 			if (need_to_return > 0) {
-				mp.Free(need_to_return);
+				_mp.Free(need_to_return);
 				pressure_not_changed_cnt = 0;
 			} else {
 				int to_pressure = cached - Conf::cached_memory_target_mb;
@@ -251,7 +269,7 @@ void PressureBasedOnCached() {
 					// Back off
 					int free_back_off = ((Conf::free_back_off_mb - free) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
 					if (free_back_off > 0) {
-						mp.Free(free_back_off);
+						_mp.Free(free_back_off);
 						pressure_not_changed_cnt = 0;
 					}
 				} else {
@@ -260,7 +278,7 @@ void PressureBasedOnCached() {
 					to_pressure = std::min(to_pressure, room_to_pressure);
 					to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
 					if (to_pressure > 0) {
-						mp.Alloc(to_pressure);
+						_mp.Alloc(to_pressure);
 						pressure_not_changed_cnt = 0;
 					}
 				}
@@ -268,14 +286,61 @@ void PressureBasedOnCached() {
 		}
 
 		pressure_not_changed_cnt ++;
-		if (pressure_not_changed_cnt > 1)
-			_SleepABit();
-
-		if (pressure_not_changed_cnt == 10)
+		if (pressure_not_changed_cnt == 100)
 			cout << " ." << flush;
-		else if (pressure_not_changed_cnt % 10 == 0)
+		else if (pressure_not_changed_cnt % 100 == 0)
 			cout << "." << flush;
 	}
+}
+
+
+int main() {
+	//              total       used       free     shared    buffers     cached
+	// Mem:         11991      11576        415         16        116      10938
+	// -/+ buffers/cache:        521      11469
+	// Swap:            0          0          0
+	// Total:       11991      11576        415
+
+	// fork(), called by popen(), fails when there is not enough free memory.
+	// Even with pre-fork, this seems to consume quite a lot of memory. Maybe C++
+	// runtime and boost library.
+	//
+	// Forking once, by making "free" continuously report.
+	const char* cmd = "free -mt -s 0.01";
+	FILE* pipe = popen(cmd, "r");
+	if (pipe == NULL) {
+		if (errno == ENOMEM) {
+			cerr << "popen failed: ENOMEM\n";
+			exit(1);
+		} else {
+			cerr << boost::format("Popen returned NULL. errno=%d\n") % errno;
+			exit(1);
+		}
+	}
+
+	OutputQueue output_q;
+	thread t_pm(PressureMemory, &output_q);
+
+	// 1024 is enough for the output of free, since I know the output.
+	const int bufsize = 1024;
+	char buffer[bufsize];
+	char* bp = buffer;
+	while (!feof(pipe)) {
+		*bp = fgetc(pipe);
+		if (*bp == '\n') {
+			*bp = '\0';
+			output_q.Put(buffer);
+			bp = buffer;
+		} else {
+			bp ++;
+			if (bp - buffer >= bufsize)
+				throw runtime_error("Unexpected output from free");
+		}
+	}
+
+	// Won't reach here
+	t_pm.join();
+	pclose(pipe);
 
 	// TODO: How does OOM killer selects a victim process? Can a child of this
 	// process be always selected?
@@ -284,77 +349,6 @@ void PressureBasedOnCached() {
 	// c3.2xlarge has 15 GB of memory.
 	// Measure the heap memory size of unmodified Cassandra and cached size.
 	// Should have a better idea then.
-}
-
-
-void PressureBasedOnFree() {
-	MemPressurer mp;
-	int pressure_not_changed_cnt = 0;
-
-	while (true) {
-		int free, cached;
-		try {
-			GetFreeAndCachedMemorySizeMb(free, cached);
-			// cout << boost::format("S: %d, %d\n") % free % cached;
-		} catch (const Util::ErrorNoMem& e) {
-			cout << "S: ErrorNoMem\n";
-			exit(-1);
-		}
-
-		int to_pressure = free - Conf::pressure_free_lower_bound_mb;
-		to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-
-		int need_to_return = Conf::pressure_free_lower_bound_mb - free;
-		need_to_return = (need_to_return / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-
-		if (to_pressure > 0) {
-			mp.Alloc(to_pressure);
-			pressure_not_changed_cnt = 0;
-		} else if (need_to_return > 0) {
-			mp.Free(need_to_return);
-			pressure_not_changed_cnt = 0;
-		}
-
-		pressure_not_changed_cnt ++;
-		if (pressure_not_changed_cnt > 1)
-			_SleepABit();
-
-		if (pressure_not_changed_cnt == 10)
-			cout << " ." << flush;
-		else if (pressure_not_changed_cnt % 10 == 0)
-			cout << "." << flush;
-	}
-}
-
-
-void PressureOnceBasedOnFree() {
-	MemPressurer mp;
-
-	int free, cached;
-	try {
-		GetFreeAndCachedMemorySizeMb(free, cached);
-		// cout << boost::format("S: %d, %d\n") % free % cached;
-	} catch (const Util::ErrorNoMem& e) {
-		cout << "S: ErrorNoMem\n";
-		exit(-1);
-	}
-
-	int to_pressure = free - Conf::pressure_free_lower_bound_mb;
-	to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-
-	if (to_pressure > 0) {
-		mp.Alloc(to_pressure);
-	}
-
-	while (true)
-		sleep(1);
-}
-
-
-int main() {
-	//PressureBasedOnCached();
-	//PressureBasedOnFree();
-	PressureOnceBasedOnFree();
 
 	return 0;
 }

@@ -115,12 +115,14 @@ Run Mutants server
 		&& sudo mkdir -p /mnt/ebs-mag/mtdb-cold \
 		&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
 		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
-		&& sudo chown -R ubuntu /mnt/cold-storage
+		&& sudo chown -R ubuntu /mnt/cold-storage \
+		&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold
 
 		sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold \
 		&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
 		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
-		&& sudo chown -R ubuntu /mnt/cold-storage
+		&& sudo chown -R ubuntu /mnt/cold-storage \
+		&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold
 
 	Run server after dropping page cache
 		screen
@@ -153,8 +155,6 @@ Run loadgen client, preferrably on a different machine
 	&& ./loadgen
 
 	Monitor it's not running behind.
-
-	Pressure memory on server. Run loadgen again on client.
 
 
 Get loadgen client log to server machine. Better do this on the server node,

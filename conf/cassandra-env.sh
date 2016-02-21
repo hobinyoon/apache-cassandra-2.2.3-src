@@ -238,7 +238,10 @@ JVM_OPTS="$JVM_OPTS -XX:ThreadPriorityPolicy=42"
 # stop-the-world GC pauses during resize, and so that we can lock the
 # heap in memory on startup to prevent any of it from being swapped
 # out.
+#
 # MTDB: reduce the size to simulate a small-memory node
+# Setting heap newsize to half of the heap size should be fine
+#   https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/sizing.html
 MAX_HEAP_SIZE="512M"
 HEAP_NEWSIZE="256M"
 echo "MAX_HEAP_SIZE="${MAX_HEAP_SIZE}

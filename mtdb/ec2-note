@@ -4,7 +4,7 @@ Set hostname
 	Dot in the hostname doesn't work, i.e., hostname0=ec2-m3.xlarge.s0
 	Excute both for export ec2-s0-m3-xlarge ec2-c0-m3-xlarge
 
-	export hostname0=ec2-s0-c3-large \
+	export hostname0=ec2-s-c3.2xlarge \
 	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
 	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
 	&& sudo hostname --file /etc/hostname
@@ -38,7 +38,7 @@ Setup repositories and dev envs
 	cd ~/work \
 	&& git clone git@github.com:hobinyoon/linux-home.git \
 	&& cd linux-home \
-	&& ./setup-linux.sh \
+	&& ./setup-linux.sh
 
 	exit and login back
 
@@ -51,11 +51,11 @@ on AWS console
 Set server address on client machine
 	On server:
 		vi ~/.bashrc
-			export CASSANDRA_CLIENT_ADDR=54.161.154.100
+			export CASSANDRA_CLIENT_ADDR=54.165.74.184
 
 	On client:
 		vi ~/.bashrc
-			export CASSANDRA_SERVER_ADDR=54.144.216.199
+			export CASSANDRA_SERVER_ADDR=54.162.89.211
 
 	exit and login back to make them take effect
 
@@ -98,9 +98,15 @@ Prepare a local SSD volume and an EBS volume
 
 
 Setup Cassandra directory both on server and client
-	cd /mnt/local-ssd \
-	&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
-	&& ln -s /mnt/local-ssd/apache-cassandra-2.2.3-src ~/work/cassandra
+	On server
+		cd ~/work \
+		&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
+		&& ln -s ~/work/apache-cassandra-2.2.3-src ~/work/cassandra
+
+	On a client with a single volume
+		cd ~/work \
+		&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
+		&& ln -s ~/work/apache-cassandra-2.2.3-src ~/work/cassandra
 
 
 Run Mutants server
@@ -108,17 +114,33 @@ Run Mutants server
 		sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold \
 		&& sudo mkdir -p /mnt/ebs-mag/mtdb-cold \
 		&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
-		&& sudo chown -R ubuntu /mnt/cold-storage \
+		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
+		&& sudo chown -R ubuntu /mnt/cold-storage
 
-		cdcass \
-		&& vi conf/cassandra.yaml
-			cold_storage_dir: /mnt/cold-storage/mtdb-cold
+		sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold \
+		&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
+		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
+		&& sudo chown -R ubuntu /mnt/cold-storage
 
-	Run server
+	Run server after dropping page cache
 		screen
-		cdcass && time ant && bin/cassandra -f | grep --color -E '^|MTDB:'
+		sudo -- sh -c 'echo 1 > /proc/sys/vm/drop_caches' \
+		&& cdcass && time ant && bin/cassandra -f | grep --color -E '^|MTDB:'
 
-		Change data directory to ebs-ssd
+	Watch free memory
+	  watch -n 0.5 "free -mt"
+
+	Watch sstables
+	  watchsstables
+
+	Pressure memory
+		cd ~/work/cassandra/mtdb/tools/pressure-memory \
+		&& mkdir -p .build \
+		&& cd .build \
+		&& cmake .. \
+		&& make -j && ./pressure-memory
+
+	Change data directory to ebs-ssd
 		mkdir -p /mnt/ebs-ssd-gp2/cass-data \
 		&& ln -s /mnt/ebs-ssd-gp2/cass-data ~/work/cassandra/data
 
@@ -146,3 +168,22 @@ which is likely to have bigger log files. Process the experiment.
 
 Copy logs to mts7
 	rsync -av ubuntu@54.144.216.199:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/
+
+
+NFS
+	server
+		sudo vi /etc/exports
+			/nfs-export       54.205.183.58/32(rw,fsid=0,insecure,no_subtree_check,async)
+
+		sudo apt-get install nfs-kernel-server -y \
+		&& sudo mkdir -p /nfs-export \
+		&& sudo chown -R ubuntu /nfs-export \
+		&& sudo service nfs-kernel-server restart
+
+	client
+		sudo vi /etc/fstab
+			54.165.74.184:/   /mnt/nfs-ebs-ssd   nfs    auto  0  0
+
+		sudo apt-get install nfs-common -y \
+		&& sudo mkdir /mnt/nfs-ebs-ssd \
+		&& sudo mount /mnt/nfs-ebs-ssd

@@ -1,2 +1,2 @@
 Dropping memory cache
-  root@mts7:~# echo 1 > /proc/sys/vm/drop_caches
+	sudo -- sh -c 'echo 1 > /proc/sys/vm/drop_caches'

@@ -19,7 +19,8 @@ Install packages, vmtouch, one-time synchronization of clocks both on server and
 	&& sudo apt-get update \
 	&& sudo apt-get install oracle-java8-installer git ctags ant htop tree maven \
 	gnuplot-nox ntp ioping realpath make gcc cmake g++ \
-	libboost-dev libboost-system-dev libboost-timer-dev -y \
+	libboost-dev libboost-system-dev libboost-timer-dev \
+	sysstat -y \
 	&& sudo apt-get autoremove -y vim-tiny \
 	&& mkdir -p ~/work \
 	&& cd ~/work \
@@ -126,8 +127,13 @@ Run Mutants server
 
 	Run server after dropping page cache
 		screen
+
 		sudo -- sh -c 'echo 1 > /proc/sys/vm/drop_caches' \
-		&& cdcass && time ant && bin/cassandra -f | grep --color -E '^|MTDB:'
+		&& cdcass \
+		&& time ant \
+		&& rm -rf ~/work/cassandra/data/* \
+		&& (killall sar > /dev/null 2>&1 || true) && ((sar 1 > ~/work/cassandra/mtdb/logs/sar/sar-`date +'%y%m%d-%H%M%S'`) &) \
+		&& bin/cassandra -f | grep --color -E '^|MTDB:'
 
 	Watch free memory
 	  watch -n 0.5 "free -mt"
@@ -135,7 +141,7 @@ Run Mutants server
 	Watch sstables
 	  watchsstables
 
-	Pressure memory
+	Pressure memory. It can be launched in the background, and monitored by htop.
 		cd ~/work/cassandra/mtdb/tools/pressure-memory \
 		&& mkdir -p .build \
 		&& cd .build \
@@ -167,7 +173,7 @@ which is likely to have bigger log files. Process the experiment.
 
 
 Copy logs to mts7
-	rsync -av ubuntu@54.144.216.199:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/
+	rsync -av ubuntu@54.162.89.211:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/
 
 
 NFS

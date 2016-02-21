@@ -879,7 +879,7 @@ mutants_options:
     # loadgen, but also used for tablet coldness detection.
     simulated_time_years: 8
     #simulation_time_mins: 0.5
-    simulation_time_mins: 20
+    simulation_time_mins: 26.667
 
     tablet_temperature_monitor_interval_simulation_time_ms: 100
 
@@ -908,7 +908,7 @@ mutants_loadgen_options:
         #
         # All of EBS mag, EBS SSD, Inst store SSD can be loaded the same way
         # with one set of numbers.
-        num_writes_per_simulation_time_mins: 50000
+        num_writes_per_simulation_time_mins: 30000
 
         progress_report_interval_ms: 100
 

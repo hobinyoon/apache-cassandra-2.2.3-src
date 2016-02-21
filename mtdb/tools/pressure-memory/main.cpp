@@ -58,7 +58,7 @@ private:
 				}
 				//cout << boost::format("C: Allocated %d MB of memory in %f sec\n")
 				//	% allocated % (timer.elapsed().wall / 1000000000.0);
-				cout << boost::format("a:%d ") % allocated << flush;
+				cout << boost::format(" %d") % allocated << flush;
 			} else if (cmd == 'f') {
 				int to_free_mb;
 				Util::readn(pipe_pc[0], &to_free_mb, sizeof(to_free_mb));
@@ -75,7 +75,7 @@ private:
 				}
 				//cout << boost::format("C: Freed %d MB of memory in %f sec\n")
 				//	% freed % (timer.elapsed().wall / 1000000000.0);
-				cout << boost::format("f:%d ") % freed << flush;
+				cout << boost::format(" -%d") % freed << flush;
 			} else {
 				throw runtime_error(str(boost::format("Unexpected cmd=[%c]") % cmd));
 			}
@@ -225,6 +225,9 @@ public:
 
 
 void PressureMemory(OutputQueue* output_q) {
+	int phase = 1;
+	int pressure_not_changed_cnt = 0;
+
 	while (true) {
 		string line = output_q->GetLatest();
 
@@ -241,42 +244,52 @@ void PressureMemory(OutputQueue* output_q) {
 		int free = atoi(tokens[3].c_str());
 		int cached = atoi(tokens[6].c_str());
 		//cout << boost::format("%d %d\n") % free % cached << flush;
-		cout << "." << flush;
 
 		// 1. Initial pressure. Pressure till there is (128MB) free memory left
 		// 2. Pressure till cached becomes below (16MB), while making sure free is above (64MB)
 		//   2.1 After pressuing, back off to secure (512MB) of free memory.
 		//   Go back to step 2
-		static int phase = 1;
 		if (phase == 1) {
 			int to_pressure = free - Conf::initial_pressure_free_mb;
 			to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
 			_mp.Alloc(to_pressure);
+			pressure_not_changed_cnt = 0;
 			// When this takes too long, some output from "free" need to be skipped.
-			cout << "to_phase_2 " << flush;
+			cout << " to_phase_2" << flush;
 			phase = 2;
 		} else if (phase == 2) {
 			int need_to_return = Conf::pressure_free_lower_bound_mb - free;
 			need_to_return = (need_to_return / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
 			if (need_to_return > 0) {
 				_mp.Free(need_to_return);
+				pressure_not_changed_cnt = 0;
 			} else {
 				int to_pressure = cached - Conf::cached_memory_target_mb;
 				if (to_pressure < 0) {
 					// Back off
 					int free_back_off = ((Conf::free_back_off_mb - free) / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-					if (free_back_off > 0)
+					if (free_back_off > 0) {
 						_mp.Free(free_back_off);
+						pressure_not_changed_cnt = 0;
+					}
 				} else {
 					int room_to_pressure = free - Conf::pressure_free_lower_bound_mb;
 					room_to_pressure = (room_to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
 					to_pressure = std::min(to_pressure, room_to_pressure);
 					to_pressure = (to_pressure / Conf::mem_alloc_chunk_mb) * Conf::mem_alloc_chunk_mb;
-					if (to_pressure > 0)
+					if (to_pressure > 0) {
 						_mp.Alloc(to_pressure);
+						pressure_not_changed_cnt = 0;
+					}
 				}
 			}
 		}
+
+		pressure_not_changed_cnt ++;
+		if (pressure_not_changed_cnt == 100)
+			cout << " ." << flush;
+		else if (pressure_not_changed_cnt % 100 == 0)
+			cout << "." << flush;
 	}
 }
 
@@ -293,7 +306,7 @@ int main() {
 	// runtime and boost library.
 	//
 	// Forking once, by making "free" continuously report.
-	const char* cmd = "free -mt -s 0.2";
+	const char* cmd = "free -mt -s 0.01";
 	FILE* pipe = popen(cmd, "r");
 	if (pipe == NULL) {
 		if (errno == ENOMEM) {

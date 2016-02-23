@@ -908,7 +908,7 @@ mutants_loadgen_options:
         #
         # All of EBS mag, EBS SSD, Inst store SSD can be loaded the same way
         # with one set of numbers.
-        num_writes_per_simulation_time_mins: 30000
+        num_writes_per_simulation_time_mins: 240000
 
         progress_report_interval_ms: 100
 
@@ -936,7 +936,7 @@ mutants_loadgen_options:
         read_time_dist: "Custom: facebook-num-reads-by-age"
 
         # Object size in bytes. E.g., a tweet is about 1KB big.
-        obj_size: 8000
+        obj_size: 1000
 
     db:
         # Request IO to the database server

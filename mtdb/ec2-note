@@ -4,9 +4,9 @@ Set hostname
 	Dot in the hostname doesn't work, i.e., hostname0=ec2-m3.xlarge.s0
 	Excute both for export ec2-s0-m3-xlarge ec2-c0-m3-xlarge
 
-	export hostname0=ec2-s-i2.xlarge \
+	export hostname0=ec2-s0-c3.2xlarge \
 
-	export hostname0=ec2-s-c3.2xlarge \
+	export hostname0=ec2-c0-m4.large \
 	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
 	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
 	&& sudo hostname --file /etc/hostname
@@ -14,12 +14,16 @@ Set hostname
 	exit and login back
 
 
-Install packages, vmtouch,
+Install packages, vmtouch
 , one-time synchronization of clocks both on server and client
 , setup repositories and dev envs
 
 	(will be prompted for an Oracle binary code license)
 	(will be prompted for if you trust the server)
+
+	(can be "rsync"ed faster from an existing node)
+	rsync -av ubuntu@54.145.244.77:/var/cache/apt/archives ~/ \
+	&& sudo cp ~/archives/* /var/cache/apt/archives/
 
 	sudo add-apt-repository -y ppa:webupd8team/java \
 	&& sudo apt-get update \
@@ -62,6 +66,28 @@ Set server address on client machine
 	exit and login back to make them take effect
 
 
+Setup Cassandra directory both on server and client. It goes to the root
+volume. It's okay. Can be done in the background to save time.
+
+	On server
+		screen
+
+		cd ~/work \
+		&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
+		&& ln -s ~/work/apache-cassandra-2.2.3-src ~/work/cassandra \
+		&& cdcass \
+		&& time ant
+
+	On client
+		screen
+
+		cd ~/work \
+		&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
+		&& ln -s ~/work/apache-cassandra-2.2.3-src ~/work/cassandra \
+		&& cd ~/work/cassandra/mtdb/loadgen \
+		&& ./loadgen
+
+
 Prepare a local SSD volume and an EBS volume
 	lsblk
 		NAME    MAJ:MIN RM   SIZE RO TYPE MOUNTPOINT
@@ -71,24 +97,13 @@ Prepare a local SSD volume and an EBS volume
 		xvdc    202:32   0  15.3G  0 disk
 		xvdd    202:48   0     8G  0 disk
 
-	sudo mkfs.ext4 -m 0 /dev/xvdc
+	sudo mkfs.ext4 -m 0 /dev/xvdf
 	(xvdb is already formatted)
 
 	sudo vi /etc/fstab
 		/dev/xvdb /mnt/local-ssd  auto  defaults,nobootwait,comment=cloudconfig 0 2
-		/dev/xvdd /mnt/ebs-mag  auto  defaults,nobootwait,comment=cloudconfig 0 2
+		/dev/xvdf /mnt/ebs-mag  auto  defaults,nobootwait,comment=cloudconfig 0 2
 		(EBS-SSD-GP2 is already mounted at /)
-
-	On the server machine:
-		sudo umount /mnt \
-		&& sudo mkdir -p /mnt/local-ssd \
-		&& sudo mkdir -p /mnt/ebs-mag \
-		&& sudo mount /mnt/local-ssd \
-		&& sudo mount /mnt/ebs-mag \
-		&& sudo chown -R ubuntu /mnt/local-ssd \
-		&& sudo chown -R ubuntu /mnt/ebs-mag \
-		&& mkdir ~/cass-data-vol \
-		&& sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2
 
 	On the machine with local-ssd and ebs-ssd-gp2:
 		sudo umount /mnt \
@@ -100,11 +115,12 @@ Prepare a local SSD volume and an EBS volume
 		&& sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2 \
 		&& mkdir /mnt/ebs-ssd-gp2/cass-data
 
-
-Setup Cassandra directory both on server and client. It goes to the root volume. It's okay.
-	cd ~/work \
-	&& git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git \
-	&& ln -s ~/work/apache-cassandra-2.2.3-src ~/work/cassandra
+	Add EBS mag
+		sudo mkdir -p /mnt/ebs-mag \
+		&& sudo mount /mnt/ebs-mag \
+		&& sudo mkdir /mnt/ebs-mag/cass-data \
+		&& sudo chown -R ubuntu /mnt/ebs-mag \
+		&& sudo chown -R ubuntu /mnt/ebs-mag/cass-data
 
 
 Run Mutants server
@@ -114,16 +130,19 @@ Run Mutants server
 		&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
 		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
 		&& sudo chown -R ubuntu /mnt/cold-storage \
-		&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold
+		&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold \
+		&& mkdir -p ~/work/cassandra/mtdb/logs/sar
 
 		On a machine without ebs-mag
 			sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold \
 			&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
 			&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
 			&& sudo chown -R ubuntu /mnt/cold-storage \
-			&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold
+			&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold \
+			&& mkdir -p ~/work/cassandra/mtdb/logs/sar
 
 	Change data directory to ebs-ssd (or to local-ssd)
+		\rm ~/work/cassandra/data \
 		&& ln -s /mnt/ebs-ssd-gp2/cass-data ~/work/cassandra/data
 
 	Run server after dropping page cache
@@ -133,21 +152,23 @@ Run Mutants server
 		&& cdcass \
 		&& time ant \
 		&& rm -rf ~/work/cassandra/data/* \
-		&& (killall sar > /dev/null 2>&1 || true) && ((sar 1 > ~/work/cassandra/mtdb/logs/sar/sar-`date +'%y%m%d-%H%M%S'`) &) \
+		&& (killall sar > /dev/null 2>&1 || true) \
+		&& ((sar 1 > ~/work/cassandra/mtdb/logs/sar/sar-`date +'%y%m%d-%H%M%S'`) &) \
 		&& bin/cassandra -f | grep --color -E '^|MTDB:'
 
 	Watch free memory
 	  watch -n 0.5 "free -mt"
 
-	Watch sstables
-	  watchsstables
-
 	Pressure memory. It can be launched in the background, and monitored by htop.
+	After Cassandra is ready.
+	Watch sstables
+
 		cd ~/work/cassandra/mtdb/tools/pressure-memory \
 		&& mkdir -p .build \
 		&& cd .build \
 		&& cmake .. \
-		&& make -j && ./pressure-memory
+		&& make -j && (./pressure-memory &) \
+		&& watchsstables
 
 
 Run loadgen client, preferrably on a different machine
@@ -162,7 +183,8 @@ Run loadgen client, preferrably on a different machine
 
 Get loadgen client log to server machine. Better do this on the server node,
 which is likely to have bigger log files. Process the experiment.
-	rsync -av $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs \
+	(killall pressure-memory > /dev/null 2>&1 || true) \
+	&& rsync -av $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs \
 	&& cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline \
 	&& (\rm *.pdf || true) \
 	&& ./plot-cost-latency-tablet-timelines.py \
@@ -170,7 +192,8 @@ which is likely to have bigger log files. Process the experiment.
 
 
 Copy logs to mts7
-	rsync -av ubuntu@54.162.89.211:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/
+	s0
+		rsync -av ubuntu@54.205.51.252:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/
 
 
 NFS

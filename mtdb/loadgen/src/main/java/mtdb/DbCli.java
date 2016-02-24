@@ -120,7 +120,10 @@ public class DbCli
 					}
 				}
 			} catch (Exception e) {
+				// Better stop the process all together here.
+				//   com.datastax.driver.core.exceptions.NoHostAvailableException is an example.
 				System.out.printf("Exception: %s\n%s\n", e, Util.getStackTrace(e));
+				System.exit(1);
 			}
 		}
 	}

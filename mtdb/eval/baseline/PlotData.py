@@ -159,6 +159,10 @@ def _LoadData():
 		with open(fn) as fo:
 			row_raw_lines = []
 			for line in fo.readlines():
+				if len(line) == 0:
+					continue
+				if line[0] == "#":
+					continue
 				line = line.strip()
 				if line.endswith("ms\""):
 					#Cons.P(line)

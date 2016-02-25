@@ -11,6 +11,7 @@ import Conf
 
 def Gen():
 	_LoadData()
+	_SetSaturatedBorder()
 	_GenPlotData()
 
 
@@ -116,6 +117,7 @@ class ExpItem:
 	def __init__(self, raw_lines):
 		#Cons.P(raw_lines)
 		self.raw_lines = raw_lines
+		self.saturated = 0
 		self._ParseLines()
 
 	def _ParseLines(self):
@@ -136,6 +138,8 @@ class ExpItem:
 				if len(t1) != 2:
 					raise RuntimeError("Unexpected format [%s]" % t[3])
 				self.writes = int(t1[1])
+			elif "# saturated" in line:
+				self.saturated = 2
 			elif "# of reads : " in line:
 				t = line.split("# of reads : ")
 				if len(t) != 2:
@@ -188,8 +192,21 @@ def _LoadData():
 					row_raw_lines = []
 				else:
 					row_raw_lines.append(line)
-		#for s, rows in _rows_by_storage.iteritems():
-		#	Cons.P("%s %s" % (s, rows))
+		#for st, rows in _rows_by_storage.iteritems():
+		#	Cons.P("%s %s" % (st, rows))
+
+
+def _SetSaturatedBorder():
+	for st, rows in _rows_by_storage.iteritems():
+		rows.sort(key=operator.attrgetter("lat_w.avg"))
+		r_prev = None
+		for r in rows:
+			if r.saturated == 2:
+				if r_prev == None:
+					raise RuntimeError("Unexpected row [%s]" % r)
+				r_prev.saturated = 1
+				break
+			r_prev = r
 
 
 def _GenPlotData():
@@ -198,10 +215,12 @@ def _GenPlotData():
 		_fn_plot_data = "data/baseline-throughput-latency-%s" % Conf.Get("exp_datetime")
 		with open(_fn_plot_data, "w") as fo:
 			fmt = "%13s %7d %8d %7d %8.2f" \
-					" %6.2f %4d %4d %6.2f %4d %4d"
+					" %6.2f %4d %4d %6.2f %4d %4d" \
+					" %1d"
 			fo.write("%s\n" % Util.BuildHeader(fmt, \
 					"storage_type num_writes num_reads exe_time_ms throughput_ops_per_sec" \
 					" lat_w_avg_ms lat_w_50_ms lat_w_99_ms lat_r_avg_ms lat_r_50_ms lat_r_99_ms" \
+					" server_saturated" \
 					))
 			# Order by storage type, writes
 			for s, rows in _rows_by_storage.iteritems():
@@ -211,6 +230,7 @@ def _GenPlotData():
 						, float(r.writes + r.reads) * 1000.0 / r.exe_time
 						, r.lat_w.avg, r.lat_w._50, r.lat_w._99
 						, r.lat_r.avg, r.lat_r._50, r.lat_r._99
+						, r.saturated
 						))
 				fo.write("\n")
 		Cons.P("Created file %s %d" % (_fn_plot_data, os.path.getsize(_fn_plot_data)))

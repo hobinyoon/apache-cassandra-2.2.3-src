@@ -52,9 +52,12 @@ set label "EBS SSD"      at (EBS_SSD_LABEL_X/1000)  , EBS_SSD_LABEL_Y   center o
 set label "Local SSD"    at (LOCAL_SSD_LABEL_X/1000), LOCAL_SSD_LABEL_Y center offset 0,0.5 tc rgb "red"     font ",8"
 
 plot \
-FN_IN u ($5/1000):(strcol(1) eq "EBS Mag"     ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 7 pointsize 0.2 lc rgb "blue"    not, \
-FN_IN u ($5/1000):(strcol(1) eq "EBS SSD GP2" ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 7 pointsize 0.2 lc rgb "#a52a2a" not, \
-FN_IN u ($5/1000):(strcol(1) eq "Local SSD"   ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 7 pointsize 0.2 lc rgb "red"     not
+FN_IN u ($5/1000):((strcol(1) eq "EBS Mag"    ) && ($12 >= 1) ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 6 pointsize 0.2 lt 0 lc rgb "blue"    not, \
+FN_IN u ($5/1000):((strcol(1) eq "EBS Mag"    ) && ($12 <= 1) ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 7 pointsize 0.2      lc rgb "blue"    not, \
+FN_IN u ($5/1000):((strcol(1) eq "EBS SSD GP2") && ($12 >= 1) ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 6 pointsize 0.2 lt 0 lc rgb "#a52a2a" not, \
+FN_IN u ($5/1000):((strcol(1) eq "EBS SSD GP2") && ($12 <= 1) ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 7 pointsize 0.2      lc rgb "#a52a2a" not, \
+FN_IN u ($5/1000):((strcol(1) eq "Local SSD"  ) && ($12 >= 1) ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 6 pointsize 0.2 lt 0 lc rgb "red"     not, \
+FN_IN u ($5/1000):((strcol(1) eq "Local SSD"  ) && ($12 <= 1) ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 7 pointsize 0.2      lc rgb "red"     not
 
 # Looks too complicated
 # (x, y, ylow, yhigh)

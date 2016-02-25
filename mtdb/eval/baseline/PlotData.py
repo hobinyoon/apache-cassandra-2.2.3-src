@@ -163,7 +163,8 @@ def _GenPlotData():
 	with Cons.MeasureTime("Generating plot data ..."):
 		_fn_plot_data = "data/baseline-throughput-latency-%s" % Conf.Get("exp_datetime")
 		with open(_fn_plot_data, "w") as fo:
-			fmt = "%13s %7d %8d %7d %7.2f %6.2f %4d %4d %6.2f %4d %4d"
+			fmt = "%13s %7d %8d %7d %8.2f" \
+					" %6.2f %4d %4d %6.2f %4d %4d"
 			fo.write("%s\n" % Util.BuildHeader(fmt, \
 					"storage_type num_writes num_reads exe_time_ms throughput_ops_per_sec" \
 					" lat_w_avg_ms lat_w_50_ms lat_w_99_ms lat_r_avg_ms lat_r_50_ms lat_r_99_ms" \

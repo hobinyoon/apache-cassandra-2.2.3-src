@@ -2,7 +2,8 @@ import datetime
 
 
 # $ / GB / Month
-INST_STORE=0.5103
+#   Cost calculation in a Excel file
+INST_STORE=0.527583
 
 EBS_SSD   =0.1
 

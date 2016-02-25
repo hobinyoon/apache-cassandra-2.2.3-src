@@ -31,7 +31,7 @@ COL_IDX_LATENCY=COL_IDX_LATENCY+0
 set terminal pdfcairo enhanced size 2in, 1.5in
 set output FN_OUT
 
-set tmargin at screen 0.980
+set tmargin at screen 0.96
 set bmargin at screen 0.240
 set lmargin at screen 0.220
 set rmargin at screen 0.970

@@ -1,4 +1,4 @@
-# Storage    cost($/GB/Month)
-"EBS\nMag"             0.05
-"EBS\nSSD"             0.1
-"Local\nSSD"           0.5103
+# Storage    cost($/1600GB/Month)
+"EBS\nMag"             80
+"EBS\nSSD"             160
+"Local\nSSD"           844.1333333

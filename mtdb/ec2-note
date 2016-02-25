@@ -4,9 +4,9 @@ Set hostname
 	Dot in the hostname doesn't work, i.e., hostname0=ec2-m3.xlarge.s0
 	Excute both for export ec2-s0-m3-xlarge ec2-c0-m3-xlarge
 
-	export hostname0=ec2-s0-c3.2xlarge \
+	export hostname0=ec2-s1-c3.2xlarge-25 \
 
-	export hostname0=ec2-c0-m4.large \
+	export hostname0=ec2-c2-m4.large-25 \
 	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
 	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
 	&& sudo hostname --file /etc/hostname
@@ -22,7 +22,7 @@ Install packages, vmtouch
 	(will be prompted for if you trust the server)
 
 	(can be "rsync"ed faster from an existing node)
-	rsync -av ubuntu@54.145.244.77:/var/cache/apt/archives ~/ \
+	(rsync -av ubuntu@54.145.133.12:/var/cache/apt/archives ~/ || true) \
 	&& sudo cp ~/archives/* /var/cache/apt/archives/
 
 	sudo add-apt-repository -y ppa:webupd8team/java \
@@ -56,12 +56,16 @@ on AWS console
 
 Set server address on client machine
 	On server:
-		vi ~/.bashrc
-			export CASSANDRA_CLIENT_ADDR=54.152.9.237
+		echo 'export CASSANDRA_CLIENT_ADDR=54.152.9.182' >> ~/.bashrc
+		echo 'export CASSANDRA_CLIENT_ADDR=52.90.32.200' >> ~/.bashrc
+		echo 'export CASSANDRA_CLIENT_ADDR=54.172.160.114' >> ~/.bashrc
+		echo 'export CASSANDRA_CLIENT_ADDR=54.152.218.14' >> ~/.bashrc
 
 	On client:
-		vi ~/.bashrc
-			export CASSANDRA_SERVER_ADDR=54.197.84.25
+		echo 'export CASSANDRA_SERVER_ADDR=54.145.133.12' >> ~/.bashrc
+		echo 'export CASSANDRA_SERVER_ADDR=54.166.92.110' >> ~/.bashrc
+		echo 'export CASSANDRA_SERVER_ADDR=54.197.124.158' >> ~/.bashrc
+		echo 'export CASSANDRA_SERVER_ADDR=54.167.170.49' >> ~/.bashrc
 
 	exit and login back to make them take effect
 
@@ -126,24 +130,15 @@ Prepare a local SSD volume and an EBS volume
 Run Mutants server
 	Setup cold storage
 		sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold \
-		&& sudo mkdir -p /mnt/ebs-mag/mtdb-cold \
+		&& (sudo mkdir -p /mnt/ebs-mag/mtdb-cold || true) \
 		&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
 		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
 		&& sudo chown -R ubuntu /mnt/cold-storage \
 		&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold \
 		&& mkdir -p ~/work/cassandra/mtdb/logs/sar
 
-		On a machine without ebs-mag
-			sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold \
-			&& sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage \
-			&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
-			&& sudo chown -R ubuntu /mnt/cold-storage \
-			&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold \
-			&& mkdir -p ~/work/cassandra/mtdb/logs/sar
-
-	Change data directory to ebs-ssd (or to local-ssd)
-		\rm ~/work/cassandra/data \
-		&& ln -s /mnt/ebs-ssd-gp2/cass-data ~/work/cassandra/data
+	Setup data directory
+		ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data
 
 	Run server after dropping page cache
 		screen
@@ -170,6 +165,9 @@ Run Mutants server
 		&& make -j && (./pressure-memory &) \
 		&& watchsstables
 
+	Save screen layout
+		Ctrl-a :layout save default
+
 
 Run loadgen client, preferrably on a different machine
 	It read the env var CASSANDRA_SERVER_ADDR.
@@ -183,11 +181,13 @@ Run loadgen client, preferrably on a different machine
 
 Get loadgen client log to server machine. Better do this on the server node,
 which is likely to have bigger log files. Process the experiment.
+
 	(killall pressure-memory > /dev/null 2>&1 || true) \
 	&& rsync -av $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs \
 	&& cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline \
 	&& (\rm *.pdf || true) \
 	&& ./plot-cost-latency-tablet-timelines.py \
+	&& du -hs ~/work/cassandra/data/ \
 	&& scp -P 20022 *.pdf hobin@localhost:
 
 

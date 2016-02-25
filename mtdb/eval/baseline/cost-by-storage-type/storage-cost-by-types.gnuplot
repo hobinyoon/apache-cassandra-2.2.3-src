@@ -24,7 +24,7 @@ set ylabel "Cost ($/GB/Month)" offset 1.8,0
 
 set border (1 + 2) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "black"
-set ytics nomirror scale 0.5,0 tc rgb "#808080"
+set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,0.2
 set tics front
 
 set yrange [0:]
@@ -35,6 +35,7 @@ set linetype 1 lc rgb "blue"
 set linetype 2 lc rgb "#a52a2a"
 set linetype 3 lc rgb "red"
 
-BOX_WIDTH=0.45
+BOX_WIDTH=0.4
 plot \
-FN_IN u 0:2:(BOX_WIDTH):($0+1):xtic(1) w boxes lc variable not
+FN_IN u 0:2:(BOX_WIDTH):($0+1):xtic(1) w boxes lc variable not, \
+FN_IN u 0:2:2:($0+1) w labels offset 0,0.5 tc variable not

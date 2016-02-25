@@ -14,11 +14,27 @@ def Gen():
 	_GenPlotData()
 
 
+def Throughput(storage_type, key_max_value):
+	rows = _rows_by_storage[storage_type]
+	rows.sort(key=operator.attrgetter(key_max_value))
+	r = rows[-1]
+	return float(r.writes + r.reads) * 1000.0 / r.exe_time
+
+
+def Latency(storage_type, key_max_value, attr_name):
+	rows = _rows_by_storage[storage_type]
+	rows.sort(key=operator.attrgetter(key_max_value))
+	o = rows[-1]
+	for a in attr_name.split("."):
+		o = getattr(o, a)
+	return o
+
+
 _rows_by_storage = {}
 _fn_plot_data = None
 
 
-class Latency:
+class _Latency:
 	def __init__(self, line):
 		self._Parse(line)
 
@@ -114,11 +130,11 @@ class ExpItem:
 			elif "# Write latency:" in line:
 				i += 1
 				line = self.raw_lines[i]
-				self.lat_w = Latency(line)
+				self.lat_w = _Latency(line)
 			elif "# Read latency:" in line:
 				i += 1
 				line = self.raw_lines[i]
-				self.lat_r = Latency(line)
+				self.lat_r = _Latency(line)
 			elif i == len(self.raw_lines) - 1:
 				t = line.split()
 				if (len(t) != 2) or (t[1] != "ms\""):

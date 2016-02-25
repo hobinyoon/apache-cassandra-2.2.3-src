@@ -1,0 +1,4 @@
+# Storage    cost($/GB/Month)
+"EBS\nMag"             0.05
+"EBS\nSSD"             0.1
+"Local\nSSD"           0.5103

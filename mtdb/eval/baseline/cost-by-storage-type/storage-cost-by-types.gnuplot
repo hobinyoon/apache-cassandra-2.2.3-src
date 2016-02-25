@@ -14,8 +14,8 @@ FN_OUT = system("echo $FN_OUT")
 set terminal pdfcairo enhanced size 2in, 1.5in
 set output FN_OUT
 
-set tmargin at screen 0.965
-set bmargin at screen 0.225
+set tmargin at screen 0.995
+set bmargin at screen 0.205
 set lmargin at screen 0.225
 set rmargin at screen 0.945
 

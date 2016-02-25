@@ -9,6 +9,7 @@ EBS_SSD_LABEL_X = system("echo $EBS_SSD_LABEL_X")
 EBS_SSD_LABEL_Y = system("echo $EBS_SSD_LABEL_Y")
 LOCAL_SSD_LABEL_X = system("echo $LOCAL_SSD_LABEL_X")
 LOCAL_SSD_LABEL_Y = system("echo $LOCAL_SSD_LABEL_Y")
+Y_MAX = system("echo $Y_MAX")
 COL_IDX_LATENCY = system("echo $COL_IDX_LATENCY")
 
 set print "-"
@@ -30,20 +31,21 @@ COL_IDX_LATENCY=COL_IDX_LATENCY+0
 set terminal pdfcairo enhanced size 2in, 1.5in
 set output FN_OUT
 
-set tmargin at screen 0.990
+set tmargin at screen 0.980
 set bmargin at screen 0.240
-set lmargin at screen 0.197
+set lmargin at screen 0.220
 set rmargin at screen 0.970
 
 set xlabel "Throughput (K OP/sec)" offset 0,0.3
-set ylabel LABEL_Y . " latency (ms)" offset 1,-0.3
+set ylabel LABEL_Y . " latency (ms)" offset 1.5,-0.3
 
 set border (1 + 2) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,2
-set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,20
+set ytics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,20
 
 set xrange [0:11]
-set yrange [0:65]
+y0=Y_MAX*1.08
+set yrange [0:y0]
 
 set label "EBS Magnetic" at (EBS_MAG_LABEL_X/1000)  , EBS_MAG_LABEL_Y   center offset 0,0.5 tc rgb "blue"    font ",8"
 set label "EBS SSD"      at (EBS_SSD_LABEL_X/1000)  , EBS_SSD_LABEL_Y   center offset 0,0.5 tc rgb "#a52a2a" font ",8"

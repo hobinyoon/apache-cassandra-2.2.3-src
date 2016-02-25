@@ -21,13 +21,27 @@ def Throughput(storage_type, key_max_value):
 	return float(r.writes + r.reads) * 1000.0 / r.exe_time
 
 
-def Latency(storage_type, key_max_value, attr_name):
+def Latency(storage_type, attr_name):
 	rows = _rows_by_storage[storage_type]
-	rows.sort(key=operator.attrgetter(key_max_value))
+	rows.sort(key=operator.attrgetter(attr_name))
 	o = rows[-1]
 	for a in attr_name.split("."):
 		o = getattr(o, a)
 	return o
+
+
+def MaxLatency(attr_name):
+	max_latency = 0
+
+	for kmv in ["lat_r." + attr_name, "lat_w." + attr_name]:
+		for st, rows in _rows_by_storage.iteritems():
+			rows.sort(key=operator.attrgetter(kmv))
+			o = rows[-1]
+			for a in kmv.split("."):
+				o = getattr(o, a)
+			max_latency = max(max_latency, o)
+
+	return max_latency
 
 
 _rows_by_storage = {}

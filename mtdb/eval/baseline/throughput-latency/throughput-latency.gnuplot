@@ -44,12 +44,12 @@ set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,2
 set ytics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,20
 
 set xrange [0:11]
-y0=Y_MAX*1.08
+y0=Y_MAX*1.13
 set yrange [0:y0]
 
-set label "EBS Magnetic" at (EBS_MAG_LABEL_X/1000)  , EBS_MAG_LABEL_Y   center offset 0,0.5 tc rgb "blue"    font ",8"
-set label "EBS SSD"      at (EBS_SSD_LABEL_X/1000)  , EBS_SSD_LABEL_Y   center offset 0,0.5 tc rgb "#a52a2a" font ",8"
-set label "Local SSD"    at (LOCAL_SSD_LABEL_X/1000), LOCAL_SSD_LABEL_Y center offset 0,0.5 tc rgb "red"     font ",8"
+set label "EBS\nMagnetic" at (EBS_MAG_LABEL_X/1000)  , EBS_MAG_LABEL_Y   center offset 0,1.2 tc rgb "blue"    font ",8"
+set label "EBS\nSSD"      at (EBS_SSD_LABEL_X/1000)  , EBS_SSD_LABEL_Y   center offset 0,1.2 tc rgb "#a52a2a" font ",8"
+set label "Local\nSSD"    at (LOCAL_SSD_LABEL_X/1000), LOCAL_SSD_LABEL_Y center offset 0,1.2 tc rgb "red"     font ",8"
 
 plot \
 FN_IN u ($5/1000):((strcol(1) eq "EBS Mag"    ) && ($12 >= 1) ? column(COL_IDX_LATENCY) : 1/0) with linespoints pt 6 pointsize 0.2 lt 0 lc rgb "blue"    not, \

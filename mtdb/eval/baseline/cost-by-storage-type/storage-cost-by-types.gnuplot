@@ -17,7 +17,7 @@ set output FN_OUT
 set tmargin at screen 0.995
 set bmargin at screen 0.205
 set lmargin at screen 0.192
-set rmargin at screen 0.960
+set rmargin at screen 0.945
 
 #set xlabel "SStable gen ID" #offset 0,0.3
 set ylabel "Cost ($/Month)" offset 1.2,0
@@ -58,12 +58,10 @@ set arrow from x1,COST_OTHER to x2,COST_OTHER nohead front lc rgb "#808080"
 set arrow from x1,        y0 to x2,        y0 nohead front lc rgb "#808080"
 
 x3=x0+0.1
-y1 = COST_OTHER / 2
-set label "Others"  at x3, y1
+y1 = COST_OTHER / 2 + 60
+set label "CPU +\nMemory"  at x3, y1
 y2 = COST_OTHER + (COST_LOCAL_SSD / 2)
 set label "Storage" at x3, y2
-
-
 
 set label "EBS\nMag"   at 0, 0 center offset 0,-0.8 tc rgb "blue"
 set label "EBS\nSSD"   at 1, 0 center offset 0,-0.8 tc rgb "#a52a2a"

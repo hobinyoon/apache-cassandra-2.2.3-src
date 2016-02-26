@@ -47,8 +47,11 @@ print (sprintf("Y_MAX: %f", Y_MAX))
 print (sprintf("Y2_MAX: %f", Y2_MAX))
 print (sprintf("yTicsStep(Y_MAX, 2)=%f", yTicsStep(Y_MAX, 2)))
 print (sprintf("yTicsStep(Y2_MAX, 2)=%f", yTicsStep(Y2_MAX, 2)))
-set ytics  nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,yTicsStep(Y_MAX, 2)
-set y2tics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,yTicsStep(Y2_MAX, 2)
+
+# TODO: disabled for "generates increment must be positive"
+#   160226-140338
+set ytics  nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,yTicsStep(Y_MAX, 2)
+set y2tics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,yTicsStep(Y2_MAX, 2)
 set tics front
 
 set xrange [X_MIN:X_MAX]

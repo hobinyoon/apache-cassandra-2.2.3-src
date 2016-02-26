@@ -1,12 +1,59 @@
 Running on EC2 VM
 
 Set hostname
-	Dot in the hostname doesn't work, i.e., hostname0=ec2-m3.xlarge.s0
+	Dot in the hostname doesn't show up in the prompt, e.g.,
+	hostname0=ec2-m3.xlarge.s0, but it is there when you run hostname.
+
 	Excute both for export ec2-s0-m3-xlarge ec2-c0-m3-xlarge
 
-	export hostname0=ec2-s1-c3.2xlarge-25 \
+	TODO: can be set from my machine, using ssh -c or something. when time allows.
 
-	export hostname0=ec2-c2-m4.large-25 \
+	export hostname0=ec2-s0-c3.2xlarge-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-c0-m4.large-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-s1-c3.2xlarge-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-c1-m4.large-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-s2-c3.2xlarge-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-c2-m4.large-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-s3-c3.2xlarge-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-c3-m4.large-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-s4-c3.2xlarge-26 \
+	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+	&& sudo hostname --file /etc/hostname
+
+	export hostname0=ec2-c4-m4.large-26 \
 	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
 	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
 	&& sudo hostname --file /etc/hostname
@@ -21,11 +68,11 @@ Install packages, vmtouch
 	(will be prompted for an Oracle binary code license)
 	(will be prompted for if you trust the server)
 
-	(can be "rsync"ed faster from an existing node)
-	(rsync -av ubuntu@54.145.133.12:/var/cache/apt/archives ~/ || true) \
-	&& sudo cp ~/archives/* /var/cache/apt/archives/
+	(can be "rsync"ed faster from an existing node. The first is from cs-s3)
 
-	sudo add-apt-repository -y ppa:webupd8team/java \
+	(rsync -av ubuntu@23.22.13.183:/var/cache/apt/archives ~/ || true) \
+	&& (sudo cp ~/archives/* /var/cache/apt/archives/ || true) \
+	&& sudo add-apt-repository -y ppa:webupd8team/java \
 	&& sudo apt-get update \
 	&& sudo apt-get install oracle-java8-installer git ctags ant htop tree maven \
 	gnuplot-nox ntp ioping realpath make gcc cmake g++ \
@@ -55,17 +102,21 @@ on AWS console
 
 
 Set server address on client machine
+	TODO: this can be automated from a control machine.
+
 	On server:
-		echo 'export CASSANDRA_CLIENT_ADDR=54.152.9.182' >> ~/.bashrc
-		echo 'export CASSANDRA_CLIENT_ADDR=52.90.32.200' >> ~/.bashrc
-		echo 'export CASSANDRA_CLIENT_ADDR=54.172.160.114' >> ~/.bashrc
-		echo 'export CASSANDRA_CLIENT_ADDR=54.152.218.14' >> ~/.bashrc
+		echo 'export CASSANDRA_CLIENT_ADDR=54.88.197.238' >> ~/.bashrc
+		echo 'export CASSANDRA_CLIENT_ADDR=52.23.248.65'  >> ~/.bashrc
+		echo 'export CASSANDRA_CLIENT_ADDR=52.90.51.177'  >> ~/.bashrc
+		echo 'export CASSANDRA_CLIENT_ADDR=54.164.75.16'  >> ~/.bashrc
+		echo 'export CASSANDRA_CLIENT_ADDR=52.87.229.186' >> ~/.bashrc
 
 	On client:
-		echo 'export CASSANDRA_SERVER_ADDR=54.145.133.12' >> ~/.bashrc
-		echo 'export CASSANDRA_SERVER_ADDR=54.166.92.110' >> ~/.bashrc
-		echo 'export CASSANDRA_SERVER_ADDR=54.197.124.158' >> ~/.bashrc
-		echo 'export CASSANDRA_SERVER_ADDR=54.167.170.49' >> ~/.bashrc
+		echo 'export CASSANDRA_SERVER_ADDR=23.22.13.183'   >> ~/.bashrc
+		echo 'export CASSANDRA_SERVER_ADDR=23.22.38.77'    >> ~/.bashrc
+		echo 'export CASSANDRA_SERVER_ADDR=54.197.159.32'  >> ~/.bashrc
+		echo 'export CASSANDRA_SERVER_ADDR=184.73.58.105'  >> ~/.bashrc
+		echo 'export CASSANDRA_SERVER_ADDR=54.161.196.221' >> ~/.bashrc
 
 	exit and login back to make them take effect
 
@@ -101,7 +152,7 @@ Prepare a local SSD volume and an EBS volume
 		xvdc    202:32   0  15.3G  0 disk
 		xvdd    202:48   0     8G  0 disk
 
-	sudo mkfs.ext4 -m 0 /dev/xvdf
+	sudo mkfs.ext4 -m 0 /dev/xvdd
 	(xvdb is already formatted)
 
 	sudo vi /etc/fstab
@@ -140,6 +191,29 @@ Run Mutants server
 	Setup data directory
 		ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data
 
+	The above 4 steps at once. TODO: better make it as a script that can be run inside the VM.
+		sudo umount /mnt \
+		&& sudo mkdir -p /mnt/local-ssd \
+		&& sudo mount /mnt/local-ssd \
+		&& sudo chown -R ubuntu /mnt/local-ssd \
+		&& mkdir /mnt/local-ssd/cass-data \
+		&& mkdir ~/cass-data-vol \
+		&& sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2 \
+		&& mkdir /mnt/ebs-ssd-gp2/cass-data \
+		&& sudo mkdir -p /mnt/ebs-mag \
+		&& sudo mount /mnt/ebs-mag \
+		&& sudo mkdir /mnt/ebs-mag/cass-data \
+		&& sudo chown -R ubuntu /mnt/ebs-mag \
+		&& sudo chown -R ubuntu /mnt/ebs-mag/cass-data \
+		&& sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold \
+		&& (sudo mkdir -p /mnt/ebs-mag/mtdb-cold || true) \
+		&& sudo ln -s /mnt/ebs-mag /mnt/cold-storage \
+		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
+		&& sudo chown -R ubuntu /mnt/cold-storage \
+		&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold \
+		&& mkdir -p ~/work/cassandra/mtdb/logs/sar \
+		&& ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data
+
 	Run server after dropping page cache
 		screen
 
@@ -166,6 +240,7 @@ Run Mutants server
 		&& watchsstables
 
 	Save screen layout
+		TODO: can this be automated?
 		Ctrl-a :layout save default
 
 
@@ -189,6 +264,10 @@ which is likely to have bigger log files. Process the experiment.
 	&& ./plot-cost-latency-tablet-timelines.py \
 	&& du -hs ~/work/cassandra/data/ \
 	&& scp -P 20022 *.pdf hobin@localhost:
+
+Check Cassandra data size
+	du -hs ~/work/cassandra/data/ \
+	&& du -hs /mnt/cold-storage/mtdb-cold/
 
 
 Copy logs to mts7

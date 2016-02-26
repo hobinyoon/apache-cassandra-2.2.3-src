@@ -1,0 +1,6 @@
+# Storage_type
+# storage_cost($/1600GB/Month)
+#           max_throughput(IO/sec)
+  "EBS\nMag"   80          4135.49          
+  "EBS\nSSD"  160          8036.78
+"Local\nSSD"  844.1333333  9870.73

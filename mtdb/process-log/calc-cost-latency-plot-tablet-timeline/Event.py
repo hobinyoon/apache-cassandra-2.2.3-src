@@ -19,7 +19,7 @@ class Event(object):
 # A tmp table is created
 class SstCreated(Event):
 	# SstCreated bin/../data/data/mtdb1/table1-89dd85a0cbba11e59f551d822de6a4f1/tmp-la-2-big
-	cold_storage_dir = "/mnt/s5-cass-cold-storage/mtdb-cold"
+	cold_storage_dir = "/mnt/cold-storage/mtdb-cold"
 
 	def __init__(self, t):
 		if "tmp-la-" not in t[8]:

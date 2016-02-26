@@ -9,7 +9,9 @@ set xdata time
 set timefmt "%y%m%d-%H%M%S"
 set format x "'%y"
 
-plot FN_IN u 1:($2/1000000) w fsteps, \
+plot \
+FN_IN u 1:($2/1024/1024/1024) w fsteps, \
+FN_IN u 1:($3/1024/1024/1024) w fsteps, \
 FN_IN u 1:($4+$5) w lines axes x1y2
 
 X_MIN=GPVAL_DATA_X_MIN
@@ -23,14 +25,14 @@ Y2_MAX=GPVAL_DATA_Y2_MAX
 set terminal pdfcairo enhanced size 3in, 2in
 set output FN_OUT
 
-#set tmargin at screen 0.975
-#set bmargin at screen 0.152
-#set lmargin at screen 0.185
-#set rmargin at screen 0.940
+set tmargin at screen 0.995
+set bmargin at screen 0.175
+set lmargin at screen 0.105
+set rmargin at screen 0.870
 
 set xlabel "Time" offset 0,0.3
-set ylabel "Storage size (MB)" offset 1.3,0
-set y2label "Storage cost ($)"
+set ylabel "Storage size (GB)" offset 1.3,0
+set y2label "Cumulative storage cost ($)" offset -1.5,0
 
 set border (1 + 2 + 8) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,(365.25*24*3600)
@@ -50,8 +52,8 @@ print (sprintf("yTicsStep(Y2_MAX, 2)=%f", yTicsStep(Y2_MAX, 2)))
 
 # TODO: disabled for "generates increment must be positive"
 #   160226-140338
-set ytics  nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,yTicsStep(Y_MAX, 2)
-set y2tics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,yTicsStep(Y2_MAX, 2)
+set ytics  nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,1
+set y2tics nomirror scale 0.5,0 tc rgb "#808080" offset -1,0 #autofreq 0,yTicsStep(Y2_MAX, 2)
 set tics front
 
 set xrange [X_MIN:X_MAX]
@@ -63,8 +65,8 @@ set key top left
 set pointsize 0.1
 
 plot \
-FN_IN u 1:($2/1000000) w steps lc rgb "red" t "Hot", \
-FN_IN u 1:($3/1000000) w steps lc rgb "blue" t "Cold", \
+FN_IN u 1:($2/1024/1024/1024) w steps lc rgb "red" t "Hot", \
+FN_IN u 1:($3/1024/1024/1024) w steps lc rgb "blue" t "Cold", \
 FN_IN u 1:4 w linespoints axes x1y2 pt 7 lc rgb "red" not, \
 FN_IN u 1:5 w linespoints axes x1y2 pt 7 lc rgb "blue" not, \
 FN_IN u 1:($4+$5) w linespoints axes x1y2 pt 7 lc rgb "black" not

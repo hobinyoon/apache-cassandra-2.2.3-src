@@ -249,6 +249,8 @@ test_256m_seq_write_direct_nfs_hdd() {
 test_256m_seq_write_nfs_hdd
 #test_256m_seq_write_direct_nfs_hdd
 
+# TODO: I will want to do this on SSDs too. I should. It should be what's interesting.
+
 exit 0
 
 # Memory file system. I don't see any iowait time. Good.

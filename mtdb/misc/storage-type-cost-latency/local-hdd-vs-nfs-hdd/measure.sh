@@ -51,12 +51,17 @@ gen_test_files() {
 	time cp $DN_LOCAL_HDD/ioping-test $DN_NFS_HDD/ioping-test
 }
 
-# TODO: more like system load test of DAS and NAS
-DN_OUTPUT=/run/ioping-test
+DN_OUTPUT=/run/storage-perf-test
 
 mk_output_dir() {
 	sudo mkdir $DN_OUTPUT \
 	&& sudo chown hobin $DN_OUTPUT
+}
+
+vmtouch_test_file() {
+	echo "vmtouch test files ..."
+	time vmtouch -t $DN_LOCAL_HDD/ioping-test
+	time vmtouch -t $DN_NFS_HDD/ioping-test
 }
 
 # TODO: wanted to know the system load difference between when using DAS and NAS.
@@ -67,7 +72,7 @@ mk_output_dir() {
 #   sys  0m47.180s
 test_4k_rand_read_cached_local_hdd() {
 	FN_OUT=${DN_OUTPUT}/4k-rand-read-cached-local-hdd-${DATETIME}
-	time ioping -Cq -c 10000000 -i 0 $DN_LOCAL_HDD/ioping-test > $FN_OUT
+	time ioping -Cq -c 10000000 -i 0 $DN_LOCAL_HDD/ioping-test | tee $FN_OUT
 	printf "Created %s %d\n" $FN_OUT `wc -c < $FN_OUT`
 }
 
@@ -77,7 +82,8 @@ test_4k_rand_read_cached_local_hdd() {
 #   sys  0m1.136s
 test_4k_rand_read_direct_local_hdd() {
 	FN_OUT=${DN_OUTPUT}/4k-rand-read-direct-local-hdd-${DATETIME}
-	time ioping -Dq -c 20000 -i 0 $DN_LOCAL_HDD/ioping-test > $FN_OUT
+	echo $FN_OUT
+	time ioping -Dq -c 20000 -i 0 $DN_LOCAL_HDD/ioping-test | tee $FN_OUT
 	printf "Created %s %d\n" $FN_OUT `wc -c < $FN_OUT`
 }
 
@@ -90,7 +96,7 @@ test_4k_rand_read_direct_local_hdd() {
 #   sys  0m50.320s
 test_4k_rand_read_cached_nfs_hdd() {
 	FN_OUT=${DN_OUTPUT}/4k-rand-read-cached-nfs-hdd-${DATETIME}
-	time ioping -Cq -c 10000000 -i 0 $DN_NFS_HDD/ioping-test > $FN_OUT
+	time ioping -Cq -c 10000000 -i 0 $DN_NFS_HDD/ioping-test | tee $FN_OUT
 	printf "Created %s %d\n" $FN_OUT `wc -c < $FN_OUT`
 }
 
@@ -101,21 +107,9 @@ test_4k_rand_read_cached_nfs_hdd() {
 #   sys  0m 0.840s
 test_4k_rand_read_direct_nfs_hdd() {
 	FN_OUT=${DN_OUTPUT}/4k-rand-read-direct-nfs-hdd-${DATETIME}
-	time ioping -Dq -c 20000 -i 0 $DN_NFS_HDD/ioping-test > $FN_OUT
+	time ioping -Dq -c 20000 -i 0 $DN_NFS_HDD/ioping-test | tee $FN_OUT
 	printf "Created %s %d\n" $FN_OUT `wc -c < $FN_OUT`
 }
-
-# TODO: Look for system overhead of iowait
-
-#gen_test_files
-
-#test_4k_rand_read_direct_local_hdd
-#test_4k_rand_read_cached_local_hdd
-#test_4k_rand_read_direct_nfs_hdd
-#test_4k_rand_read_cached_nfs_hdd
-
-# TODO: big sequential writes. It will be capped by the network bandwidth. How
-# about iowait time?
 
 # So, like 34% of kernel time. 66% of iowait time.
 #   real 0m2.169s user 0m0.000s sys 0m0.748s
@@ -241,12 +235,26 @@ test_256m_seq_write_direct_nfs_hdd() {
 	for ((i=0; i<10; i++)); do time dd bs=256M count=1 oflag=direct if=/dev/zero of=$DN_NFS_HDD/dd-test; done
 }
 
-# TODO: What I don't know is if EBS does any caching
+# TODO: Wanted to know the system overhead of iowait
+
+#gen_test_files
+
+#vmtouch_test_file
+
+#test_4k_rand_read_cached_local_hdd
+#test_4k_rand_read_direct_local_hdd
+#test_4k_rand_read_cached_nfs_hdd
+#test_4k_rand_read_direct_nfs_hdd
+
+# TODO: big sequential writes. It will be capped by the network bandwidth. How
+# about iowait time?
+
+# TODO: What I don't know is if EBS does any caching or not.
 # TODO: Look for NAS caching.
 
 #test_256m_seq_write_local_hdd
 #test_256m_seq_write_direct_local_hdd
-test_256m_seq_write_nfs_hdd
+#test_256m_seq_write_nfs_hdd
 #test_256m_seq_write_direct_nfs_hdd
 
 # TODO: I will want to do this on SSDs too. I should. It should be what's interesting.

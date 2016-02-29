@@ -132,6 +132,7 @@ def BuildHeader(fmt, desc):
 	return header
 
 
+# http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
 def MkDirs(path):
 	try:
 		os.makedirs(path)

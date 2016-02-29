@@ -24,7 +24,7 @@ class Mon:
 
 	def __enter__(self):
 		# Start monitoring CPU, Disk, Network
-		cmd = "collectl -i %d -sCDN -oTm 2>/dev/null" % Mon.mon_interval
+		cmd = "collectl -i %f -sCDN -oTm 2>/dev/null" % Mon.mon_interval
 		self.subp = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
 		self.t = threading.Thread(target=self._CollectMonitorOutput)
@@ -50,8 +50,8 @@ class Mon:
 
 	def __exit__(self, type, value, traceback):
 		self._Stop()
-		# TODO: first write to file and see what's happening. I'll have a better idea then
 		self._WriteToFile()
+		GenReport(self.stdout)
 
 	def _WriteToFile(self):
 		fn = "data/%s-%s-collectl" % (Conf.ExpDatetime(), self.test_name)
@@ -88,7 +88,13 @@ class _ResUsage:
 			self.read_kb = int(read_kb)
 			self.read_io = int(read_io)
 			self.write_kb = int(write_kb)
-			self.write_io = int(write_io)
+
+			# For example, 10K
+			if write_io.endswith("K"):
+				self.write_io = int(write_io[:len(write_io)-1]) * 1000
+			else:
+				self.write_io = int(write_io)
+
 			self.rw_size = int(rw_size)
 			self.q_len = int(q_len)
 			self.wait = int(wait)
@@ -252,7 +258,7 @@ def _ResUsageReportAggr():
 		))
 
 
-def ResUsageReport():
+def _GenReport():
 	global _time_res_usage
 
 	#for time, ru in sorted(_time_res_usage.iteritems()):
@@ -280,80 +286,78 @@ def ResUsageReport():
 	sys.exit(0)
 
 
-def _TestParse():
+def GenReport(lines):
 	# TODO: what I need is probably aggregate stat, like avg, _99th percentile, min, max, not by time
-
-	# TODO: I will want aggregate CPU stat, not individual one.
 
 	# I don't see as much wait as in htop. Hmm. Not sure.
 
-	fn = "data/160229-145249-4k-rand-read-Local-SSD-collectl"
-	with open(fn) as fo:
-		phase = None
-		for line in fo.readlines():
-			if line.startswith("# SINGLE CPU[HYPER] STATISTICS"):
-				phase = "CPU"
+	phase = None
+	for line in lines:
+		if line.startswith("# SINGLE CPU[HYPER] STATISTICS"):
+			phase = "CPU"
+			continue
+		elif line.startswith("# DISK STATISTICS"):
+			phase = "DISK"
+			continue
+		elif line.startswith("# NETWORK STATISTICS"):
+			phase = "NET"
+			continue
+
+		if phase == "CPU":
+			# # SINGLE CPU[HYPER] STATISTICS
+			# #Time            Cpu  User Nice  Sys Wait IRQ  Soft Steal Idle
+			# 14:52:49.732       0     0    0    0    0    0    0     0    0
+			# 14:52:49.732       1     0    0    0    0    0    0     0    0
+			if line.startswith("#Time"):
 				continue
-			elif line.startswith("# DISK STATISTICS"):
-				phase = "DISK"
+			t = line.split()
+			if len(t) != 10:
+				# There is a blank line. Ignore.
 				continue
-			elif line.startswith("# NETWORK STATISTICS"):
-				phase = "NET"
+			time = t[0]
+			cpu_id = t[1]
+			user = t[2]
+			sys = t[4]
+			wait = t[5]
+			ResAddCpu(time, cpu_id, user, sys, wait)
+		elif phase == "DISK":
+			## DISK STATISTICS (/sec)
+			##                       <---------reads---------><---------writes---------><--------averages--------> Pct
+			##Time         Name       KBytes Merged  IOs Size  KBytes Merged  IOs Size  RWSize  QLen  Wait SvcTim Util
+			#14:52:49.732 xvda             0      0    0    0       0      0    0    0       0     0     0      0    0
+			#14:52:49.732 xvdb         23996      0 5999    4       0      0    0    0       4     0     0      0    0
+			#14:52:49.732 xvdc             0      0    0    0       0      0    0    0       0     0     0      0    0
+			#           0    1             2      3    4    5       6      7    8    9      10    11    12     13   14
+			if line.startswith("#"):
 				continue
+			t = line.split()
+			if len(t) != 15:
+				continue
+			time = t[0]
+			dev_name = t[1]
+			read_kb = t[2]
+			read_io = t[4]
+			write_kb = t[6]
+			write_io = t[8]
 
-			if phase == "CPU":
-				# # SINGLE CPU[HYPER] STATISTICS
-				# #Time            Cpu  User Nice  Sys Wait IRQ  Soft Steal Idle
-				# 14:52:49.732       0     0    0    0    0    0    0     0    0
-				# 14:52:49.732       1     0    0    0    0    0    0     0    0
-				if line.startswith("#Time"):
-					continue
-				t = line.split()
-				if len(t) != 10:
-					# There is a blank line. Ignore.
-					continue
-				time = t[0]
-				cpu_id = t[1]
-				user = t[2]
-				sys = t[4]
-				wait = t[5]
-				ResAddCpu(time, cpu_id, user, sys, wait)
-			elif phase == "DISK":
-				## DISK STATISTICS (/sec)
-				##                       <---------reads---------><---------writes---------><--------averages--------> Pct
-				##Time         Name       KBytes Merged  IOs Size  KBytes Merged  IOs Size  RWSize  QLen  Wait SvcTim Util
-				#14:52:49.732 xvda             0      0    0    0       0      0    0    0       0     0     0      0    0
-				#14:52:49.732 xvdb         23996      0 5999    4       0      0    0    0       4     0     0      0    0
-				#14:52:49.732 xvdc             0      0    0    0       0      0    0    0       0     0     0      0    0
-				#           0    1             2      3    4    5       6      7    8    9      10    11    12     13   14
-				if line.startswith("#"):
-					continue
-				t = line.split()
-				if len(t) != 15:
-					continue
-				time = t[0]
-				dev_name = t[1]
-				read_kb = t[2]
-				read_io = t[4]
-				write_kb = t[6]
-				write_io = t[8]
+			rw_size = t[10]
+			# TODO: can q_len be a hint?
+			q_len = t[11]
+			wait = t[12]
+			svc_time = t[13]
+			util = t[14]
+			ResAddDisk(time, dev_name, read_kb, read_io, write_kb, write_io, \
+					rw_size, q_len, wait, svc_time, util)
 
-				rw_size = t[10]
-				# TODO: !!!
-				q_len = t[11]
-				wait = t[12]
-				svc_time = t[13]
-				util = t[14]
-				ResAddDisk(time, dev_name, read_kb, read_io, write_kb, write_io, \
-						rw_size, q_len, wait, svc_time, util)
-
-	ResUsageReport()
-
-
-
-
-
+	_GenReport()
 
 #14:52:49.732 xvdd             0      0    0    0       0      0    0    0       0     0     0      0    0
 #
 ## NETWORK STATISTICS (/sec)
+
+
+def _TestParse():
+	fn = "data/160229-170819-4k-rand-read-Local-SSD-collectl"
+	#fn = "data/160229-145249-4k-rand-read-Local-SSD-collectl"
+	with open(fn) as fo:
+		GenReport(fo.readlines())

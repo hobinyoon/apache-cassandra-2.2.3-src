@@ -8,7 +8,13 @@ _ind_len = 0
 _ind = ""
 
 
-def P(o):
+def P(o, ind = 0):
+	global _ind_len, _ind
+	if ind > 0:
+		_ind_len += ind
+		for i in range(ind):
+			_ind += " "
+
 	if _ind_len > 0:
 		#print str(o).split("\n")
 		lines = str(o).split("\n")
@@ -18,6 +24,10 @@ def P(o):
 			print _ind + lines[i]
 	else:
 		print o
+
+	if ind > 0:
+		_ind_len -= ind
+		_ind = _ind[: len(_ind) - ind]
 
 
 class MeasureTime:

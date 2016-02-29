@@ -289,8 +289,6 @@ def _GenReport():
 def GenReport(lines):
 	# TODO: what I need is probably aggregate stat, like avg, _99th percentile, min, max, not by time
 
-	# I don't see as much wait as in htop. Hmm. Not sure.
-
 	phase = None
 	for line in lines:
 		if line.startswith("# SINGLE CPU[HYPER] STATISTICS"):

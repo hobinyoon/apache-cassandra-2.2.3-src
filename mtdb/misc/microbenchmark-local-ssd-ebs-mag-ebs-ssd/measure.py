@@ -4,6 +4,7 @@ import sys
 
 import Conf
 import Plot
+import SysResMon
 import TestStorage
 
 sys.path.insert(0, "../../util/python")
@@ -12,6 +13,10 @@ import Util
 
 
 def main(argv):
+	SysResMon.Test()
+	sys.exit(0)
+
+
 	TestStorage.Test()
 
 	sys.exit(0)

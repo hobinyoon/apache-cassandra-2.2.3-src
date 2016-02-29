@@ -8,16 +8,9 @@ import Cons
 
 dn_output="/run/storage-perf-test"
 
-def TestDir(storage_type):
-	if storage_type == "local-ssd":
-		return "/mnt/local-ssd"
-	elif storage_type == "ebs-ssd":
-		return "/mnt/ebs-ssd-gp2"
-	elif storage_type == "ebs-mag":
-		return "/mnt/ebs-mag"
-	else:
-		raise RuntimeError("storage_type=[%s]" % storage_type)
-
+dn_local_ssd="/mnt/local-ssd"
+dn_ebs_ssd="/mnt/ebs-ssd-gp2"
+dn_ebs_mag="/mnt/ebs-mag"
 
 _exp_datetime = None
 

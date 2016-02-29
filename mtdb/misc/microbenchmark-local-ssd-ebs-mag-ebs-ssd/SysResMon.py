@@ -9,10 +9,15 @@ import Cons
 
 import Conf
 
+
+# Note: Redirecting output to memory file system may have a lower overhead. Not
+# a big deal though.
+
 class Mon:
 	mon_interval = 0.1
 
-	def __init__(self):
+	def __init__(self, test_name):
+		self.test_name = test_name
 		self.stop_requested = False
 		self.stdout = []
 
@@ -48,11 +53,16 @@ class Mon:
 		self._WriteToFile()
 
 	def _WriteToFile(self):
-		fn = "data/%s-sysmon" % Conf.ExpDatetime()
+		fn = "data/%s-%s-collectl" % (Conf.ExpDatetime(), self.test_name)
 		with open(fn, "w") as fo:
 			for line in self.stdout:
 				fo.write(line)
-		Cons.P("Saved system monitor log to %s %d" % (fn, os.path.getsize(fn)))
+		Cons.P("Saved collectl log to %s %d" % (fn, os.path.getsize(fn)))
+
+		# TODO: reduce size. trim logs during first and last mon_interval.
+		# It can be done later
+
+		# TODO: what I need is just avg, _99th percentile, min, max
 
 
 def Test():

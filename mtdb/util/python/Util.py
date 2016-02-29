@@ -2,8 +2,11 @@ import errno
 import os
 import pprint
 import re
+import subprocess
 import sys
 import time
+
+import Cons
 
 
 _ind = 0
@@ -137,3 +140,16 @@ def MkDirs(path):
 			pass
 		else:
 			raise
+
+
+def RunSubp(cmd, env_ = os.environ.copy(), print_=True):
+	if print_:
+		Cons.P(cmd)
+	p = subprocess.Popen(cmd, shell=True, env=env_, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	# communidate() waits for termination
+	stdouterr = p.communicate()[0]
+	rc = p.returncode
+	if rc != 0:
+		raise RuntimeError("Error: cmd=[%s] rc=%d stdouterr=[%s]" % (cmd, rc, stdouterr))
+	if len(stdouterr) > 0:
+		Cons.P(stdouterr)

@@ -1,22 +1,25 @@
 Running on EC2 VM
 
-Set hostname
-	Dot in the hostname doesn't show up in the prompt, e.g.,
-	hostname0=ec2-m3.xlarge.s0, but it is there when you run hostname.
+Launching spot instances
+	(Use web interface for now)
 
-	Use set-hostname.sh
+	aws ec2 request-spot-instances --dry-run --spot-price 1 --type c3.2xlarge --availability-zone-group us-east-1
 
-		export hostname0=ec2-s0-c3.2xlarge-26 \
-		&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-		&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-		&& sudo hostname --file /etc/hostname
+	Set firewall rules on Server. Allow client machine to connect to server
+	machine on AWS console
+		Allow inbound TCP 9042 10.152.33.227/32
 
-		export hostname0=ec2-c0-m4.large-26 \
-		&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-		&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-		&& sudo hostname --file /etc/hostname
+Get hostname lists
+	create-hostname-lists.py
 
-	exit and login back
+
+Set hostname and edit .bashrc
+	Automated set-hostname-edit-bashrc.py
+		On server:
+			echo 'export CASSANDRA_CLIENT_ADDR=54.88.197.238' >> ~/.bashrc
+
+		On client:
+			echo 'export CASSANDRA_SERVER_ADDR=23.22.13.183'   >> ~/.bashrc
 
 
 Install packages, vmtouch
@@ -50,23 +53,6 @@ Install packages, vmtouch
 	&& git clone git@github.com:hobinyoon/linux-home.git \
 	&& cd linux-home \
 	&& ./setup-linux.sh
-
-
-Set firewall rules on Server. Allow client machine to connect to server machine
-on AWS console
-	Allow inbound TCP 9042 10.152.33.227/32
-
-
-Set server address on client machine
-	Automated with edit-bashrc.sh
-
-		On server:
-			echo 'export CASSANDRA_CLIENT_ADDR=54.88.197.238' >> ~/.bashrc
-
-		On client:
-			echo 'export CASSANDRA_SERVER_ADDR=23.22.13.183'   >> ~/.bashrc
-
-	exit and login back to make them take effect
 
 
 Setup Cassandra directory both on server and client. It goes to the root

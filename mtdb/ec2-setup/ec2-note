@@ -4,19 +4,17 @@ Set hostname
 	Dot in the hostname doesn't show up in the prompt, e.g.,
 	hostname0=ec2-m3.xlarge.s0, but it is there when you run hostname.
 
-	Excute both for export ec2-s0-m3-xlarge ec2-c0-m3-xlarge
+	Use set-hostname.sh
 
-	TODO: can be set from my machine, using ssh -c or something. when time allows.
+		export hostname0=ec2-s0-c3.2xlarge-26 \
+		&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+		&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+		&& sudo hostname --file /etc/hostname
 
-	export hostname0=ec2-s0-c3.2xlarge-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
-	export hostname0=ec2-c0-m4.large-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
+		export hostname0=ec2-c0-m4.large-26 \
+		&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
+		&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
+		&& sudo hostname --file /etc/hostname
 
 	exit and login back
 
@@ -29,7 +27,7 @@ Install packages, vmtouch
 	(will be prompted for if you trust the server)
 
 	rsync from an existing machine, when the ubuntu servers are slow.
-		(rsync -av ubuntu@23.22.13.183:/var/cache/apt/archives ~/ || true) \
+		(rsync -av ubuntu@54.204.181.71:/var/cache/apt/archives ~/ || true) \
 		&& (sudo cp ~/archives/* /var/cache/apt/archives/ || true) \
 
 	sudo add-apt-repository -y ppa:webupd8team/java \
@@ -53,8 +51,6 @@ Install packages, vmtouch
 	&& cd linux-home \
 	&& ./setup-linux.sh
 
-	exit and login back
-
 
 Set firewall rules on Server. Allow client machine to connect to server machine
 on AWS console
@@ -62,21 +58,13 @@ on AWS console
 
 
 Set server address on client machine
-	TODO: this can be automated from a control machine.
+	Automated with edit-bashrc.sh
 
-	On server:
-		echo 'export CASSANDRA_CLIENT_ADDR=54.88.197.238' >> ~/.bashrc
-		echo 'export CASSANDRA_CLIENT_ADDR=52.23.248.65'  >> ~/.bashrc
-		echo 'export CASSANDRA_CLIENT_ADDR=52.90.51.177'  >> ~/.bashrc
-		echo 'export CASSANDRA_CLIENT_ADDR=54.164.75.16'  >> ~/.bashrc
-		echo 'export CASSANDRA_CLIENT_ADDR=52.87.229.186' >> ~/.bashrc
+		On server:
+			echo 'export CASSANDRA_CLIENT_ADDR=54.88.197.238' >> ~/.bashrc
 
-	On client:
-		echo 'export CASSANDRA_SERVER_ADDR=23.22.13.183'   >> ~/.bashrc
-		echo 'export CASSANDRA_SERVER_ADDR=23.22.38.77'    >> ~/.bashrc
-		echo 'export CASSANDRA_SERVER_ADDR=54.197.159.32'  >> ~/.bashrc
-		echo 'export CASSANDRA_SERVER_ADDR=184.73.58.105'  >> ~/.bashrc
-		echo 'export CASSANDRA_SERVER_ADDR=54.161.196.221' >> ~/.bashrc
+		On client:
+			echo 'export CASSANDRA_SERVER_ADDR=23.22.13.183'   >> ~/.bashrc
 
 	exit and login back to make them take effect
 

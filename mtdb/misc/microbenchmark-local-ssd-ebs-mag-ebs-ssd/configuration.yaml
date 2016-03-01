@@ -1,0 +1,9 @@
+dn_output: /run/storage-perf-test
+
+dn_local_ssd: /mnt/local-ssd
+dn_ebs_ssd: /mnt/ebs-ssd-gp2
+dn_ebs_mag: /mnt/ebs-mag
+
+4k_rand_read_cnt: 40000
+
+reuse_4k_rand_read_Local_SSD_exp: 160301-000300

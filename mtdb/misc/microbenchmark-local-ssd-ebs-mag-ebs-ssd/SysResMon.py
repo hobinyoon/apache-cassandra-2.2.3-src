@@ -51,7 +51,7 @@ class Mon:
 	def __exit__(self, type, value, traceback):
 		self._Stop()
 		self._WriteToFile()
-		GenReport(self.stdout)
+		_GenConciseReport(self.stdout)
 
 	def _WriteToFile(self):
 		fn = "data/%s-%s-collectl" % (Conf.ExpDatetime(), self.test_name)
@@ -59,6 +59,13 @@ class Mon:
 			for line in self.stdout:
 				fo.write(line)
 		Cons.P("Saved collectl log to %s %d" % (fn, os.path.getsize(fn)))
+
+
+def PrintReport(exp_datetime, test_name):
+	fn = "data/%s-%s-collectl" % (exp_datetime, test_name)
+	#Cons.P("fn=[%s]" % fn)
+	with open(fn) as fo:
+		_GenConciseReport(fo.readlines())
 
 
 def Test():
@@ -170,6 +177,7 @@ def _ResUsageReportByTime():
 			, disk_dev_name)
 		))
 
+	global _time_res_usage
 	for time, ru in sorted(_time_res_usage.iteritems()):
 		Cons.P(fmt % (
 			time
@@ -187,9 +195,10 @@ def _ResUsageReportByTime():
 
 
 def _ResUsageReportAggr():
+	Cons.P("Resource usage stat:")
 	fmt = "%6.2f %6.2f %6.2f %10.2f %9.2f %10.2f %9.2f %10.2f %10.2f %10.2f %10.2f %10.2f"
 	disk_dev_name = "xvdb"
-	Cons.P(Util.BuildHeader(fmt,
+	Cons.P(Util.Indent(Util.BuildHeader(fmt,
 		"cpu_user cpu_sys cpu_wait"
 		" disk_%s_read_kb disk_%s_read_io"
 		" disk_%s_write_kb disk_%s_write_io"
@@ -207,7 +216,7 @@ def _ResUsageReportAggr():
 			, disk_dev_name
 			, disk_dev_name
 			, disk_dev_name)
-		))
+		), 2))
 
 	cpu_user = 0
 	cpu_sys = 0
@@ -222,6 +231,7 @@ def _ResUsageReportAggr():
 	disk_svc_time = 0
 	disk_util     = 0
 
+	global _time_res_usage
 	for time, ru in _time_res_usage.iteritems():
 		cpu_user += ru.CpuAttr("user")
 		cpu_sys  += ru.CpuAttr("sys")
@@ -250,43 +260,15 @@ def _ResUsageReportAggr():
 	disk_svc_time /= len_
 	disk_util     /= len_
 
-	Cons.P(fmt % (
+	Cons.P(Util.Indent(fmt % (
 		cpu_user , cpu_sys , cpu_wait
 		, disk_read_kb , disk_read_io
 		, disk_write_kb , disk_write_io
 		, disk_rw_size , disk_q_len , disk_wait , disk_svc_time , disk_util
-		))
+		), 2))
 
 
-def _GenReport():
-	global _time_res_usage
-
-	#for time, ru in sorted(_time_res_usage.iteritems()):
-	#	Cons.P("%s %s" % (time, ru))
-	#sys.exit(0)
-
-	# Trim the first two and last two, which may not overlap with the experiment
-	tru0 = {}
-	cnt = 0
-	len_tru = len(_time_res_usage)
-	for time, ru in sorted(_time_res_usage.iteritems()):
-		if cnt < 2:
-			pass
-		elif cnt >= len_tru - 2:
-			pass
-		else:
-			tru0[time] = ru
-			pass
-		cnt += 1
-	_time_res_usage = tru0
-
-	# TODO: network report too, eth0 probably
-	#_ResUsageReportByTime()
-	_ResUsageReportAggr()
-	sys.exit(0)
-
-
-def GenReport(lines):
+def _GenConciseReport(lines):
 	# TODO: what I need is probably aggregate stat, like avg, _99th percentile, min, max, not by time
 
 	phase = None
@@ -347,7 +329,26 @@ def GenReport(lines):
 			ResAddDisk(time, dev_name, read_kb, read_io, write_kb, write_io, \
 					rw_size, q_len, wait, svc_time, util)
 
-	_GenReport()
+	# Trim the first two and last two, which may not overlap with the experiment
+	global _time_res_usage
+	tru0 = {}
+	cnt = 0
+	len_tru = len(_time_res_usage)
+	for time, ru in sorted(_time_res_usage.iteritems()):
+		if cnt < 2:
+			pass
+		elif cnt >= len_tru - 2:
+			pass
+		else:
+			tru0[time] = ru
+			pass
+		cnt += 1
+	_time_res_usage = tru0
+
+	# TODO: network report too, eth0 probably
+	#_ResUsageReportByTime()
+	_ResUsageReportAggr()
+
 
 #14:52:49.732 xvdd             0      0    0    0       0      0    0    0       0     0     0      0    0
 #
@@ -356,6 +357,5 @@ def GenReport(lines):
 
 def _TestParse():
 	fn = "data/160229-170819-4k-rand-read-Local-SSD-collectl"
-	#fn = "data/160229-145249-4k-rand-read-Local-SSD-collectl"
 	with open(fn) as fo:
-		GenReport(fo.readlines())
+		_GenConciseReport(fo.readlines())

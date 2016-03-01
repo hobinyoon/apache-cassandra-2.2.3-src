@@ -4,8 +4,8 @@ import sys
 
 import Conf
 import Plot
+import StoragePerfTest
 import SysResMon
-import TestStorage
 
 sys.path.insert(0, "../../util/python")
 import Cons
@@ -16,7 +16,8 @@ def main(argv):
 	#SysResMon.Test()
 	#sys.exit(0)
 
-	TestStorage.Test()
+	Conf.Init()
+	StoragePerfTest.Test()
 	sys.exit(0)
 
 	# TODO

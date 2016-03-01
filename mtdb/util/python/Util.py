@@ -143,8 +143,8 @@ def MkDirs(path):
 			raise
 
 
-def RunSubp(cmd, env_ = os.environ.copy(), print_=True):
-	if print_:
+def RunSubp(cmd, env_ = os.environ.copy(), print_cmd = True):
+	if print_cmd:
 		Cons.P(cmd)
 	p = subprocess.Popen(cmd, shell=True, env=env_, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 	# communidate() waits for termination
@@ -154,3 +154,4 @@ def RunSubp(cmd, env_ = os.environ.copy(), print_=True):
 		raise RuntimeError("Error: cmd=[%s] rc=%d stdouterr=[%s]" % (cmd, rc, stdouterr))
 	if len(stdouterr) > 0:
 		Cons.P(stdouterr)
+	return stdouterr

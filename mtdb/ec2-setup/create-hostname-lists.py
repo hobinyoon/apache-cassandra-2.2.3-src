@@ -44,17 +44,28 @@ def GetIpAddrs():
 		#	for ipaddr in v:
 		#		Cons.P("  %s" % ipaddr)
 	
-		fn = "ec2-server-list"
-		with open(fn, "w") as fo:
-			for ipaddr in _inst_type_ipaddr["c3.2xlarge"]:
-				fo.write("%s\n" % ipaddr)
-		Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
+		inst_type = "c3.2xlarge"
+		if inst_type in _inst_type_ipaddr:
+			Cons.P("%s type: %d instances" % (inst_type, len(_inst_type_ipaddr[inst_type])))
+		inst_type = "m4.large"
+		if inst_type in _inst_type_ipaddr:
+			Cons.P("%s type: %d instances" % (inst_type, len(_inst_type_ipaddr[inst_type])))
+
+		inst_type = "c3.2xlarge"
+		if inst_type in _inst_type_ipaddr:
+			fn = "ec2-server-list"
+			with open(fn, "w") as fo:
+				for ipaddr in _inst_type_ipaddr[inst_type]:
+					fo.write("%s\n" % ipaddr)
+			Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
 		
-		fn = "ec2-client-list"
-		with open(fn, "w") as fo:
-			for ipaddr in _inst_type_ipaddr["m4.large"]:
-				fo.write("%s\n" % ipaddr)
-		Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
+		inst_type = "m4.large"
+		if inst_type in _inst_type_ipaddr:
+			fn = "ec2-client-list"
+			with open(fn, "w") as fo:
+				for ipaddr in _inst_type_ipaddr[inst_type]:
+					fo.write("%s\n" % ipaddr)
+			Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
 
 
 def main(argv):

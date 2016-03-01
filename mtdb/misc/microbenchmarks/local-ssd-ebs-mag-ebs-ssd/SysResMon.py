@@ -4,7 +4,7 @@ import sys
 import threading
 import time
 
-sys.path.insert(0, "../../util/python")
+sys.path.insert(0, "../../../util/python")
 import Cons
 import Util
 

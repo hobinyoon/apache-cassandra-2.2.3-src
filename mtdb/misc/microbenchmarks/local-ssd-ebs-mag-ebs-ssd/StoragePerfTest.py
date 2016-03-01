@@ -6,7 +6,7 @@ import sys
 import Conf
 import SysResMon
 
-sys.path.insert(0, "../../util/python")
+sys.path.insert(0, "../../../util/python")
 import Cons
 import Util
 

@@ -7,7 +7,7 @@ import Plot
 import StoragePerfTest
 import SysResMon
 
-sys.path.insert(0, "../../util/python")
+sys.path.insert(0, "../../../util/python")
 import Cons
 import Util
 

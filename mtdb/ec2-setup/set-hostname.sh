@@ -53,7 +53,7 @@ set_hostname() {
 	i=0
 	for ip in "${c_ips[@]}"; do
 		# hostname
-		hn=ec2-s${i}-m4.large-29
+		hn=ec2-c${i}-m4.large-29
 
 		cmd="sudo sed -i 's/localhost$/localhost '$hn'/g' /etc/hosts \
 			&& sudo bash -c 'echo '$hn' > /etc/hostname' \

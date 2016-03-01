@@ -18,46 +18,6 @@ Set hostname
 	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
 	&& sudo hostname --file /etc/hostname
 
-	export hostname0=ec2-s1-c3.2xlarge-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
-	export hostname0=ec2-c1-m4.large-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
-	export hostname0=ec2-s2-c3.2xlarge-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
-	export hostname0=ec2-c2-m4.large-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
-	export hostname0=ec2-s3-c3.2xlarge-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
-	export hostname0=ec2-c3-m4.large-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
-	export hostname0=ec2-s4-c3.2xlarge-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
-	export hostname0=ec2-c4-m4.large-26 \
-	&& sudo sed -i 's/localhost$/localhost '$hostname0'/g' /etc/hosts \
-	&& sudo bash -c 'echo '$hostname0' > /etc/hostname' \
-	&& sudo hostname --file /etc/hostname
-
 	exit and login back
 
 
@@ -68,16 +28,16 @@ Install packages, vmtouch
 	(will be prompted for an Oracle binary code license)
 	(will be prompted for if you trust the server)
 
-	(can be "rsync"ed faster from an existing node. The first is from cs-s3)
+	rsync from an existing machine, when the ubuntu servers are slow.
+		(rsync -av ubuntu@23.22.13.183:/var/cache/apt/archives ~/ || true) \
+		&& (sudo cp ~/archives/* /var/cache/apt/archives/ || true) \
 
-	(rsync -av ubuntu@23.22.13.183:/var/cache/apt/archives ~/ || true) \
-	&& (sudo cp ~/archives/* /var/cache/apt/archives/ || true) \
-	&& sudo add-apt-repository -y ppa:webupd8team/java \
+	sudo add-apt-repository -y ppa:webupd8team/java \
 	&& sudo apt-get update \
 	&& sudo apt-get install oracle-java8-installer git ctags ant htop tree maven \
 	gnuplot-nox ntp ioping realpath make gcc cmake g++ \
 	libboost-dev libboost-system-dev libboost-timer-dev \
-	sysstat -y \
+	collectl -y \
 	&& sudo apt-get autoremove -y vim-tiny \
 	&& mkdir -p ~/work \
 	&& cd ~/work \

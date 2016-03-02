@@ -3,22 +3,22 @@ Running on EC2
 Launching spot instances
 	(Use web interface for now)
 
+		AWS command line interface
+			https://aws.amazon.com/cli/
+
+			sudo pip install --ignore-installed awscli
+
+			aws configure
+			aws ec2 describe-instances
+
+			aws ec2 request-spot-instances --dry-run --spot-price 1 --type c3.2xlarge --availability-zone-group us-east-1
+
 	Delete some machine finger prints in ~/.ssh/known_hosts to avoid ssh getting
 	confused.
-
-	aws ec2 request-spot-instances --dry-run --spot-price 1 --type c3.2xlarge --availability-zone-group us-east-1
 
 	Set firewall rules on Server. Allow client machine to connect to server
 	machine on AWS console
 		Allow inbound TCP 9042 10.152.33.227/32
-
-	AWS command line interface
-		https://aws.amazon.com/cli/
-
-		sudo pip install --ignore-installed awscli
-
-		aws configure
-		aws ec2 describe-instances
 
 
 Get hostname lists. Set hostname and edit .bashrc. All automated.

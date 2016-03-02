@@ -9,6 +9,14 @@ Launching spot instances
 	machine on AWS console
 		Allow inbound TCP 9042 10.152.33.227/32
 
+	AWS command line interface
+		https://aws.amazon.com/cli/
+
+		sudo pip install --ignore-installed awscli
+
+		aws configure
+		aws ec2 describe-instances
+
 
 Get hostname lists. Set hostname and edit .bashrc. All automated.
 	create-hostname-lists.py \
@@ -192,6 +200,7 @@ which is likely to have bigger log files. Process the experiment.
 
 	(killall pressure-memory > /dev/null 2>&1 || true) \
 	&& rsync -ave "ssh -o StrictHostKeyChecking=no" $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs \
+	&& (killall mon-num-cass-threads.sh >/dev/null 2>&1 || true) \
 	&& cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline \
 	&& (\rm *.pdf || true) \
 	&& ./plot-cost-latency-tablet-timelines.py \

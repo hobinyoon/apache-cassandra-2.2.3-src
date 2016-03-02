@@ -46,11 +46,12 @@ def _BuildIdEventsMap(e):
 			pass
 		elif type(e1) is Event.AccessStat.SstAccStat:
 			sst_gen = e1.id_
-			global _id_events
-			if sst_gen not in _id_events:
-				_id_events[sst_gen] = Events()
-			_id_events[sst_gen].AddAccStat(e.simulated_time, e1)
-			#Cons.P("%s %s" % (e.simulated_time, e1))
+			if TabletMinMaxTimestampsTimelinePlotDataGenerator.SstExist(sst_gen):
+				global _id_events
+				if sst_gen not in _id_events:
+					_id_events[sst_gen] = Events()
+				_id_events[sst_gen].AddAccStat(e.simulated_time, e1)
+				#Cons.P("%s %s" % (e.simulated_time, e1))
 
 
 class NumToTime:

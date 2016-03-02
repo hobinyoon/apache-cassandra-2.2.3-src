@@ -1,0 +1,3 @@
+LABEL=cloudimg-rootfs	/	 ext4	defaults,discard	0 0
+/dev/xvdb	/mnt/local-ssd	auto	defaults,nobootwait,comment=cloudconfig	0	2
+/dev/xvdd	/mnt/ebs-mag	auto	defaults,nobootwait,comment=cloudconfig	0	2

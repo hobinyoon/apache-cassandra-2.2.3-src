@@ -31,6 +31,8 @@ Get hostname lists. Set hostname and edit .bashrc. All automated.
 			echo 'export CASSANDRA_SERVER_ADDR=23.22.13.183'   >> ~/.bashrc
 
 
+---- From here, things are automated by AppleScript ----------------------------
+
 Install packages, vmtouch
 , one-time synchronization of clocks both on server and client
 , setup repositories and dev envs
@@ -210,6 +212,7 @@ which is likely to have bigger log files. Process the experiment.
 	&& du -hs ~/work/cassandra/data/ \
 	&& scp -P 20022 *.pdf hobin@localhost:
 
+---- To here ------------------------------------------------------------------
 
 Check Mutants data size
 	check-mustants-data-size.py

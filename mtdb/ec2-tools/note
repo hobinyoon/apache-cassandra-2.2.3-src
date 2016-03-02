@@ -214,9 +214,8 @@ which is likely to have bigger log files. Process the experiment.
 
 ---- To here ------------------------------------------------------------------
 
-Check Mutants data size
-	check-mustants-data-size.py
+Copy logs to a local machine, like mt-s7
+	./copy-ec2-logs.py
 
-
-Copy logs to current machine, like mt-s7
-	copy-ec2-logs.py
+Get load datatime and Mutants data size
+	./get-last-log-datetime-mutants-data-size.py

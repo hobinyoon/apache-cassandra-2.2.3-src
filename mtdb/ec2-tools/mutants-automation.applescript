@@ -378,7 +378,7 @@ on run_server()
 		set currentWindow to front window
 		set tab_id to 1
 		repeat until tab_id > (num_servers * 2)
-			set cmd to "sudo -- sh -c 'echo 1 > /proc/sys/vm/drop_caches' && cdcass && time ant && rm -rf ~/work/cassandra/data/* && (killall mon-num-cass-threads.sh >/dev/null 2>&1 || true) && (~/work/cassandra/mtdb/tools/mon-num-cass-threads.sh &) && (killall collectl >/dev/null 2>&1 || true) && ((collectl -i 1 -sCDN -oTm > ~/work/cassandra/mtdb/logs/collectl/collectl-`date +'%y%m%d-%H%M%S'` 2>/dev/null) &) && bin/cassandra -f | grep --color -E '^|MTDB:'"
+			set cmd to "sudo -- sh -c 'echo 1 > /proc/sys/vm/drop_caches' && cdcass && time ant && rm -rf ~/work/cassandra/data/* && rm -rf /mnt/cold-storage/mtdb-cold/* && (killall mon-num-cass-threads.sh >/dev/null 2>&1 || true) && (~/work/cassandra/mtdb/tools/mon-num-cass-threads.sh &) && (killall collectl >/dev/null 2>&1 || true) && ((collectl -i 1 -sCDN -oTm > ~/work/cassandra/mtdb/logs/collectl/collectl-`date +'%y%m%d-%H%M%S'` 2>/dev/null) &) && bin/cassandra -f | grep --color -E '^|MTDB:'"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Give enough delay to make sure the logs have different datetimes.
 			delay 4
@@ -502,7 +502,7 @@ on server_get_client_logs_and_process()
 		set currentWindow to front window
 		set tab_id to 1
 		repeat until tab_id > (num_servers * 2)
-			set cmd to "(killall pressure-memory > /dev/null 2>&1 || true) && rsync -ave \"ssh -o StrictHostKeyChecking=no\" $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs && cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline && (\\rm *.pdf || true) && ./plot-cost-latency-tablet-timelines.py && du -hs ~/work/cassandra/data/"
+			set cmd to "(killall pressure-memory > /dev/null 2>&1 || true) && (sudo killall collectl > /dev/null 2>&1 || true) && (sudo killall mon-num-cass-threads.sh > /dev/null 2>&1 || true) && rsync -ave \"ssh -o StrictHostKeyChecking=no\" $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs && cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline && (\\rm *.pdf || true) && ./plot-cost-latency-tablet-timelines.py && du -hs ~/work/cassandra/data/"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Go to the next server tab
 			set tab_id to tab_id + 2
@@ -566,6 +566,21 @@ on server_rename_client_log()
 end server_rename_client_log
 
 
+-- One-time use.
+on server_kill_monitor_processes()
+	tell application "Terminal"
+		set currentWindow to front window
+		set tab_id to 1
+		repeat until tab_id > (num_servers * 2)
+			set cmd to "(killall pressure-memory > /dev/null 2>&1 || true) && (sudo killall collectl > /dev/null 2>&1 || true) && (sudo killall mon-num-cass-threads.sh > /dev/null 2>&1 || true)"
+			do script (cmd) in tab tab_id of currentWindow
+			-- Go to the next server tab
+			set tab_id to tab_id + 2
+		end repeat
+	end tell
+end server_kill_monitor_processes
+
+
 on open_window_tabs_ssh_screen()
 	my open_window_tabs()
 	my ssh()
@@ -610,8 +625,6 @@ on run_all()
 	my server_get_client_logs_and_process()
 end run_all
 
-
-my git_pull()
 
 
 

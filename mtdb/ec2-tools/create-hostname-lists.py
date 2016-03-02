@@ -33,6 +33,8 @@ def GetIpAddrs():
 		for i1 in j["Reservations"]:
 			for i2 in i1["Instances"]:
 				it = i2["InstanceType"]
+				if i2["State"]["Name"] != "running":
+					continue
 				ipaddr = i2["PublicIpAddress"]
 
 				if it not in _inst_type_ipaddr:

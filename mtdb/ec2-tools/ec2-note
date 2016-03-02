@@ -191,21 +191,20 @@ Get loadgen client log to server machine. Better do this on the server node,
 which is likely to have bigger log files. Process the experiment.
 
 	(killall pressure-memory > /dev/null 2>&1 || true) \
-	&& rsync -av $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs \
+	&& rsync -ave "ssh -o StrictHostKeyChecking=no" $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs \
 	&& cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline \
 	&& (\rm *.pdf || true) \
 	&& ./plot-cost-latency-tablet-timelines.py \
 	&& du -hs ~/work/cassandra/data/ \
 	&& scp -P 20022 *.pdf hobin@localhost:
 
-Check Cassandra data size
-	du -hs ~/work/cassandra/data/ \
-	&& du -hs /mnt/cold-storage/mtdb-cold/
+
+Check Mutants data size
+	check-mustants-data-size.py
 
 
-Copy logs to mts7
-	s0
-		rsync -av ubuntu@54.205.51.252:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/
+Copy logs to current machine, like mt-s7
+	copy-ec2-logs.py
 
 
 NFS

@@ -47,9 +47,10 @@ def _BuildIdEventsMap(e):
 				pass
 			elif type(e1) is Event.AccessStat.SstAccStat:
 				sst_gen = e1.id_
-				if sst_gen not in _id_events:
-					_id_events[sst_gen] = Events()
-				_id_events[sst_gen].AddAccStat(e.simulated_time, e1)
+				if TabletSizeTimelinePlotDataGenerator.SstExist(sst_gen):
+					if sst_gen not in _id_events:
+						_id_events[sst_gen] = Events()
+					_id_events[sst_gen].AddAccStat(e.simulated_time, e1)
 
 
 def _WriteToFile():

@@ -6,6 +6,7 @@ import sys
 
 sys.path.insert(0, "../util/python")
 import Cons
+import Util
 
 
 def _RunSubp(cmd, env_ = os.environ.copy(), print_cmd = True):
@@ -34,7 +35,7 @@ def CopyEc2Logs():
 			# it will break log processing tools
 			cmd = "rsync -ave \"ssh -o StrictHostKeyChecking=no\" ubuntu@%s:work/cassandra/mtdb/logs ~/work/cassandra/mtdb/" \
 					% ip
-			_RunSubp(cmd, print_cmd = True)
+			Cons.P(Util.Indent(_RunSubp(cmd, print_cmd = True), 2))
 
 
 def main(argv):

@@ -381,7 +381,7 @@ on run_server()
 			set cmd to "sudo -- sh -c 'echo 1 > /proc/sys/vm/drop_caches' && cdcass && time ant && rm -rf ~/work/cassandra/data/* && rm -rf /mnt/cold-storage/mtdb-cold/* && (killall mon-num-cass-threads.sh >/dev/null 2>&1 || true) && (~/work/cassandra/mtdb/tools/mon-num-cass-threads.sh &) && (killall collectl >/dev/null 2>&1 || true) && ((collectl -i 1 -sCDN -oTm > ~/work/cassandra/mtdb/logs/collectl/collectl-`date +'%y%m%d-%H%M%S'` 2>/dev/null) &) && bin/cassandra -f | grep --color -E '^|MTDB:'"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Give enough delay to make sure the logs have different datetimes.
-			delay 4
+			delay 3
 			
 			-- Go to the next server tab
 			set tab_id to tab_id + 2
@@ -412,9 +412,10 @@ on server_pressure_memory()
 		set currentWindow to front window
 		set tab_id to 1
 		repeat until tab_id > (num_servers * 2)
-			set cmd to "cd ~/work/cassandra/mtdb/tools/pressure-memory && mkdir -p .build && cd .build && cmake ..  && make -j && (./pressure-memory &) && watchsstables"
+			set cmd to "cd ~/work/cassandra/mtdb/tools/pressure-memory/.build"
+			set cmd to cmd & " && (./pressure-memory &)"
+			set cmd to cmd & " && watchsstables"
 			do script (cmd) in tab tab_id of currentWindow
-			delay 1
 			
 			-- Go to the next server tab
 			set tab_id to tab_id + 2
@@ -581,6 +582,27 @@ on server_kill_monitor_processes()
 end server_kill_monitor_processes
 
 
+-- One-time use.
+on server_data_dir_to_ebs_mag()
+	tell application "Terminal"
+		set currentWindow to front window
+		set tab_id to 1
+		repeat until tab_id > (num_servers * 2)
+			set cmd to "cdcass"
+			set cmd to cmd & " && \\rm data"
+			set cmd to cmd & " && ln -s /mnt/ebs-mag/cass-data data"
+			do script (cmd) in tab tab_id of currentWindow
+			-- Go to the next server tab
+			set tab_id to tab_id + 2
+		end repeat
+	end tell
+end server_data_dir_to_ebs_mag
+
+
+
+
+
+
 on open_window_tabs_ssh_screen()
 	my open_window_tabs()
 	my ssh()
@@ -614,7 +636,9 @@ on run_all()
 	my client_edit_cassandra_yaml()
 	my save_screen_layout()
 	
+	-- This takes like 40 secs. Do not move focus to anywhere else, or it will fail.
 	my run_server()
+	
 	my server_pressure_memory()
 	
 	my client_run_loadgen()
@@ -623,11 +647,13 @@ on run_all()
 	my screen_reattach()
 	
 	my server_get_client_logs_and_process()
+	
+	-- Switch data directory
+	-- my server_data_dir_to_ebs_mag()
 end run_all
 
 
-
-
+my screen_detach()
 
 
 

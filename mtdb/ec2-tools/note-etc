@@ -1,0 +1,17 @@
+NFS
+	server
+		sudo vi /etc/exports
+			/nfs-export       54.205.183.58/32(rw,fsid=0,insecure,no_subtree_check,async)
+
+		sudo apt-get install nfs-kernel-server -y \
+		&& sudo mkdir -p /nfs-export \
+		&& sudo chown -R ubuntu /nfs-export \
+		&& sudo service nfs-kernel-server restart
+
+	client
+		sudo vi /etc/fstab
+			54.165.74.184:/   /mnt/nfs-ebs-ssd   nfs    auto  0  0
+
+		sudo apt-get install nfs-common -y \
+		&& sudo mkdir /mnt/nfs-ebs-ssd \
+		&& sudo mount /mnt/nfs-ebs-ssd

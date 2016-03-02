@@ -1,4 +1,4 @@
-Running on EC2 VM
+Running on EC2
 
 Launching spot instances
 	(Use web interface for now)
@@ -205,22 +205,3 @@ Check Mutants data size
 
 Copy logs to current machine, like mt-s7
 	copy-ec2-logs.py
-
-
-NFS
-	server
-		sudo vi /etc/exports
-			/nfs-export       54.205.183.58/32(rw,fsid=0,insecure,no_subtree_check,async)
-
-		sudo apt-get install nfs-kernel-server -y \
-		&& sudo mkdir -p /nfs-export \
-		&& sudo chown -R ubuntu /nfs-export \
-		&& sudo service nfs-kernel-server restart
-
-	client
-		sudo vi /etc/fstab
-			54.165.74.184:/   /mnt/nfs-ebs-ssd   nfs    auto  0  0
-
-		sudo apt-get install nfs-common -y \
-		&& sudo mkdir /mnt/nfs-ebs-ssd \
-		&& sudo mount /mnt/nfs-ebs-ssd

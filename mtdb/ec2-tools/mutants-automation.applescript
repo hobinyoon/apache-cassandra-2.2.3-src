@@ -1,5 +1,5 @@
 global num_servers
-set num_servers to 12
+set num_servers to 7
 
 
 on open_window_tabs()
@@ -101,6 +101,19 @@ on install_pkgs_2()
 		end repeat
 	end tell
 end install_pkgs_2
+
+
+on killall_screen()
+	tell application "Terminal"
+		set currentWindow to front window
+		set tab_id to 0
+		repeat until tab_id is (num_servers * 2)
+			set tab_id to tab_id + 1
+			set cmd to "killall screen"
+			do script (cmd) in tab tab_id of currentWindow
+		end repeat
+	end tell
+end killall_screen
 
 
 on exit_screen()
@@ -582,8 +595,7 @@ on server_kill_monitor_processes()
 end server_kill_monitor_processes
 
 
--- One-time use.
-on server_data_dir_to_ebs_mag()
+on server_switch_data_dir_to_ebs_mag()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
@@ -596,7 +608,7 @@ on server_data_dir_to_ebs_mag()
 			set tab_id to tab_id + 2
 		end repeat
 	end tell
-end server_data_dir_to_ebs_mag
+end server_switch_data_dir_to_ebs_mag
 
 
 
@@ -620,27 +632,31 @@ on run_all()
 	-- Not a normal process. In case something goes wrong.
 	-- my exit_screen()
 	
+	-- Need to logout and login again to make the new .bashrc in effect
+	
 	-- These can be grouped
 	my server_screen_split_htop()
 	my client_screen_split_htop()
 	my build_cass_pressuremem_loadgen()
 	
-	-- In case needed
-	-- my git_pull()
-	
 	-- These can be grouped
 	my server_format_ebs_mag_mount_prepare_dirs()
 	my watch_free_mem()
+	
+	-- Switch data directory to ebs mag
+	-- my server_switch_data_dir_to_ebs_mag()
+	
 	-- Make sure which experiment you want, by editing migrate_to_cold_storage
 	my server_edit_cassandra_yaml()
 	my client_edit_cassandra_yaml()
 	my save_screen_layout()
 	
-	-- This takes like 40 secs. Do not move focus to anywhere else, or it will fail.
+	-- This takes some time to make sure each server has different exp datetime. Wait till all servers are ready before moving on to the next step
 	my run_server()
 	
 	my server_pressure_memory()
 	
+	-- This takes some time too.
 	my client_run_loadgen()
 	
 	my screen_detach()
@@ -648,12 +664,9 @@ on run_all()
 	
 	my server_get_client_logs_and_process()
 	
-	-- Switch data directory
-	-- my server_data_dir_to_ebs_mag()
+	-- Switch data directory to ebs mag
+	-- my server_switch_data_dir_to_ebs_mag()
 end run_all
-
-
-my screen_detach()
 
 
 

@@ -13,17 +13,17 @@ Launching spot instances
 
 			aws ec2 request-spot-instances --dry-run --spot-price 1 --type c3.2xlarge --availability-zone-group us-east-1
 
-	Delete some machine finger prints in ~/.ssh/known_hosts to avoid ssh getting
-	confused.
-
 	Set firewall rules on Server. Allow client machine to connect to server
 	machine on AWS console
 		Allow inbound TCP 9042 10.152.33.227/32
 
 
 Get hostname lists. Set hostname and edit .bashrc. All automated.
-	create-hostname-lists.py \
-	&& set-hostname-edit-bashrc.py
+	Delete some machine finger prints in ~/.ssh/known_hosts to avoid ssh getting
+	confused.
+
+	./create-hostname-lists.py \
+	&& ./set-hostname-edit-bashrc.py
 
 		On server:
 			echo 'export CASSANDRA_CLIENT_ADDR=54.88.197.238' >> ~/.bashrc

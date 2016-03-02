@@ -7,7 +7,13 @@ echo ${fn}
 touch ${fn}
 
 while [ 1 ]; do
-	echo `date +'%y%m%d-%H%M%S '` >> ${fn}
-	ps -T -p `ps -ef | grep -i org.apache.cassandra.service.CassandraDaemo[n] | awk '{ print $2 }'` | wc -l >> ${fn}
+	echo -n `date +'%y%m%d-%H%M%S'` >> ${fn}
+	cass_pid=`ps -ef | grep -i org.apache.cassandra.service.CassandraDaemo[n] | awk '{ print $2 }'`
+	if [ ${#cass_pid} -ne 0 ]; then
+		echo -n " " >> ${fn}
+		ps -T -p ${cass_pid} | wc -l >> ${fn}
+	else
+		echo "" >> ${fn}
+	fi
 	sleep 1
 done

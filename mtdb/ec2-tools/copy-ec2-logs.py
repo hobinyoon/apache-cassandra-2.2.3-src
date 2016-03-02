@@ -28,7 +28,7 @@ def CopyEc2Logs():
 		for line in fo.readlines():
 			server_list.append(line.strip())
 
-	with Cons.MeasureTime("Setting hostname and edit .bashrc ..."):
+	with Cons.MeasureTime("Copying ec2 server logs ..."):
 		for ip in server_list:
 			# Was thinkinf of labeling log file names with the server hostname, but
 			# it will break log processing tools

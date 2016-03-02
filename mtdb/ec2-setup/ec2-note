@@ -153,8 +153,10 @@ Run Mutants server
 		&& cdcass \
 		&& time ant \
 		&& rm -rf ~/work/cassandra/data/* \
-		&& (killall collectl > /dev/null 2>&1 || true) \
-		&& ((sar 1 > ~/work/cassandra/mtdb/logs/sar/sar-`date +'%y%m%d-%H%M%S'`) &) \
+		&& (killall mon-num-cass-threads.sh >/dev/null 2>&1 || true) \
+		&& (~/work/cassandra/mtdb/tools/mon-num-cass-threads.sh &) \
+		&& (killall collectl >/dev/null 2>&1 || true) \
+		&& ((collectl -i 1 -sCDN -oTm > ~/work/cassandra/mtdb/logs/collectl/collectl-`date +'%y%m%d-%H%M%S'` 2>/dev/null) &) \
 		&& bin/cassandra -f | grep --color -E '^|MTDB:'
 
 	Watch free memory

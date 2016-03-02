@@ -1,5 +1,5 @@
 global num_servers
-set num_servers to 7
+set num_servers to 12
 
 
 on open_window_tabs()
@@ -276,47 +276,71 @@ on git_pull()
 end git_pull
 
 
-on server_format_ebs_mag_mount_prepare_dirs()
+on server_format_ebs_mag_mount_dev_prepare_dirs()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
 		repeat until tab_id > (num_servers * 2)
-			set cmd to "sudo mkfs.ext4 -m 0 /dev/xvdd && sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab && sudo umount /mnt && sudo mkdir -p /mnt/local-ssd && sudo mount /mnt/local-ssd && sudo chown -R ubuntu /mnt/local-ssd && mkdir /mnt/local-ssd/cass-data && mkdir ~/cass-data-vol && sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2 && mkdir /mnt/ebs-ssd-gp2/cass-data && sudo mkdir -p /mnt/ebs-mag && sudo mount /mnt/ebs-mag && sudo mkdir /mnt/ebs-mag/cass-data && sudo chown -R ubuntu /mnt/ebs-mag && sudo chown -R ubuntu /mnt/ebs-mag/cass-data && sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold && (sudo mkdir -p /mnt/ebs-mag/mtdb-cold || true) && sudo ln -s /mnt/ebs-mag /mnt/cold-storage && sudo chown -R ubuntu /mnt/ebs-ssd-gp2 && sudo chown -R ubuntu /mnt/cold-storage && sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold && mkdir -p ~/work/cassandra/mtdb/logs/collectl && ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data"
+			set cmd to "sudo mkfs.ext4 -m 0 /dev/xvdd"
+			set cmd to cmd & " && sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
+			set cmd to cmd & " && sudo umount /mnt"
+			set cmd to cmd & " && sudo mkdir -p /mnt/local-ssd"
+			set cmd to cmd & " && sudo mount /mnt/local-ssd"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/local-ssd"
+			set cmd to cmd & " && mkdir /mnt/local-ssd/cass-data"
+			set cmd to cmd & " && mkdir ~/cass-data-vol"
+			set cmd to cmd & " && sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2"
+			set cmd to cmd & " && mkdir /mnt/ebs-ssd-gp2/cass-data"
+			set cmd to cmd & " && sudo mkdir -p /mnt/ebs-mag"
+			set cmd to cmd & " && sudo mount /mnt/ebs-mag"
+			set cmd to cmd & " && sudo mkdir /mnt/ebs-mag/cass-data"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-mag"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-mag/cass-data"
+			set cmd to cmd & " && sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold"
+			set cmd to cmd & " && (sudo mkdir -p /mnt/ebs-mag/mtdb-cold || true)"
+			set cmd to cmd & " && sudo ln -s /mnt/ebs-mag /mnt/cold-storage"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-ssd-gp2"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold"
+			set cmd to cmd & " && mkdir -p ~/work/cassandra/mtdb/logs/collectl"
+			set cmd to cmd & " && ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data"
 			do script (cmd) in tab tab_id of currentWindow
 			
 			-- Go to the next server tab
 			set tab_id to tab_id + 2
 		end repeat
 	end tell
-end server_format_ebs_mag_mount_prepare_dirs
+end server_format_ebs_mag_mount_dev_prepare_dirs
 
 
-on watch_free_mem()
-	tell application "Terminal" to activate
-	set tab_id to 0
-	repeat until tab_id is num_servers
-		set tab_id to tab_id + 1
-		
-		tell application "System Events" to keystroke "a" using {control down}
-		tell application "System Events" to keystroke tab
-		
-		tell application "System Events" to keystroke "a" using {control down}
-		tell application "System Events" to keystroke tab
-		
-		tell application "System Events" to keystroke "watch -n 0.5 \"free -mt\""
-		tell application "System Events" to key code 36
-		tell application "System Events" to keystroke "a" using {control down}
-		tell application "System Events" to keystroke tab
-		
-		tell application "System Events" to keystroke "a" using {control down}
-		tell application "System Events" to keystroke tab
-		
-		-- Move to the next server tab
-		tell application "System Events" to key code 124 using {shift down, command down}
-		tell application "System Events" to key code 124 using {shift down, command down}
-		delay 0.1
-	end repeat
-end watch_free_mem
+on server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
+	tell application "Terminal"
+		set currentWindow to front window
+		set tab_id to 1
+		repeat until tab_id > (num_servers * 2)
+			set cmd to "sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
+			set cmd to cmd & " && sudo umount /mnt"
+			set cmd to cmd & " && sudo mkdir -p /mnt/local-ssd"
+			set cmd to cmd & " && sudo mount /mnt/local-ssd"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/local-ssd"
+			set cmd to cmd & " && mkdir /mnt/local-ssd/cass-data"
+			set cmd to cmd & " && mkdir ~/cass-data-vol"
+			set cmd to cmd & " && sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2"
+			set cmd to cmd & " && mkdir /mnt/ebs-ssd-gp2/cass-data"
+			set cmd to cmd & " && sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold"
+			set cmd to cmd & " && sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-ssd-gp2"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold"
+			set cmd to cmd & " && mkdir -p ~/work/cassandra/mtdb/logs/collectl"
+			set cmd to cmd & " && ln -s /mnt/ebs-ssd-gp2/cass-data ~/work/cassandra/data"
+			do script (cmd) in tab tab_id of currentWindow
+			
+			-- Go to the next server tab
+			set tab_id to tab_id + 2
+		end repeat
+	end tell
+end server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd
 
 
 on server_edit_cassandra_yaml()
@@ -633,15 +657,21 @@ on run_all()
 	-- my exit_screen()
 	
 	-- Need to logout and login again to make the new .bashrc in effect
+	-- Hit ^D until all tabs are closed
+	my open_window_tabs_ssh_screen()
 	
 	-- These can be grouped
 	my server_screen_split_htop()
 	my client_screen_split_htop()
 	my build_cass_pressuremem_loadgen()
 	
-	-- These can be grouped
-	my server_format_ebs_mag_mount_prepare_dirs()
-	my watch_free_mem()
+	my save_screen_layout()
+	my screen_detach()
+	my screen_reattach()
+	
+	-- Run either of these, depending on what dev you have
+	-- my server_format_ebs_mag_mount_dev_prepare_dirs()
+	my server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
 	
 	-- Switch data directory to ebs mag
 	-- my server_switch_data_dir_to_ebs_mag()
@@ -649,24 +679,22 @@ on run_all()
 	-- Make sure which experiment you want, by editing migrate_to_cold_storage
 	my server_edit_cassandra_yaml()
 	my client_edit_cassandra_yaml()
-	my save_screen_layout()
 	
-	-- This takes some time to make sure each server has different exp datetime. Wait till all servers are ready before moving on to the next step
+	-- This takes some time to make sure each server has different exp datetime
 	my run_server()
 	
+	-- Wait till all servers are ready before pressuring memory
 	my server_pressure_memory()
 	
 	-- This takes some time too.
 	my client_run_loadgen()
-	
-	my screen_detach()
-	my screen_reattach()
 	
 	my server_get_client_logs_and_process()
 	
 	-- Switch data directory to ebs mag
 	-- my server_switch_data_dir_to_ebs_mag()
 end run_all
+
 
 
 

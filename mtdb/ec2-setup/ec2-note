@@ -9,15 +9,13 @@ Launching spot instances
 	machine on AWS console
 		Allow inbound TCP 9042 10.152.33.227/32
 
-Get hostname lists
-	create-hostname-lists.py
 
+Get hostname lists. Set hostname and edit .bashrc. All automated.
+	create-hostname-lists.py \
+	&& set-hostname-edit-bashrc.py
 
-Set hostname and edit .bashrc
-	Automated set-hostname-edit-bashrc.py
 		On server:
 			echo 'export CASSANDRA_CLIENT_ADDR=54.88.197.238' >> ~/.bashrc
-
 		On client:
 			echo 'export CASSANDRA_SERVER_ADDR=23.22.13.183'   >> ~/.bashrc
 
@@ -120,7 +118,7 @@ Run Mutants server
 		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
 		&& sudo chown -R ubuntu /mnt/cold-storage \
 		&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold \
-		&& mkdir -p ~/work/cassandra/mtdb/logs/sar
+		&& mkdir -p ~/work/cassandra/mtdb/logs/collectl
 
 	Setup data directory
 		ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data
@@ -145,7 +143,7 @@ Run Mutants server
 		&& sudo chown -R ubuntu /mnt/ebs-ssd-gp2 \
 		&& sudo chown -R ubuntu /mnt/cold-storage \
 		&& sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold \
-		&& mkdir -p ~/work/cassandra/mtdb/logs/sar \
+		&& mkdir -p ~/work/cassandra/mtdb/logs/collectl \
 		&& ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data
 
 	Run server after dropping page cache
@@ -155,7 +153,7 @@ Run Mutants server
 		&& cdcass \
 		&& time ant \
 		&& rm -rf ~/work/cassandra/data/* \
-		&& (killall sar > /dev/null 2>&1 || true) \
+		&& (killall collectl > /dev/null 2>&1 || true) \
 		&& ((sar 1 > ~/work/cassandra/mtdb/logs/sar/sar-`date +'%y%m%d-%H%M%S'`) &) \
 		&& bin/cassandra -f | grep --color -E '^|MTDB:'
 
@@ -174,11 +172,10 @@ Run Mutants server
 		&& watchsstables
 
 	Save screen layout
-		TODO: can this be automated?
 		Ctrl-a :layout save default
 
 
-Run loadgen client, preferrably on a different machine
+Run loadgen client on client machine
 	It read the env var CASSANDRA_SERVER_ADDR.
 
 	cd ~/work/cassandra/mtdb/loadgen \

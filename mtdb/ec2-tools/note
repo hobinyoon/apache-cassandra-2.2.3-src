@@ -3,6 +3,9 @@ Running on EC2
 Launching spot instances
 	(Use web interface for now)
 
+	Delete some machine finger prints in ~/.ssh/known_hosts to avoid ssh getting
+	confused.
+
 	aws ec2 request-spot-instances --dry-run --spot-price 1 --type c3.2xlarge --availability-zone-group us-east-1
 
 	Set firewall rules on Server. Allow client machine to connect to server

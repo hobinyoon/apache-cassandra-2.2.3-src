@@ -69,9 +69,7 @@ class Log:
 		self._ReportByTime()
 		sys.exit(0)
 		_ResUsageReportAggr()
-
-
-
+		# TODO
 
 
 	def _ParseCpu(self, line):
@@ -143,19 +141,57 @@ class Log:
 		self.time_res_usage[time].AddDisk(dev_name, read_kb, read_io, write_kb, write_io, rw_size, q_len, wait, svc_time, util)
 
 	def _ParseNetwork(self, line):
-		# TODO: network too. eth0 probably
-
-		# 14:52:49.732 xvdd             0      0    0    0       0      0    0    0       0     0     0      0    0
+		# ### RECORD    7 >>> s0-c3-2xlarge-02 <<< (1456931323.001) (Wed Mar  2.001 15:08:43) ###
 		#
-		# # NETWORK STATISTICS (/sec)
-		pass
+		# #Time         Num    Name   KBIn  PktIn SizeIn  MultI   CmpI  ErrsI  KBOut PktOut  SizeO   CmpO  ErrsO
+		# 15:08:43.001    0    eth0      0      3     66      0      0      0      2      3    686      0      0
+		# 15:08:43.001    1      lo      0      0      0      0      0      0      0      0      0      0      0
+		if len(line) == 0:
+			return
+		if line[0] == "#":
+			return
+		t = line.split()
+		if len(t) != 14:
+			return
+
+		time = t[0]
+		# Scope time range by the loadgen time range
+		if time <= self.exp_dt_begin:
+			return
+		if self.exp_dt_end <= time:
+			self.parse_time_passed_exp_time_end = True
+			return
+
+		intf = t[2]
+		if intf != "eth0":
+			return
+
+		kb_in   = t[3]
+		pkt_in  = t[4]
+		size_in = t[5]
+		mult_i  = t[6]
+		cmp_i   = t[7]
+		errs_i  = t[8]
+		kb_out  = t[9]
+		pkt_out = t[10]
+		size_o  = t[11]
+		cmp_o   = t[12]
+		errs_o  = t[13]
+
+		if time not in self.time_res_usage:
+			self.time_res_usage[time] = _ResUsage()
+		self.time_res_usage[time].AddNetwork(kb_in, pkt_in, size_in, mult_i, cmp_i, errs_i, kb_out, pkt_out, size_o, cmp_o, errs_o)
 
 	def _ReportByTime(self):
 		fmt = "%12s %3d %3d %3d" \
 				" %5d %4d" \
 				" %5d %4d" \
 				" %4d %4d" \
-				" %3d %2d %2d"
+				" %3d %2d %2d" \
+				" %4d"
+		# TODO: continue!!!! other net attributes
+
+		# TODO: could be something else, or multiple if you use multiple storages
 		disk_dev_name = "xvdb"
 		Cons.P(Util.BuildHeader(fmt,
 			"time cpu.user cpu.sys cpu.wait"
@@ -165,6 +201,7 @@ class Log:
 			" disk.%s.wait"
 			" disk.%s.svc_time"
 			" disk.%s.util"
+			" net.kb_in"
 			% (disk_dev_name, disk_dev_name
 				, disk_dev_name, disk_dev_name
 				, disk_dev_name, disk_dev_name
@@ -183,6 +220,7 @@ class Log:
 				, ru.DiskAttr(disk_dev_name, "wait")
 				, ru.DiskAttr(disk_dev_name, "svc_time")
 				, ru.DiskAttr(disk_dev_name, "util")
+				, ru.NetAttr("kb_in")
 				))
 
 
@@ -240,9 +278,27 @@ class _ResUsage:
 		def __repr__(self):
 			return "[%s]" % (" ".join("%s=%s" % item for item in vars(self).items()))
 
+	class Network:
+		def __init__(self, kb_in, pkt_in, size_in, mult_i, cmp_i, errs_i, kb_out, pkt_out, size_o, cmp_o, errs_o):
+			self.kb_in   = int(kb_in)
+			self.pkt_in  = int(pkt_in)
+			self.size_in = int(size_in)
+			self.mult_i  = int(mult_i)
+			self.cmp_i   = int(cmp_i)
+			self.errs_i  = int(errs_i)
+			self.kb_out  = int(kb_out)
+			self.pkt_out = int(pkt_out)
+			self.size_o  = int(size_o)
+			self.cmp_o   = int(cmp_o)
+			self.errs_o  = int(errs_o)
+
+		def __repr__(self):
+			return "[%s]" % (" ".join("%s=%s" % item for item in vars(self).items()))
+
 	def __init__(self):
 		self.cpu = {}
 		self.disk = {}
+		self.network = None
 
 	def AddCpu(self, cpu_id, user, sys, wait):
 		if cpu_id not in self.cpu:
@@ -251,6 +307,9 @@ class _ResUsage:
 	def AddDisk(self, dev_name, read_kb, read_io, write_kb, write_io, rw_size, q_len, wait, svc_time, util):
 		if dev_name not in self.disk:
 			self.disk[dev_name] = _ResUsage.Disk(read_kb, read_io, write_kb, write_io, rw_size, q_len, wait, svc_time, util)
+
+	def AddNetwork(self, kb_in, pkt_in, size_in, mult_i, cmp_i, errs_i, kb_out, pkt_out, size_o, cmp_o, errs_o):
+			self.network = _ResUsage.Network(kb_in, pkt_in, size_in, mult_i, cmp_i, errs_i, kb_out, pkt_out, size_o, cmp_o, errs_o)
 
 	def __str__(self):
 		return " ".join("%s=%s" % item for item in vars(self).items())
@@ -264,10 +323,14 @@ class _ResUsage:
 	def DiskAttr(self, dev_name, attr_name):
 		return getattr(self.disk[dev_name], attr_name)
 
+	def NetAttr(self, attr_name):
+		return getattr(self.network, attr_name)
+
 
 def _ResUsageReportAggr():
 	Cons.P("Resource usage stat:")
 	fmt = "%6.2f %6.2f %6.2f %10.2f %9.2f %10.2f %9.2f %10.2f %10.2f %10.2f %10.2f %10.2f"
+	# TODO: could be something else
 	disk_dev_name = "xvdb"
 	Cons.P(Util.Indent(Util.BuildHeader(fmt,
 		"cpu_user cpu_sys cpu_wait"

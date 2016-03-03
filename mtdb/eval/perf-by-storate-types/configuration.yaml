@@ -1,0 +1,6 @@
+exp_result:
+  local-ssd:         local-ssd-160302-151235
+  ebs-ssd:           ebs-ssd-160302-212229
+  ebs-mag:           ebs-mag-160302-193548
+  local-ssd-ebs-mag: local-ssd-ebs-mag-160303-004309
+  local-ssd-ebs-ssd: local-ssd-ebs-ssd-160302-230443

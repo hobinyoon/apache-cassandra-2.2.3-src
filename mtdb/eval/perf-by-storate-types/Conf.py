@@ -1,7 +1,7 @@
 import sys
 import yaml
 
-sys.path.insert(0, "../../../util/python")
+sys.path.insert(0, "../../util/python")
 import Cons
 
 _conf = None

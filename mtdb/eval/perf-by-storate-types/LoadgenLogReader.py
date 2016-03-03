@@ -3,14 +3,14 @@ import os
 import re
 import sys
 
-sys.path.insert(0, "../../../util/python")
+sys.path.insert(0, "../../util/python")
 import Cons
 import Util
 
 import Conf
 
 def Read(log_datetime):
-	fn = "../../../logs/loadgen/%s" % log_datetime
+	fn = "../../logs/loadgen/%s" % log_datetime
 	lines = []
 	with open(fn) as fo:
 		for line in fo.readlines():

@@ -1,11 +1,11 @@
 import sys
 
-sys.path.insert(0, "../../../util/python")
+sys.path.insert(0, "../../util/python")
 import Cons
 
 
 def Read(log_datetime):
-	fn = "../../../logs/num-cass-threads/%s" % log_datetime
+	fn = "../../logs/num-cass-threads/%s" % log_datetime
 	return Log(fn)
 
 

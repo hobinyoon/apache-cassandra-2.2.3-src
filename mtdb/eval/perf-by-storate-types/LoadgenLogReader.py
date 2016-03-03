@@ -1,4 +1,4 @@
-import operator
+import datetime
 import os
 import re
 import sys
@@ -17,59 +17,28 @@ def Read(log_datetime):
 class Log:
 	def __init__(self, fn):
 		self.fn = fn
+		self.dt_begin = None
+		self.dt_end = None
 		self._Parse(fn)
 	
+	# IOs / sec
+	def Throughput(self):
+		return (self.num_writes + self.num_reads) * 1000.0 / self.exe_time_ms
+
+	def ExpBegin(self):
+		return self.dt_begin
+
+	def ExpEnd(self):
+		return self.dt_end
+
 	def _Parse(self, fn):
 		raw_lines = []
 		with open(fn) as fo:
 			for line in fo.readlines():
 				line = line.rstrip()
 				raw_lines.append(line)
-
 		self._ParseStartTime(raw_lines)
-
-		# TODO: _ParseTail()
-
-
-
-
-		lines_tail = raw_lines[-12:]
-		#Cons.P(lines_tail)
-		#  0 1600025 160302-200229.382 180101-001411.305  266670 100.0     1     0        0     0        0    0    3    1    8
-		#  1 #
-		#  2 # # of writes: 266670
-		#  3 # # of reads : 1390809
-		#  4 # # reads / write:
-		#  5 #   avg= 5.215 min=    0 max= 783 50=   2 90=  11 95=  19 99=  57 995=  86 999= 184
-		#  6 #
-		#  7 # Write latency:
-		#  8 #   avg= 2.560 min=0.470 max=1328 50=   0 90=   0 95=   0 99=   8 995=  87 999= 494
-		#  9 # Read latency:
-		# 10 #   avg= 1.696 min=0.582 max=1285 50=   0 90=   0 95=   1 99=   3 995=  21 999= 227
-		# 11 1602454 ms
-		# 12 24 ms
-		line = lines_tail[0]
-		t = line.split()
-		if len(t) != 14:
-			raise RuntimeError("Unexpected format [%s]" % line)
-		self.exe_time_ms = int(t[0])
-
-		line = lines_tail[2]
-		t = line.split()
-		if len(t) != 5:
-			raise RuntimeError("Unexpected format [%s]" % line)
-		self.num_writes = int(t[4])
-
-		line = lines_tail[3]
-		t = line.split()
-		if len(t) != 6:
-			raise RuntimeError("Unexpected format [%s]" % line)
-		self.num_reads = int(t[5])
-
-		self.lat_w = _Latency(lines_tail[8])
-		self.lat_r = _Latency(lines_tail[10])
-
-		#Cons.P(self)
+		self._ParseTail(raw_lines[-12:])
 
 	def _ParseStartTime(self, raw_lines):
 		lines = raw_lines
@@ -92,17 +61,52 @@ class Log:
 		if first_body_line == None:
 			raise RuntimeError("Cannot find the first body line. fn=[%s]", self.fn)
 		#Cons.P(first_body_line)
+		# 119 160302-151236.892 100101-051433.070      19   0.0    19    34       68     5       -4    4    0   19    0
 		t = first_body_line.split()
-		lap_time_ms = t[0]
-		cur_dt = t[1]
+		lap_time_ms = float(t[0])
+		dt_first = datetime.datetime.strptime(t[1], "%y%m%d-%H%M%S.%f")
+		#Cons.P(dt_first)
+		self.dt_begin = dt_first - datetime.timedelta(seconds=(lap_time_ms * 0.001))
+		#Cons.P(self.dt_begin)
 
-		sys.exit(0)
+	def _ParseTail(self, lines_tail):
+		#Cons.P(lines_tail)
+		#  0 1600025 160302-200229.382 180101-001411.305  266670 100.0     1     0        0     0        0    0    3    1    8
+		#  1 #
+		#  2 # # of writes: 266670
+		#  3 # # of reads : 1390809
+		#  4 # # reads / write:
+		#  5 #   avg= 5.215 min=    0 max= 783 50=   2 90=  11 95=  19 99=  57 995=  86 999= 184
+		#  6 #
+		#  7 # Write latency:
+		#  8 #   avg= 2.560 min=0.470 max=1328 50=   0 90=   0 95=   0 99=   8 995=  87 999= 494
+		#  9 # Read latency:
+		# 10 #   avg= 1.696 min=0.582 max=1285 50=   0 90=   0 95=   1 99=   3 995=  21 999= 227
+		# 11 1602454 ms
+		# 12 24 ms
+		line = lines_tail[0]
+		t = line.split()
+		if len(t) != 14:
+			raise RuntimeError("Unexpected format [%s]" % line)
+		self.exe_time_ms = int(t[0])
+		self.dt_end = datetime.datetime.strptime(t[1], "%y%m%d-%H%M%S.%f")
 
-	
-	# IOs / sec
-	def Throughput(self):
-		return (self.num_writes + self.num_reads) * 1000.0 / self.exe_time_ms
-	
+		line = lines_tail[2]
+		t = line.split()
+		if len(t) != 5:
+			raise RuntimeError("Unexpected format [%s]" % line)
+		self.num_writes = int(t[4])
+
+		line = lines_tail[3]
+		t = line.split()
+		if len(t) != 6:
+			raise RuntimeError("Unexpected format [%s]" % line)
+		self.num_reads = int(t[5])
+
+		self.lat_w = _Latency(lines_tail[8])
+		self.lat_r = _Latency(lines_tail[10])
+		#Cons.P(self)
+
 	def __str__(self):
 		return " ".join("%s=%s" % item for item in vars(self).items())
 

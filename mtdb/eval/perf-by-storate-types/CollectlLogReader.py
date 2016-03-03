@@ -9,118 +9,181 @@ import Util
 import Conf
 
 
-def Read(log_datetime):
+def Read(log_datetime, loadgen_log):
 	fn = "../../logs/collectl/collectl-%s" % log_datetime
+	#Cons.P(fn)
+	return Log(fn, loadgen_log)
 
-	# TODO: will want to make a concise, intermediate data file
 
-	raw_lines = []
-	with open(fn) as fo:
-		for line in fo.readlines():
-			raw_lines.append(line.rstrip())
+class Log:
+	def __init__(self, fn, loadgen_log):
+		self.fn = fn
+		self.exp_dt_begin = loadgen_log.ExpBegin().strftime("%H:%M:%S.%f")[:-3]
+		self.exp_dt_end = loadgen_log.ExpEnd().strftime("%H:%M:%S.%f")[:-3]
+		#Cons.P(self.exp_dt_begin)
+		#Cons.P(self.exp_dt_end)
+		if self.exp_dt_begin >= self.exp_dt_end:
+			raise RuntimeError("Exp begin time(%s) is smaller than end time(%s)."
+					"Collectl log time doesn't have a date part :("
+					% (self.exp_dt_begin, self.exp_dt_end))
+		self.time_res_usage = {}
+		self._ParseFile()
+
+	def _ParseFile(self):
+		# TODO: will want to make a concise, intermediate data file
+
+		# TODO: what I want
+		# - CPU
+		#     (user, kernel, iowait) * (avg, min, max, _50, _99)
+		# - Disk usage: (per device) * (what?)
+		# - Network usage: eth0 in/out. Check if it is saturated or what.
+		# - Mem is always full, since it is pressured. Linux buffer cache is assumed to be always full.
+
+		raw_lines = []
+		with open(self.fn) as fo:
+			for line in fo.readlines():
+				raw_lines.append(line.rstrip())
 	
-	sys.exit(0)
-
-	# TODO: scope the time range
-
-	# TODO: what I want
-	# - CPU
-	#     (user, kernel, iowait) * (avg, min, max, _50, _99)
-	# - Disk usage: (per device) * (what?)
-	# - Network usage: eth0 in/out. Check if it is saturated or what.
-	# - Mem is always full, since it is pressured. Linux buffer cache is assumed to be always full.
-
-	phase = None
-	for line in raw_lines:
-		if line.startswith("# SINGLE CPU[HYPER] STATISTICS"):
-			phase = "CPU"
-			continue
-		elif line.startswith("# DISK STATISTICS"):
-			phase = "DISK"
-			continue
-		elif line.startswith("# NETWORK STATISTICS"):
-			phase = "NET"
-			continue
-
-		if phase == "CPU":
-			# # SINGLE CPU[HYPER] STATISTICS
-			# #Time            Cpu  User Nice  Sys Wait IRQ  Soft Steal Idle
-			# 14:52:49.732       0     0    0    0    0    0    0     0    0
-			# 14:52:49.732       1     0    0    0    0    0    0     0    0
-			if line.startswith("#Time"):
+		phase = None
+		self.parse_time_passed_exp_time_end = False
+		for line in raw_lines:
+			if self.parse_time_passed_exp_time_end:
+				break
+			if line.startswith("# SINGLE CPU[HYPER] STATISTICS"):
+				phase = "CPU"
 				continue
-			t = line.split()
-			if len(t) != 10:
-				# There is a blank line. Ignore.
+			elif line.startswith("# DISK STATISTICS"):
+				phase = "DISK"
 				continue
-			time = t[0]
-			cpu_id = t[1]
-			user = t[2]
-			sys_ = t[4]
-			wait = t[5]
-			ResAddCpu(time, cpu_id, user, sys_, wait)
-		elif phase == "DISK":
-			## DISK STATISTICS (/sec)
-			##                       <---------reads---------><---------writes---------><--------averages--------> Pct
-			##Time         Name       KBytes Merged  IOs Size  KBytes Merged  IOs Size  RWSize  QLen  Wait SvcTim Util
-			#14:52:49.732 xvda             0      0    0    0       0      0    0    0       0     0     0      0    0
-			#14:52:49.732 xvdb         23996      0 5999    4       0      0    0    0       4     0     0      0    0
-			#14:52:49.732 xvdc             0      0    0    0       0      0    0    0       0     0     0      0    0
-			#           0    1             2      3    4    5       6      7    8    9      10    11    12     13   14
-			if line.startswith("#"):
+			elif line.startswith("# NETWORK STATISTICS"):
+				phase = "NET"
 				continue
-			t = line.split()
-			if len(t) != 15:
-				continue
-			time = t[0]
-			dev_name = t[1]
-			read_kb = t[2]
-			read_io = t[4]
-			write_kb = t[6]
-			write_io = t[8]
 
-			rw_size = t[10]
-			# TODO: can q_len be a hint?
-			q_len = t[11]
-			wait = t[12]
-			svc_time = t[13]
-			util = t[14]
-			ResAddDisk(time, dev_name, read_kb, read_io, write_kb, write_io, \
-					rw_size, q_len, wait, svc_time, util)
+			if phase == "CPU":
+				self._ParseCpu(line)
+			elif phase == "DISK":
+				self._ParseDisk(line)
+			elif phase == "NET":
+				self._ParseNetwork(line)
 
-	# Trim the first two and last two, which may not overlap with the experiment
-	global _time_res_usage
-	tru0 = {}
-	cnt = 0
-	len_tru = len(_time_res_usage)
-	for time, ru in sorted(_time_res_usage.iteritems()):
-		if cnt < 2:
-			pass
-		elif cnt >= len_tru - 2:
-			pass
-		else:
-			tru0[time] = ru
-			pass
-		cnt += 1
-	_time_res_usage = tru0
-
-	# TODO: network report too, eth0 probably
-	#_ResUsageReportByTime()
-	_ResUsageReportAggr()
-
-
-#14:52:49.732 xvdd             0      0    0    0       0      0    0    0       0     0     0      0    0
-#
-## NETWORK STATISTICS (/sec)
-
-
-
-	sys.exit(0)
+		self._ReportByTime()
+		sys.exit(0)
+		_ResUsageReportAggr()
 
 
 
 
 
+	def _ParseCpu(self, line):
+		# # SINGLE CPU[HYPER] STATISTICS
+		# #Time            Cpu  User Nice  Sys Wait IRQ  Soft Steal Idle
+		# 14:52:49.732       0     0    0    0    0    0    0     0    0
+		# 14:52:49.732       1     0    0    0    0    0    0     0    0
+		if line.startswith("#Time"):
+			return
+		t = line.split()
+		if len(t) != 10:
+			# There are blank lines. Ignore.
+			return
+
+		time = t[0]
+		# Scope time range by the loadgen time range
+		if time <= self.exp_dt_begin:
+			return
+		if self.exp_dt_end <= time:
+			self.parse_time_passed_exp_time_end = True
+			return
+
+		cpu_id = t[1]
+		user = t[2]
+		sys_ = t[4]
+		wait = t[5]
+
+		if time not in self.time_res_usage:
+			self.time_res_usage[time] = _ResUsage()
+		self.time_res_usage[time].AddCpu(cpu_id, user, sys_, wait)
+
+	def _ParseDisk(self, line):
+		# # DISK STATISTICS (/sec)
+		# #                       <---------reads---------><---------writes---------><--------averages--------> Pct
+		# #Time         Name       KBytes Merged  IOs Size  KBytes Merged  IOs Size  RWSize  QLen  Wait SvcTim Util
+		# 14:52:49.732 xvda             0      0    0    0       0      0    0    0       0     0     0      0    0
+		# 14:52:49.732 xvdb         23996      0 5999    4       0      0    0    0       4     0     0      0    0
+		# 14:52:49.732 xvdc             0      0    0    0       0      0    0    0       0     0     0      0    0
+		#            0    1             2      3    4    5       6      7    8    9      10    11    12     13   14
+		if line.startswith("#"):
+			return
+		t = line.split()
+		if len(t) != 15:
+			return
+
+		time = t[0]
+		# Scope time range by the loadgen time range
+		if time <= self.exp_dt_begin:
+			return
+		if self.exp_dt_end <= time:
+			self.parse_time_passed_exp_time_end = True
+			return
+
+		dev_name = t[1]
+		read_kb = t[2]
+		read_io = t[4]
+		write_kb = t[6]
+		write_io = t[8]
+
+		rw_size = t[10]
+		# TODO: can q_len be a hint?
+		q_len = t[11]
+		wait = t[12]
+		svc_time = t[13]
+		util = t[14]
+
+		if time not in self.time_res_usage:
+			self.time_res_usage[time] = _ResUsage()
+		self.time_res_usage[time].AddDisk(dev_name, read_kb, read_io, write_kb, write_io, rw_size, q_len, wait, svc_time, util)
+
+	def _ParseNetwork(self, line):
+		# TODO: network too. eth0 probably
+
+		# 14:52:49.732 xvdd             0      0    0    0       0      0    0    0       0     0     0      0    0
+		#
+		# # NETWORK STATISTICS (/sec)
+		pass
+
+	def _ReportByTime(self):
+		fmt = "%12s %3d %3d %3d" \
+				" %5d %4d" \
+				" %5d %4d" \
+				" %4d %4d" \
+				" %3d %2d %2d"
+		disk_dev_name = "xvdb"
+		Cons.P(Util.BuildHeader(fmt,
+			"time cpu.user cpu.sys cpu.wait"
+			" disk.%s.read_kb disk.%s.read_io"
+			" disk.%s.write_kb disk.%s.write_io"
+			" disk.%s.rw_size disk.%s.q_len"
+			" disk.%s.wait"
+			" disk.%s.svc_time"
+			" disk.%s.util"
+			% (disk_dev_name, disk_dev_name
+				, disk_dev_name, disk_dev_name
+				, disk_dev_name, disk_dev_name
+				, disk_dev_name
+				, disk_dev_name
+				, disk_dev_name)
+			))
+
+		for time, ru in sorted(self.time_res_usage.iteritems()):
+			Cons.P(fmt % (
+				time
+				, ru.CpuAttr("user"), ru.CpuAttr("sys"), ru.CpuAttr("wait")
+				, ru.DiskAttr(disk_dev_name, "read_kb"), ru.DiskAttr(disk_dev_name, "read_io")
+				, ru.DiskAttr(disk_dev_name, "write_kb"), ru.DiskAttr(disk_dev_name, "write_io")
+				, ru.DiskAttr(disk_dev_name, "rw_size"), ru.DiskAttr(disk_dev_name, "q_len")
+				, ru.DiskAttr(disk_dev_name, "wait")
+				, ru.DiskAttr(disk_dev_name, "svc_time")
+				, ru.DiskAttr(disk_dev_name, "util")
+				))
 
 
 # TODO: clean up
@@ -202,64 +265,6 @@ class _ResUsage:
 		return getattr(self.disk[dev_name], attr_name)
 
 
-_time_res_usage = {}
-
-def ResAddCpu(time, cpu_id, user, sys, wait):
-	global _time_res_usage
-	if time not in _time_res_usage:
-		_time_res_usage[time] = _ResUsage()
-	_time_res_usage[time].AddCpu(cpu_id, user, sys, wait)
-
-
-def ResAddDisk(time, dev_name, read_kb, read_io, write_kb, write_io, rw_size, q_len, wait, svc_time, util):
-	global _time_res_usage
-	if time not in _time_res_usage:
-		_time_res_usage[time] = _ResUsage()
-	_time_res_usage[time].AddDisk(dev_name, read_kb, read_io, write_kb, write_io, rw_size, q_len, wait, svc_time, util)
-
-
-def _ResUsageReportByTime():
-	fmt = "%12s %3d %3d %3d %7d %6d %7d %6d %7d %7d %7d %7d %7d"
-	disk_dev_name = "xvdb"
-	Cons.P(Util.BuildHeader(fmt,
-		"time cpu_user cpu_sys cpu_wait"
-		" disk_%s_read_kb"
-		" disk_%s_read_io"
-		" disk_%s_write_kb"
-		" disk_%s_write_io"
-		" disk_%s_rw_size"
-		" disk_%s_q_len"
-		" disk_%s_wait"
-		" disk_%s_svc_time"
-		" disk_%s_util"
-		% (disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name)
-		))
-
-	global _time_res_usage
-	for time, ru in sorted(_time_res_usage.iteritems()):
-		Cons.P(fmt % (
-			time
-			, ru.CpuAttr("user"), ru.CpuAttr("sys"), ru.CpuAttr("wait")
-			, ru.DiskAttr(disk_dev_name, "read_kb")
-			, ru.DiskAttr(disk_dev_name, "read_io")
-			, ru.DiskAttr(disk_dev_name, "write_kb")
-			, ru.DiskAttr(disk_dev_name, "write_io")
-			, ru.DiskAttr(disk_dev_name, "rw_size")
-			, ru.DiskAttr(disk_dev_name, "q_len")
-			, ru.DiskAttr(disk_dev_name, "wait")
-			, ru.DiskAttr(disk_dev_name, "svc_time")
-			, ru.DiskAttr(disk_dev_name, "util")
-			))
-
-
 def _ResUsageReportAggr():
 	Cons.P("Resource usage stat:")
 	fmt = "%6.2f %6.2f %6.2f %10.2f %9.2f %10.2f %9.2f %10.2f %10.2f %10.2f %10.2f %10.2f"
@@ -297,8 +302,7 @@ def _ResUsageReportAggr():
 	disk_svc_time = 0
 	disk_util     = 0
 
-	global _time_res_usage
-	for time, ru in _time_res_usage.iteritems():
+	for time, ru in self.time_res_usage.iteritems():
 		cpu_user += ru.CpuAttr("user")
 		cpu_sys  += ru.CpuAttr("sys")
 		cpu_wait += ru.CpuAttr("wait")
@@ -312,7 +316,7 @@ def _ResUsageReportAggr():
 		disk_svc_time += ru.DiskAttr(disk_dev_name, "svc_time")
 		disk_util     += ru.DiskAttr(disk_dev_name, "util")
 
-	len_ = float(len(_time_res_usage))
+	len_ = float(len(self.time_res_usage))
 	cpu_user /= len_
 	cpu_sys  /= len_
 	cpu_wait /= len_

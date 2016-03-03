@@ -7,6 +7,7 @@ sys.path.insert(0, "../../util/python")
 import Cons
 import Util
 
+import CollectlLogReader
 import Conf
 import LoadgenLogReader
 import NumCassThreadsReader
@@ -71,7 +72,13 @@ class Exp():
 		self.saturated = int(t[7])
 		self.loadgen_log = LoadgenLogReader.Read(self.log_dt_loadgen)
 		self.num_cass_threads = NumCassThreadsReader.Read(self.log_dt_num_cass_threads)
-		# TODO: load other logs too
+		self.collectl = CollectlLogReader.Read(self.log_dt_collectl)
+
+		# TODO: Cassndra log. What do you get from it?
+		# - Hot and cold storage size, which you use to calculate cost. This is
+		#   worth plotting.
+		# - When tablets migrate.
+		# - Number of requests to each tablet.
 
 	def __str__(self):
 		return " ".join("%s=%s" % item for item in vars(self).items())

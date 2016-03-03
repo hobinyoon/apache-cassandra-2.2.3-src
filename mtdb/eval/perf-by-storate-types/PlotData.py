@@ -45,7 +45,6 @@ def Gen():
 			for e in eg.exps:
 				lat_w = e.loadgen_log.lat_w
 				lat_r = e.loadgen_log.lat_r
-				# TODO: e.loadgen_log.saturated
 
 				_P(fmt % (
 					e.log_dt_loadgen

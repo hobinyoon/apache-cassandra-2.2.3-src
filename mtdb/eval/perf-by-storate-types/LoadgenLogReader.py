@@ -11,20 +11,30 @@ import Conf
 
 def Read(log_datetime):
 	fn = "../../logs/loadgen/%s" % log_datetime
-	lines = []
-	with open(fn) as fo:
-		for line in fo.readlines():
-			line = line.rstrip()
-			lines.append(line)
-	return Log(lines[-12:])
+	return Log(fn)
 
 
 class Log:
-	def __init__(self, lines):
-		self._Parse(lines)
+	def __init__(self, fn):
+		self.fn = fn
+		self._Parse(fn)
 	
-	def _Parse(self, lines):
-		#Cons.P(lines)
+	def _Parse(self, fn):
+		raw_lines = []
+		with open(fn) as fo:
+			for line in fo.readlines():
+				line = line.rstrip()
+				raw_lines.append(line)
+
+		self._ParseStartTime(raw_lines)
+
+		# TODO: _ParseTail()
+
+
+
+
+		lines_tail = raw_lines[-12:]
+		#Cons.P(lines_tail)
 		#  0 1600025 160302-200229.382 180101-001411.305  266670 100.0     1     0        0     0        0    0    3    1    8
 		#  1 #
 		#  2 # # of writes: 266670
@@ -38,28 +48,56 @@ class Log:
 		# 10 #   avg= 1.696 min=0.582 max=1285 50=   0 90=   0 95=   1 99=   3 995=  21 999= 227
 		# 11 1602454 ms
 		# 12 24 ms
-		line = lines[0]
+		line = lines_tail[0]
 		t = line.split()
 		if len(t) != 14:
 			raise RuntimeError("Unexpected format [%s]" % line)
 		self.exe_time_ms = int(t[0])
 
-		line = lines[2]
+		line = lines_tail[2]
 		t = line.split()
 		if len(t) != 5:
 			raise RuntimeError("Unexpected format [%s]" % line)
 		self.num_writes = int(t[4])
 
-		line = lines[3]
+		line = lines_tail[3]
 		t = line.split()
 		if len(t) != 6:
 			raise RuntimeError("Unexpected format [%s]" % line)
 		self.num_reads = int(t[5])
 
-		self.lat_w = _Latency(lines[8])
-		self.lat_r = _Latency(lines[10])
+		self.lat_w = _Latency(lines_tail[8])
+		self.lat_r = _Latency(lines_tail[10])
 
 		#Cons.P(self)
+
+	def _ParseStartTime(self, raw_lines):
+		lines = raw_lines
+		first_body_line = None
+		for i in range(200):
+			line = lines[i]
+			#Cons.P(line)
+			t = line.split()
+			if len(t) <= 9:
+				continue
+			detected_header = True
+			for j in range(1, 9):
+				#Cons.P("%d %s" % (j, t[j]))
+				if int(t[j]) != j:
+					detected_header = False
+					break
+			if detected_header == True:
+				first_body_line = lines[i + 1]
+				break
+		if first_body_line == None:
+			raise RuntimeError("Cannot find the first body line. fn=[%s]", self.fn)
+		#Cons.P(first_body_line)
+		t = first_body_line.split()
+		lap_time_ms = t[0]
+		cur_dt = t[1]
+
+		sys.exit(0)
+
 	
 	# IOs / sec
 	def Throughput(self):

@@ -1,5 +1,5 @@
 global num_servers
-set num_servers to 12
+set num_servers to 10
 
 
 on open_window_tabs()
@@ -292,7 +292,7 @@ on git_pull()
 end git_pull
 
 
-on server_format_ebs_mag_mount_dev_prepare_dirs()
+on server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_ebs_mag()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
@@ -326,7 +326,7 @@ on server_format_ebs_mag_mount_dev_prepare_dirs()
 			set tab_id to tab_id + 2
 		end repeat
 	end tell
-end server_format_ebs_mag_mount_dev_prepare_dirs
+end server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_ebs_mag
 
 
 on server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
@@ -589,7 +589,7 @@ on server_get_client_logs_and_process()
 		set currentWindow to front window
 		set tab_id to 1
 		repeat until tab_id > (num_servers * 2)
-			set cmd to "(killall pressure-memory > /dev/null 2>&1 || true) && (sudo killall collectl > /dev/null 2>&1 || true) && (sudo killall mon-num-cass-threads.sh > /dev/null 2>&1 || true) && rsync -ave \"ssh -o StrictHostKeyChecking=no\" $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs && cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline && (\\rm *.pdf || true) && ./plot-cost-latency-tablet-timelines.py && du -hs ~/work/cassandra/data/"
+			set cmd to "(killall pressure-memory > /dev/null 2>&1 || true) && (sudo killall collectl > /dev/null 2>&1 || true) && (sudo killall mon-num-cass-threads.sh > /dev/null 2>&1 || true) && rsync -ave \"ssh -o StrictHostKeyChecking=no\" $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs && cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline && (\\rm *.pdf >/dev/null 2>&1 || true) && ./plot-cost-latency-tablet-timelines.py && du -hs ~/work/cassandra/data/"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Go to the next server tab
 			set tab_id to tab_id + 2
@@ -731,8 +731,8 @@ on run_all()
 	my screen_reattach()
 	
 	-- Run either of these, depending on what dev you have
-	-- my server_format_ebs_mag_mount_dev_prepare_dirs()
-	-- my server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
+	my server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_ebs_mag()
+	my server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
 	my server_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_data_to_ebs_ssd()
 	
 	-- Switch data directory to ebs mag
@@ -764,4 +764,7 @@ on run_all()
 	-- Switch data directory to ebs mag
 	-- my server_switch_data_dir_to_ebs_mag()
 end run_all
+
+
+
 

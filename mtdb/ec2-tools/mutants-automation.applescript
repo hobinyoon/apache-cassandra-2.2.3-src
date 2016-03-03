@@ -66,7 +66,23 @@ on install_pkgs_0()
 		set tab_id to 0
 		repeat until tab_id is (num_servers * 2)
 			set tab_id to tab_id + 1
-			set cmd to "sudo add-apt-repository -y ppa:webupd8team/java && sudo apt-get update && sudo apt-get install oracle-java8-installer git ctags ant htop tree maven gnuplot-nox ntp ioping realpath make gcc cmake g++ libboost-dev libboost-system-dev libboost-timer-dev collectl -y && sudo apt-get autoremove -y vim-tiny && mkdir -p ~/work && cd ~/work && git clone https://github.com/hoytech/vmtouch.git && cd vmtouch && make -j && sudo make install && sudo service ntp stop && sudo ntpdate -bv 0.ubuntu.pool.ntp.org && sudo service ntp start && cd ~/work && git clone git@github.com:hobinyoon/linux-home.git && cd linux-home && ./setup-linux.sh"
+			set cmd to "sudo add-apt-repository -y ppa:webupd8team/java"
+			set cmd to cmd & " && sudo apt-get update"
+			set cmd to cmd & " && sudo apt-get install oracle-java8-installer git ctags ant htop tree maven gnuplot-nox ntp ioping realpath make gcc cmake g++ libboost-dev libboost-system-dev libboost-timer-dev collectl -y"
+			set cmd to cmd & " && sudo apt-get autoremove -y vim-tiny"
+			set cmd to cmd & " && mkdir -p ~/work"
+			set cmd to cmd & " && cd ~/work"
+			set cmd to cmd & " && git clone https://github.com/hoytech/vmtouch.git"
+			set cmd to cmd & " && cd vmtouch"
+			set cmd to cmd & " && make -j"
+			set cmd to cmd & " && sudo make install"
+			set cmd to cmd & " && sudo service ntp stop"
+			set cmd to cmd & " && sudo ntpdate -bv 0.ubuntu.pool.ntp.org"
+			set cmd to cmd & " && sudo service ntp start"
+			set cmd to cmd & " && cd ~/work"
+			set cmd to cmd & " && git clone git@github.com:hobinyoon/linux-home.git"
+			set cmd to cmd & " && cd linux-home"
+			set cmd to cmd & " && ./setup-linux.sh"
 			do script (cmd) in tab tab_id of currentWindow
 		end repeat
 	end tell
@@ -343,15 +359,48 @@ on server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
 end server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd
 
 
+on server_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_data_to_ebs_ssd()
+	tell application "Terminal"
+		set currentWindow to front window
+		set tab_id to 1
+		repeat until tab_id > (num_servers * 2)
+			set cmd to "sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
+			set cmd to cmd & " && sudo umount /mnt"
+			set cmd to cmd & " && sudo mkdir -p /mnt/local-ssd"
+			set cmd to cmd & " && sudo mount /mnt/local-ssd"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/local-ssd"
+			set cmd to cmd & " && mkdir /mnt/local-ssd/cass-data"
+			set cmd to cmd & " && mkdir ~/cass-data-vol"
+			set cmd to cmd & " && sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2"
+			set cmd to cmd & " && mkdir /mnt/ebs-ssd-gp2/cass-data"
+			set cmd to cmd & " && sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold"
+			set cmd to cmd & " && sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-ssd-gp2"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage"
+			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold"
+			set cmd to cmd & " && mkdir -p ~/work/cassandra/mtdb/logs/collectl"
+			set cmd to cmd & " && ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data"
+			do script (cmd) in tab tab_id of currentWindow
+			
+			-- Go to the next server tab
+			set tab_id to tab_id + 2
+		end repeat
+	end tell
+end server_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_data_to_ebs_ssd
+
+
 on server_edit_cassandra_yaml()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
 		repeat until tab_id > (num_servers * 2)
-			--			set cmd to "sed -i -r 's/^    migrate_to_cold_storage:.+/    migrate_to_cold_storage: true/' ~/work/cassandra/conf/cassandra.yaml"
-			set cmd to "sed -i -r 's/^    migrate_to_cold_storage:.+/    migrate_to_cold_storage: false/' ~/work/cassandra/conf/cassandra.yaml"
+			set cmd to "sed -i -r 's/^    migrate_to_cold_storage:.+/    migrate_to_cold_storage: true/' ~/work/cassandra/conf/cassandra.yaml"
 			do script (cmd) in tab tab_id of currentWindow
 			set cmd to "sed -i -r 's/^    tablet_coldness_threshold:.+/    tablet_coldness_threshold: 75/' ~/work/cassandra/conf/cassandra.yaml"
+			do script (cmd) in tab tab_id of currentWindow
+			set cmd to "grep migrate_to_cold_storage: ~/work/cassandra/conf/cassandra.yaml"
+			do script (cmd) in tab tab_id of currentWindow
+			set cmd to "grep tablet_coldness_threshold: ~/work/cassandra/conf/cassandra.yaml"
 			do script (cmd) in tab tab_id of currentWindow
 			
 			-- Go to the next server tab
@@ -635,8 +684,20 @@ on server_switch_data_dir_to_ebs_mag()
 end server_switch_data_dir_to_ebs_mag
 
 
-
-
+on server_switch_data_dir_to_local_ssd()
+	tell application "Terminal"
+		set currentWindow to front window
+		set tab_id to 1
+		repeat until tab_id > (num_servers * 2)
+			set cmd to "cdcass"
+			set cmd to cmd & " && \\rm data"
+			set cmd to cmd & " && ln -s /mnt/local-ssd/cass-data data"
+			do script (cmd) in tab tab_id of currentWindow
+			-- Go to the next server tab
+			set tab_id to tab_id + 2
+		end repeat
+	end tell
+end server_switch_data_dir_to_local_ssd
 
 
 on open_window_tabs_ssh_screen()
@@ -671,7 +732,8 @@ on run_all()
 	
 	-- Run either of these, depending on what dev you have
 	-- my server_format_ebs_mag_mount_dev_prepare_dirs()
-	my server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
+	-- my server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
+	my server_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_data_to_ebs_ssd()
 	
 	-- Switch data directory to ebs mag
 	-- my server_switch_data_dir_to_ebs_mag()
@@ -689,20 +751,17 @@ on run_all()
 	-- This takes some time too.
 	my client_run_loadgen()
 	
+	-- Detach screen to save network traffic while running experiments
+	my save_screen_layout()
+	my screen_detach()
+	
+	-- May want to check the last tabs to see if the system saturates or cold sstables are created
+	
+	-- When done, reattach the screen and process the logs
+	my screen_reattach()
 	my server_get_client_logs_and_process()
 	
 	-- Switch data directory to ebs mag
 	-- my server_switch_data_dir_to_ebs_mag()
 end run_all
-
-
-
-
-
-
-
-
-
-
-
 

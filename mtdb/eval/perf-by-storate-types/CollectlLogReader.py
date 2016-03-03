@@ -10,27 +10,27 @@ import Conf
 
 
 def Read(log_datetime, loadgen_log):
-	fn = "../../logs/collectl/collectl-%s" % log_datetime
-	#Cons.P(fn)
-	return Log(fn, loadgen_log)
+	# If the digested file doesn't exist, read the raw one and create one
+	fn_digested = "plot-data/collectl-digested-%s" % log_datetime
+	if not os.path.isfile(fn_digested):
+		rlp = _ParseRawLog(log_datetime, loadgen_log)
+	return _LogDigested(fn_digested)
 
 
-class Log:
-	def __init__(self, fn, loadgen_log):
-		self.fn = fn
-		self.exp_dt_begin = loadgen_log.ExpBegin().strftime("%H:%M:%S.%f")[:-3]
-		self.exp_dt_end = loadgen_log.ExpEnd().strftime("%H:%M:%S.%f")[:-3]
-		#Cons.P(self.exp_dt_begin)
-		#Cons.P(self.exp_dt_end)
-		if self.exp_dt_begin >= self.exp_dt_end:
+class _ParseRawLog:
+	def __init__(self, log_datetime, loadgen_log):
+		self.time_res_usage = {}
+		self.log_datetime = log_datetime
+		self._ParseFile(loadgen_log)
+
+
+	def _ParseFile(self, loadgen_log):
+		self.loadgen_exp_dt_begin = loadgen_log.ExpBegin().strftime("%H:%M:%S.%f")[:-3]
+		self.loadgen_exp_dt_end = loadgen_log.ExpEnd().strftime("%H:%M:%S.%f")[:-3]
+		if self.loadgen_exp_dt_begin >= self.loadgen_exp_dt_end:
 			raise RuntimeError("Exp begin time(%s) is smaller than end time(%s)."
 					"Collectl log time doesn't have a date part :("
-					% (self.exp_dt_begin, self.exp_dt_end))
-		self.time_res_usage = {}
-		self._ParseFile()
-
-	def _ParseFile(self):
-		# TODO: will want to make a concise, intermediate data file
+					% (self.loadgen_exp_dt_begin, self.loadgen_exp_dt_end))
 
 		# TODO: what I want
 		# - CPU
@@ -40,10 +40,11 @@ class Log:
 		# - Mem is always full, since it is pressured. Linux buffer cache is assumed to be always full.
 
 		raw_lines = []
-		with open(self.fn) as fo:
+		fn_raw = "../../logs/collectl/collectl-%s" % self.log_datetime
+		with open(fn_raw) as fo:
 			for line in fo.readlines():
 				raw_lines.append(line.rstrip())
-	
+
 		phase = None
 		self.parse_time_passed_exp_time_end = False
 		for line in raw_lines:
@@ -70,6 +71,8 @@ class Log:
 		#self._ReportAvg()
 		# May want 99th percentile? Think about it later.
 
+		self._CreateDigestFile()
+
 
 	def _ParseCpu(self, line):
 		# # SINGLE CPU[HYPER] STATISTICS
@@ -85,9 +88,9 @@ class Log:
 
 		time = t[0]
 		# Scope time range by the loadgen time range
-		if time <= self.exp_dt_begin:
+		if time <= self.loadgen_exp_dt_begin:
 			return
-		if self.exp_dt_end <= time:
+		if self.loadgen_exp_dt_end <= time:
 			self.parse_time_passed_exp_time_end = True
 			return
 
@@ -116,9 +119,9 @@ class Log:
 
 		time = t[0]
 		# Scope time range by the loadgen time range
-		if time <= self.exp_dt_begin:
+		if time <= self.loadgen_exp_dt_begin:
 			return
-		if self.exp_dt_end <= time:
+		if self.loadgen_exp_dt_end <= time:
 			self.parse_time_passed_exp_time_end = True
 			return
 
@@ -155,9 +158,9 @@ class Log:
 
 		time = t[0]
 		# Scope time range by the loadgen time range
-		if time <= self.exp_dt_begin:
+		if time <= self.loadgen_exp_dt_begin:
 			return
-		if self.exp_dt_end <= time:
+		if self.loadgen_exp_dt_end <= time:
 			self.parse_time_passed_exp_time_end = True
 			return
 
@@ -334,16 +337,47 @@ class Log:
 			, net_kb_out, net_pkt_out, net_size_o, net_cmp_o, net_errs_o
 			))
 
+	# Collectl stat by time
+	def _CreateDigestFile(self):
+		fn = "plot-data/collectl-digested-%s" % self.log_datetime
+		with open(fn, "w") as fo:
+			fmt = "%12s %3d %3d %3d" \
+					" %5d %4d" \
+					" %5d %4d" \
+					" %4d %4d" \
+					" %3d %2d %2d" \
+					" %4d %4d %4d %1d %1d %1d" \
+					" %4d %4d %4d %1d %1d"
 
+			# TODO: could be something else, or multiple if you use multiple storages
+			disk_dev_name = "xvdb"
 
+			fo.write("%s\n" % Util.BuildHeader(fmt,
+				"time cpu.user cpu.sys cpu.wait"
+				" disk.%s.read_kb disk.%s.read_io"
+				" disk.%s.write_kb disk.%s.write_io"
+				" disk.%s.rw_size disk.%s.q_len"
+				" disk.%s.wait disk.%s.svc_time disk.%s.util"
+				" net.kb_in net.pkt_in net.size_in net.mult_i net.cmp_i net.errs_i"
+				" net.kb_out net.pkt_out net.size_o net.cmp_o net.errs_o"
+				% (disk_dev_name, disk_dev_name
+					, disk_dev_name, disk_dev_name
+					, disk_dev_name, disk_dev_name
+					, disk_dev_name, disk_dev_name, disk_dev_name)
+				))
 
-# TODO: clean up
-#	def _WriteToFile(self):
-#		fn = "data/%s-%s-collectl" % (Conf.ExpDatetime(), self.test_name)
-#		with open(fn, "w") as fo:
-#			for line in self.stdout:
-#				fo.write(line)
-#		Cons.P("Saved collectl log to %s %d" % (fn, os.path.getsize(fn)))
+			for time, ru in sorted(self.time_res_usage.iteritems()):
+				fo.write("%s\n" % (fmt % (
+					time
+					, ru.CpuAttr("user"), ru.CpuAttr("sys"), ru.CpuAttr("wait")
+					, ru.DiskAttr(disk_dev_name, "read_kb"), ru.DiskAttr(disk_dev_name, "read_io")
+					, ru.DiskAttr(disk_dev_name, "write_kb"), ru.DiskAttr(disk_dev_name, "write_io")
+					, ru.DiskAttr(disk_dev_name, "rw_size"), ru.DiskAttr(disk_dev_name, "q_len")
+					, ru.DiskAttr(disk_dev_name, "wait"), ru.DiskAttr(disk_dev_name, "svc_time"), ru.DiskAttr(disk_dev_name, "util")
+					, ru.NetAttr("kb_in"), ru.NetAttr("pkt_in") , ru.NetAttr("size_in") , ru.NetAttr("mult_i") , ru.NetAttr("cmp_i") , ru.NetAttr("errs_i")
+					, ru.NetAttr("kb_out") , ru.NetAttr("pkt_out") , ru.NetAttr("size_o") , ru.NetAttr("cmp_o") , ru.NetAttr("errs_o")
+					)))
+		Cons.P("Created a digest file %s %d" % (fn, os.path.getsize(fn)))
 
 
 def Test():
@@ -436,3 +470,52 @@ class _ResUsage:
 
 	def NetAttr(self, attr_name):
 		return getattr(self.network, attr_name)
+
+
+class _LogDigested:
+	def __init__(self, fn):
+		self.time_res_usage = {}
+		self.fn = fn
+		self._LoadFile()
+
+	def _LoadFile(self):
+		fn = self.fn
+		with open(fn) as fo:
+			for line in fo.readlines():
+				if len(line) == 0:
+					continue
+				if line[0] == "#":
+					continue
+				t = line.split()
+				if len(t) != 24:
+					raise RuntimeError("Unexpected format: [%s]" % line)
+
+				# TODO: implement xvda, xvdd too
+				time = t[0]
+				self.time_res_usage[time] = _LogDigested.ResUsageMetrics(t)
+
+	class ResUsageMetrics:
+		def __init__(self, tokens):
+			cpu_user           = tokens[1]
+			cpu_sys            = tokens[2]
+			cpu_wait           = tokens[3]
+			disk_xvdb_read_kb  = tokens[4]
+			disk_xvdb_read_io  = tokens[5]
+			disk_xvdb_write_kb = tokens[6]
+			disk_xvdb_write_io = tokens[7]
+			disk_xvdb_rw_size  = tokens[8]
+			disk_xvdb_q_len    = tokens[9]
+			disk_xvdb_wait     = tokens[10]
+			disk_xvdb_svc_time = tokens[11]
+			disk_xvdb_util     = tokens[12]
+			net_kb_in          = tokens[13]
+			net_pkt_in         = tokens[14]
+			net_size_in        = tokens[15]
+			net_mult_i         = tokens[16]
+			net_cmp_i          = tokens[17]
+			net_errs_i         = tokens[18]
+			net_kb_out         = tokens[19]
+			net_pkt_out        = tokens[20]
+			net_size_o         = tokens[21]
+			net_cmp_o          = tokens[22]
+			net_errs_o         = tokens[23]

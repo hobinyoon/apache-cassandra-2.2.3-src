@@ -66,10 +66,9 @@ class Log:
 			elif phase == "NET":
 				self._ParseNetwork(line)
 
-		self._ReportByTime()
-		sys.exit(0)
-		_ResUsageReportAggr()
-		# TODO
+		#self._ReportByTime()
+		#self._ReportAvg()
+		# May want 99th percentile? Think about it later.
 
 
 	def _ParseCpu(self, line):
@@ -188,26 +187,24 @@ class Log:
 				" %5d %4d" \
 				" %4d %4d" \
 				" %3d %2d %2d" \
-				" %4d"
-		# TODO: continue!!!! other net attributes
+				" %4d %4d %4d %1d %1d %1d" \
+				" %4d %4d %4d %1d %1d"
 
 		# TODO: could be something else, or multiple if you use multiple storages
 		disk_dev_name = "xvdb"
+
 		Cons.P(Util.BuildHeader(fmt,
 			"time cpu.user cpu.sys cpu.wait"
 			" disk.%s.read_kb disk.%s.read_io"
 			" disk.%s.write_kb disk.%s.write_io"
 			" disk.%s.rw_size disk.%s.q_len"
-			" disk.%s.wait"
-			" disk.%s.svc_time"
-			" disk.%s.util"
-			" net.kb_in"
+			" disk.%s.wait disk.%s.svc_time disk.%s.util"
+			" net.kb_in net.pkt_in net.size_in net.mult_i net.cmp_i net.errs_i"
+			" net.kb_out net.pkt_out net.size_o net.cmp_o net.errs_o"
 			% (disk_dev_name, disk_dev_name
 				, disk_dev_name, disk_dev_name
 				, disk_dev_name, disk_dev_name
-				, disk_dev_name
-				, disk_dev_name
-				, disk_dev_name)
+				, disk_dev_name, disk_dev_name, disk_dev_name)
 			))
 
 		for time, ru in sorted(self.time_res_usage.iteritems()):
@@ -217,16 +214,130 @@ class Log:
 				, ru.DiskAttr(disk_dev_name, "read_kb"), ru.DiskAttr(disk_dev_name, "read_io")
 				, ru.DiskAttr(disk_dev_name, "write_kb"), ru.DiskAttr(disk_dev_name, "write_io")
 				, ru.DiskAttr(disk_dev_name, "rw_size"), ru.DiskAttr(disk_dev_name, "q_len")
-				, ru.DiskAttr(disk_dev_name, "wait")
-				, ru.DiskAttr(disk_dev_name, "svc_time")
-				, ru.DiskAttr(disk_dev_name, "util")
-				, ru.NetAttr("kb_in")
+				, ru.DiskAttr(disk_dev_name, "wait"), ru.DiskAttr(disk_dev_name, "svc_time"), ru.DiskAttr(disk_dev_name, "util")
+				, ru.NetAttr("kb_in"), ru.NetAttr("pkt_in") , ru.NetAttr("size_in") , ru.NetAttr("mult_i") , ru.NetAttr("cmp_i") , ru.NetAttr("errs_i")
+				, ru.NetAttr("kb_out") , ru.NetAttr("pkt_out") , ru.NetAttr("size_o") , ru.NetAttr("cmp_o") , ru.NetAttr("errs_o")
 				))
+
+	def _ReportAvg(self):
+		# TODO: need to be presented with other metrics
+
+		fmt = "%5.2f %5.2f %5.2f" \
+				" %7.2f %6.2f" \
+				" %7.2f %6.2f" \
+				" %6.2f %6.2f" \
+				" %5.2f %4.2f %4.2f" \
+				" %4d %4d %4d %1d %1d %1d" \
+				" %4d %4d %4d %1d %1d"
+
+		# TODO: could be something else, or multiple if you use multiple storages
+		#   xvda: EBS SSD
+		#   xvdb: First local SSD
+		#   xvdc: (Never used). A Second local SSD
+		#   xvdd: EBS Magnetic
+		disk_dev_name = "xvdb"
+
+		Cons.P(Util.BuildHeader(fmt,
+			"cpu.user cpu.sys cpu.wait"
+			" disk.%s.read_kb disk.%s.read_io"
+			" disk.%s.write_kb disk.%s.write_io"
+			" disk.%s.rw_size disk.%s.q_len"
+			" disk.%s.wait disk.%s.svc_time disk.%s.util"
+			" net.kb_in net.pkt_in net.size_in net.mult_i net.cmp_i net.errs_i"
+			" net.kb_out net.pkt_out net.size_o net.cmp_o net.errs_o"
+			% (disk_dev_name, disk_dev_name
+				, disk_dev_name, disk_dev_name
+				, disk_dev_name, disk_dev_name
+				, disk_dev_name, disk_dev_name, disk_dev_name)
+			))
+
+		cpu_user = 0
+		cpu_sys  = 0
+		cpu_wait = 0
+		disk_read_kb  = 0
+		disk_read_io  = 0
+		disk_write_kb = 0
+		disk_write_io = 0
+		disk_rw_size  = 0
+		disk_q_len    = 0
+		disk_wait     = 0
+		disk_svc_time = 0
+		disk_util     = 0
+		net_kb_in   = 0
+		net_pkt_in  = 0
+		net_size_in = 0
+		net_mult_i  = 0
+		net_cmp_i   = 0
+		net_errs_i  = 0
+		net_kb_out  = 0
+		net_pkt_out = 0
+		net_size_o  = 0
+		net_cmp_o   = 0
+		net_errs_o  = 0
+
+		for time, ru in self.time_res_usage.iteritems():
+			cpu_user += ru.CpuAttr("user")
+			cpu_sys  += ru.CpuAttr("sys")
+			cpu_wait += ru.CpuAttr("wait")
+			disk_read_kb  += ru.DiskAttr(disk_dev_name, "read_kb")
+			disk_read_io  += ru.DiskAttr(disk_dev_name, "read_io")
+			disk_write_kb += ru.DiskAttr(disk_dev_name, "write_kb")
+			disk_write_io += ru.DiskAttr(disk_dev_name, "write_io")
+			disk_rw_size  += ru.DiskAttr(disk_dev_name, "rw_size")
+			disk_q_len    += ru.DiskAttr(disk_dev_name, "q_len")
+			disk_wait     += ru.DiskAttr(disk_dev_name, "wait")
+			disk_svc_time += ru.DiskAttr(disk_dev_name, "svc_time")
+			disk_util     += ru.DiskAttr(disk_dev_name, "util")
+			net_kb_in   += ru.NetAttr("kb_in")
+			net_pkt_in  += ru.NetAttr("pkt_in")
+			net_size_in += ru.NetAttr("size_in")
+			net_mult_i  += ru.NetAttr("mult_i")
+			net_cmp_i   += ru.NetAttr("cmp_i")
+			net_errs_i  += ru.NetAttr("errs_i")
+			net_kb_out  += ru.NetAttr("kb_out")
+			net_pkt_out += ru.NetAttr("pkt_out")
+			net_size_o  += ru.NetAttr("size_o")
+			net_cmp_o   += ru.NetAttr("cmp_o")
+			net_errs_o  += ru.NetAttr("errs_o")
+
+		len_ = float(len(self.time_res_usage))
+		cpu_user /= len_
+		cpu_sys  /= len_
+		cpu_wait /= len_
+		disk_read_kb  /= len_
+		disk_read_io  /= len_
+		disk_write_kb /= len_
+		disk_write_io /= len_
+		disk_rw_size  /= len_
+		disk_q_len    /= len_
+		disk_wait     /= len_
+		disk_svc_time /= len_
+		disk_util     /= len_
+		net_kb_in   /= len_
+		net_pkt_in  /= len_
+		net_size_in /= len_
+		net_mult_i  /= len_
+		net_cmp_i   /= len_
+		net_errs_i  /= len_
+		net_kb_out  /= len_
+		net_pkt_out /= len_
+		net_size_o  /= len_
+		net_cmp_o   /= len_
+		net_errs_o  /= len_
+
+		Cons.P(fmt % (
+			cpu_user, cpu_sys, cpu_wait
+			, disk_read_kb, disk_read_io
+			, disk_write_kb, disk_write_io
+			, disk_rw_size, disk_q_len, disk_wait, disk_svc_time, disk_util
+			, net_kb_in, net_pkt_in, net_size_in, net_mult_i, net_cmp_i, net_errs_i
+			, net_kb_out, net_pkt_out, net_size_o, net_cmp_o, net_errs_o
+			))
+
+
 
 
 # TODO: clean up
-#		_GenConciseReport(self.stdout)
-#
 #	def _WriteToFile(self):
 #		fn = "data/%s-%s-collectl" % (Conf.ExpDatetime(), self.test_name)
 #		with open(fn, "w") as fo:
@@ -325,114 +436,3 @@ class _ResUsage:
 
 	def NetAttr(self, attr_name):
 		return getattr(self.network, attr_name)
-
-
-def _ResUsageReportAggr():
-	Cons.P("Resource usage stat:")
-	fmt = "%6.2f %6.2f %6.2f %10.2f %9.2f %10.2f %9.2f %10.2f %10.2f %10.2f %10.2f %10.2f"
-	# TODO: could be something else
-	disk_dev_name = "xvdb"
-	Cons.P(Util.Indent(Util.BuildHeader(fmt,
-		"cpu_user cpu_sys cpu_wait"
-		" disk_%s_read_kb disk_%s_read_io"
-		" disk_%s_write_kb disk_%s_write_io"
-		" disk_%s_rw_size"
-		" disk_%s_q_len"
-		" disk_%s_wait"
-		" disk_%s_svc_time"
-		" disk_%s_util"
-		% (disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name
-			, disk_dev_name)
-		), 2))
-
-	cpu_user = 0
-	cpu_sys = 0
-	cpu_wait = 0
-	disk_read_kb  = 0
-	disk_read_io  = 0
-	disk_write_kb = 0
-	disk_write_io = 0
-	disk_rw_size  = 0
-	disk_q_len    = 0
-	disk_wait     = 0
-	disk_svc_time = 0
-	disk_util     = 0
-
-	for time, ru in self.time_res_usage.iteritems():
-		cpu_user += ru.CpuAttr("user")
-		cpu_sys  += ru.CpuAttr("sys")
-		cpu_wait += ru.CpuAttr("wait")
-		disk_read_kb  += ru.DiskAttr(disk_dev_name, "read_kb")
-		disk_read_io  += ru.DiskAttr(disk_dev_name, "read_io")
-		disk_write_kb += ru.DiskAttr(disk_dev_name, "write_kb")
-		disk_write_io += ru.DiskAttr(disk_dev_name, "write_io")
-		disk_rw_size  += ru.DiskAttr(disk_dev_name, "rw_size")
-		disk_q_len    += ru.DiskAttr(disk_dev_name, "q_len")
-		disk_wait     += ru.DiskAttr(disk_dev_name, "wait")
-		disk_svc_time += ru.DiskAttr(disk_dev_name, "svc_time")
-		disk_util     += ru.DiskAttr(disk_dev_name, "util")
-
-	len_ = float(len(self.time_res_usage))
-	cpu_user /= len_
-	cpu_sys  /= len_
-	cpu_wait /= len_
-	disk_read_kb  /= len_
-	disk_read_io  /= len_
-	disk_write_kb /= len_
-	disk_write_io /= len_
-	disk_rw_size  /= len_
-	disk_q_len    /= len_
-	disk_wait     /= len_
-	disk_svc_time /= len_
-	disk_util     /= len_
-
-	Cons.P(Util.Indent(fmt % (
-		cpu_user , cpu_sys , cpu_wait
-		, disk_read_kb , disk_read_io
-		, disk_write_kb , disk_write_io
-		, disk_rw_size , disk_q_len , disk_wait , disk_svc_time , disk_util
-		), 2))
-
-
-
-
-def _TestParse():
-	fn = "data/160229-170819-4k-rand-read-Local-SSD-collectl"
-	with open(fn) as fo:
-		_GenConciseReport(fo.readlines())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

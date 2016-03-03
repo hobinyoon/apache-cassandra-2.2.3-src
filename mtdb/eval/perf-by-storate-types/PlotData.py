@@ -32,7 +32,12 @@ def Gen():
 					" %7.3f %3.0f %4.0f" \
 					" %7.3f %3.0f %4.0f" \
 					" %2d" \
-					" %3d %3d"
+					" %2d %3d" \
+					" %6.2f %6.2f %6.2f" \
+					" %8.2f %7.2f" \
+					" %8.2f %6.2f" \
+					" %5.2f %5.2f %5.2f %5.2f %5.2f" \
+					" %5.0f %5.0f"
 			_P(Util.BuildHeader(fmt,
 				"loadgen_datetime"
 				" exe_time_ms num_writes num_reads"
@@ -41,6 +46,11 @@ def Gen():
 				" lat_r.avg lat_r._50 lat_r._99"
 				" saturated(overloaded)"
 				" num_cass_threads.min num_cass_threads.max"
+				" cpu.user cpu.sys cpu.wait"
+				" disk.xvdb.read_kb disk.xvdb.read_io"
+				" disk.xvdb.write_kb disk.xvdb.write_io"
+				" disk.xvdb.rw_size disk.xvdb.q_len disk.xvdb.wait disk.xvdb.svc_time disk.xvdb.util"
+				" net.kb_in net.kb_out"
 				))
 			for e in eg.exps:
 				lat_w = e.loadgen_log.lat_w
@@ -48,12 +58,17 @@ def Gen():
 
 				_P(fmt % (
 					e.log_dt_loadgen
-					, e.loadgen_log.exe_time_ms , e.loadgen_log.num_writes , e.loadgen_log.num_reads
+					, e.loadgen_log.exe_time_ms, e.loadgen_log.num_writes, e.loadgen_log.num_reads
 					, e.loadgen_log.Throughput()
 					, lat_w.avg, lat_w._50, lat_w._99
 					, lat_r.avg, lat_r._50, lat_r._99
 					, e.saturated
-					, e.num_cass_threads.min , e.num_cass_threads.max
+					, e.num_cass_threads.min, e.num_cass_threads.max
+					, e.collectl.GetAttrAvg("cpu_user"), e.collectl.GetAttrAvg("cpu_sys"), e.collectl.GetAttrAvg("cpu_wait")
+					, e.collectl.GetAttrAvg("disk_xvdb_read_kb"), e.collectl.GetAttrAvg("disk_xvdb_read_io")
+					, e.collectl.GetAttrAvg("disk_xvdb_write_kb"), e.collectl.GetAttrAvg("disk_xvdb_write_io")
+					, e.collectl.GetAttrAvg("disk_xvdb_rw_size"), e.collectl.GetAttrAvg("disk_xvdb_q_len"), e.collectl.GetAttrAvg("disk_xvdb_wait"), e.collectl.GetAttrAvg("disk_xvdb_svc_time"), e.collectl.GetAttrAvg("disk_xvdb_util")
+					, e.collectl.GetAttrAvg("net_kb_in"), e.collectl.GetAttrAvg("net_kb_out")
 					))
 			_P(" ")
 

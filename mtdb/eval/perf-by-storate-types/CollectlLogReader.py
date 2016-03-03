@@ -478,6 +478,12 @@ class _LogDigested:
 		self.fn = fn
 		self._LoadFile()
 
+	def GetAttrAvg(self, attr_name):
+		sum = 0
+		for k, rum in self.time_res_usage.iteritems():
+			sum += getattr(rum, attr_name)
+		return float(sum) / len(self.time_res_usage)
+
 	def _LoadFile(self):
 		fn = self.fn
 		with open(fn) as fo:
@@ -496,26 +502,26 @@ class _LogDigested:
 
 	class ResUsageMetrics:
 		def __init__(self, tokens):
-			cpu_user           = tokens[1]
-			cpu_sys            = tokens[2]
-			cpu_wait           = tokens[3]
-			disk_xvdb_read_kb  = tokens[4]
-			disk_xvdb_read_io  = tokens[5]
-			disk_xvdb_write_kb = tokens[6]
-			disk_xvdb_write_io = tokens[7]
-			disk_xvdb_rw_size  = tokens[8]
-			disk_xvdb_q_len    = tokens[9]
-			disk_xvdb_wait     = tokens[10]
-			disk_xvdb_svc_time = tokens[11]
-			disk_xvdb_util     = tokens[12]
-			net_kb_in          = tokens[13]
-			net_pkt_in         = tokens[14]
-			net_size_in        = tokens[15]
-			net_mult_i         = tokens[16]
-			net_cmp_i          = tokens[17]
-			net_errs_i         = tokens[18]
-			net_kb_out         = tokens[19]
-			net_pkt_out        = tokens[20]
-			net_size_o         = tokens[21]
-			net_cmp_o          = tokens[22]
-			net_errs_o         = tokens[23]
+			self.cpu_user           = int(tokens[1])
+			self.cpu_sys            = int(tokens[2])
+			self.cpu_wait           = int(tokens[3])
+			self.disk_xvdb_read_kb  = int(tokens[4])
+			self.disk_xvdb_read_io  = int(tokens[5])
+			self.disk_xvdb_write_kb = int(tokens[6])
+			self.disk_xvdb_write_io = int(tokens[7])
+			self.disk_xvdb_rw_size  = int(tokens[8])
+			self.disk_xvdb_q_len    = int(tokens[9])
+			self.disk_xvdb_wait     = int(tokens[10])
+			self.disk_xvdb_svc_time = int(tokens[11])
+			self.disk_xvdb_util     = int(tokens[12])
+			self.net_kb_in          = int(tokens[13])
+			self.net_pkt_in         = int(tokens[14])
+			self.net_size_in        = int(tokens[15])
+			self.net_mult_i         = int(tokens[16])
+			self.net_cmp_i          = int(tokens[17])
+			self.net_errs_i         = int(tokens[18])
+			self.net_kb_out         = int(tokens[19])
+			self.net_pkt_out        = int(tokens[20])
+			self.net_size_o         = int(tokens[21])
+			self.net_cmp_o          = int(tokens[22])
+			self.net_errs_o         = int(tokens[23])

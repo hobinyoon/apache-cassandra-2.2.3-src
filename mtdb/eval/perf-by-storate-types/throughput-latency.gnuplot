@@ -1,17 +1,27 @@
-# Tested with gnuplot 4.6 patchlevel 4
-
-FN_IN = system("echo $FN_IN")
+# Tested with gnuplot 4.6 patchlevel 6
 
 FN_IN_EBS_MAG           = system("echo $FN_IN_EBS_MAG")
 FN_IN_EBS_SSD           = system("echo $FN_IN_EBS_SSD")
 FN_IN_LOCAL_SSD         = system("echo $FN_IN_LOCAL_SSD")
 FN_IN_LOCAL_SSD_EBS_MAG = system("echo $FN_IN_LOCAL_SSD_EBS_MAG")
 FN_IN_LOCAL_SSD_EBS_SSD = system("echo $FN_IN_LOCAL_SSD_EBS_SSD")
+EBS_MAG_LAST_X = system("echo $EBS_MAG_LAST_X")
+EBS_MAG_LAST_Y = system("echo $EBS_MAG_LAST_Y")
+EBS_SSD_LAST_X = system("echo $EBS_SSD_LAST_X")
+EBS_SSD_LAST_Y = system("echo $EBS_SSD_LAST_Y")
+LOCAL_SSD_LAST_X = system("echo $LOCAL_SSD_LAST_X")
+LOCAL_SSD_LAST_Y = system("echo $LOCAL_SSD_LAST_Y")
 
 FN_OUT = system("echo $FN_OUT")
 LABEL_Y = system("echo $LABEL_Y")
+X_TICS_INTERVAL = system("echo $X_TICS_INTERVAL")
+Y_TICS_INTERVAL = system("echo $Y_TICS_INTERVAL")
 
 set print "-"
+
+print (sprintf("LOCAL_SSD_LAST_X: %s", LOCAL_SSD_LAST_X))
+print (sprintf("LOCAL_SSD_LAST_Y: %s", LOCAL_SSD_LAST_Y))
+
 #print (sprintf("c_lat: %s", c_lat))
 # Convert string to int
 #   http://stackoverflow.com/questions/9739315/how-to-convert-string-to-number-in-gnuplot
@@ -20,7 +30,6 @@ set print "-"
 c_thrp =  5 # throughput
 c_lat  =  6 # Latency
 c_sat  = 12 # Saturated (overloaded)
-
 
 ## Get min and max values
 set terminal unknown
@@ -45,49 +54,33 @@ set xlabel "Throughput (K OP/sec)" offset 0,0.3
 set ylabel LABEL_Y offset 1.5,-0.3
 
 set border (1 + 2) back lc rgb "#808080"
-set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,2
-set ytics nomirror scale 0.5,0 tc rgb "#808080" #autofreq 0,20
-
-# set label "EBS\nMagnetic" at (EBS_MAG_LABEL_X/1000)  , EBS_MAG_LABEL_Y   center offset 0,1.2 tc rgb "blue"    font ",8"
-# set label "EBS\nSSD"      at (EBS_SSD_LABEL_X/1000)  , EBS_SSD_LABEL_Y   center offset 0,1.2 tc rgb "#a52a2a" font ",8"
-# set label "Local\nSSD"    at (LOCAL_SSD_LABEL_X/1000), LOCAL_SSD_LABEL_Y center offset 0,1.2 tc rgb "red"     font ",8"
-#
-# #print (sprintf("AVG_AVG_LAT_EBS_MAG_X: %s", AVG_AVG_LAT_EBS_MAG_X))
-# #print (sprintf("AVG_AVG_LAT_EBS_MAG_Y: %s", AVG_AVG_LAT_EBS_MAG_Y))
-# set arrow from 0,0 to (AVG_AVG_LAT_EBS_MAG_X/1000)  , AVG_AVG_LAT_EBS_MAG_Y   nohead lt 0 lw 3 lc rgb "blue"
-# set arrow from 0,0 to (AVG_AVG_LAT_EBS_SSD_X/1000)  , AVG_AVG_LAT_EBS_SSD_Y   nohead lt 0 lw 3 lc rgb "#a52a2a"
-# set arrow from 0,0 to (AVG_AVG_LAT_LOCAL_SSD_X/1000), AVG_AVG_LAT_LOCAL_SSD_Y nohead lt 0 lw 3 lc rgb "red"
-
-set xrange [0:11]
-y0=Y_MAX*1.0
-set yrange [0:y0]
-
+set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,X_TICS_INTERVAL
+set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,Y_TICS_INTERVAL
 
 # Gnuplot colors
 #   http://www.ss.scphys.kyoto-u.ac.jp/person/yonezawa/contents/program/gnuplot/img/colorname-list2.png
-#"#8060c0"
-
 color0="blue"
 #color1="slateblue1"
 color1="dark-plum"
 color2="red"
 
+set label "EBS\nMagnetic" at (EBS_MAG_LAST_X  /1000.0), EBS_MAG_LAST_Y   center offset 0,1.2 tc rgb color0 font ",8"
+set label "EBS\nSSD"      at (EBS_SSD_LAST_X  /1000.0), EBS_SSD_LAST_Y   center offset 0,1.2 tc rgb color1 font ",8"
+set label "LOCAL\nSSD"    at (LOCAL_SSD_LAST_X/1000.0), LOCAL_SSD_LAST_Y center offset 0,1.2 tc rgb color2 font ",8"
+
+set xrange [0:11]
+y0=Y_MAX*1.18
+set yrange [0:y0]
+
 lw1=3
 
 plot \
-FN_IN_EBS_MAG   u (column(c_thrp)/1000):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color0 not, \
-FN_IN_EBS_SSD   u (column(c_thrp)/1000):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color1 not, \
-FN_IN_LOCAL_SSD u (column(c_thrp)/1000):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color2 not, \
-FN_IN_EBS_MAG   u (column(c_thrp)/1000):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color0 lt 0 lw lw1 not, \
-FN_IN_EBS_SSD   u (column(c_thrp)/1000):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color1 lt 0 lw lw1 not, \
-FN_IN_LOCAL_SSD u (column(c_thrp)/1000):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color2 lt 0 lw lw1 not, \
-FN_IN_EBS_MAG   u (column(c_thrp)/1000):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color0 not, \
-FN_IN_EBS_SSD   u (column(c_thrp)/1000):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color1 not, \
-FN_IN_LOCAL_SSD u (column(c_thrp)/1000):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color2 not
-
-# Looks too complicated
-# (x, y, ylow, yhigh)
-# median, avg, 99th
-#plot \
-#FN_IN u (column(c_thrp)/1000):(strcol(1) eq "EBS SSD GP2" ? $6 : 1/0):7:8 with yerrorbars pt 7 pointsize 0.2 t "EBS SSD", \
-#FN_IN u (column(c_thrp)/1000):(strcol(1) eq "Local SSD"   ? $6 : 1/0):7:8 with yerrorbars pt 7 pointsize 0.2 t "Local SSD"
+FN_IN_EBS_MAG   u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color0 not, \
+FN_IN_EBS_SSD   u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color1 not, \
+FN_IN_LOCAL_SSD u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color2 not, \
+FN_IN_EBS_MAG   u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color0 lt 0 lw lw1 not, \
+FN_IN_EBS_SSD   u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color1 lt 0 lw lw1 not, \
+FN_IN_LOCAL_SSD u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color2 lt 0 lw lw1 not, \
+FN_IN_EBS_MAG   u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color0 not, \
+FN_IN_EBS_SSD   u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color1 not, \
+FN_IN_LOCAL_SSD u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color2 not

@@ -1,3 +1,4 @@
+import math
 import os
 import subprocess
 import sys
@@ -6,6 +7,7 @@ sys.path.insert(0, "../../util/python")
 import Cons
 
 import Conf
+import ExpData
 
 
 def Plot():
@@ -20,17 +22,24 @@ def _Baseline():
 		env["FN_IN_LOCAL_SSD"] =         "plot-data/local-ssd"
 		env["FN_IN_LOCAL_SSD_EBS_MAG"] = "plot-data/local-ssd-ebs-mag"
 		env["FN_IN_LOCAL_SSD_EBS_SSD"] = "plot-data/local-ssd-ebs-ssd"
-
 		fn_out = "throughput-w-avg-latency-ebs-mag-ebs-ssd-local-ssd.pdf"
 		env["FN_OUT"] = fn_out
-
 		env["LABEL_Y"] = "Avg write latency (ms)"
+
+		env["EBS_MAG_LAST_X"] =   str(ExpData.LastExpAttr("ebs-mag",   "throughput"))
+		env["EBS_MAG_LAST_Y"] =   str(ExpData.LastExpAttr("ebs-mag",   "lat_w_avg"))
+		env["EBS_SSD_LAST_X"] =   str(ExpData.LastExpAttr("ebs-ssd",   "throughput"))
+		env["EBS_SSD_LAST_Y"] =   str(ExpData.LastExpAttr("ebs-ssd",   "lat_w_avg"))
+		env["LOCAL_SSD_LAST_X"] = str(ExpData.LastExpAttr("local-ssd", "throughput"))
+		env["LOCAL_SSD_LAST_Y"] = str(ExpData.LastExpAttr("local-ssd", "lat_w_avg"))
+
+		env["X_TICS_INTERVAL"] = str(_TicsInterval(ExpData.LastExpAttr("local-ssd", "throughput") / 1000.0))
+		env["Y_TICS_INTERVAL"] = str(_TicsInterval(ExpData.LastExpAttr("ebs-mag", "lat_w_avg")))
+
 		_RunSubp("gnuplot %s/throughput-latency.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 		sys.exit(0)
 
-		env["EBS_MAG_LABEL_X"] = str(PlotData.Throughput("EBS Mag", "lat_w.avg"))
-		env["EBS_MAG_LABEL_Y"] = str(PlotData.Latency("EBS Mag", "lat_w.avg"))
 		env["EBS_SSD_LABEL_X"] = str(PlotData.Throughput("EBS SSD GP2", "lat_w.avg"))
 		env["EBS_SSD_LABEL_Y"] = str(PlotData.Latency("EBS SSD GP2", "lat_w.avg"))
 		env["LOCAL_SSD_LABEL_X"] = str(PlotData.Throughput("Local SSD", "lat_w.avg"))
@@ -110,3 +119,44 @@ def _RunSubp(cmd, env_, print_=True):
 		raise RuntimeError("Error: cmd=[%s] rc=%d stdouterr=[%s]" % (cmd, rc, stdouterr))
 	if len(stdouterr) > 0:
 		Cons.P(stdouterr)
+
+
+def _TicsInterval(v_max):
+	# Get most-significant digit
+	# 1 -> 0.2 : 5 tic marks
+	# 2 -> 0.5 : 4 tic marks
+	# 3 -> 1   : 3 tic marks
+	# 4 -> 1   : 4 tic marks
+	# 5 -> 1   : 5 tic marks
+	# 6 -> 2   : 3 tic marks
+	# 7 -> 2   : 3 tic marks
+	# 8 -> 2   : 4 tic marks
+	# 9 -> 2   : 4 tic marks
+
+	v_max = float(v_max)
+	v = v_max
+	v_prev = v
+	while v > 1.0:
+		v_prev = v
+		v /= 10.0
+	msd = int(v_prev)
+
+	base = math.pow(10, int(math.log10(v_max)))
+	if msd == 1:
+		return 0.2 * base
+	elif msd == 2:
+		return 0.5 * base
+	elif msd == 3:
+		return 1.0 * base
+	elif msd == 4:
+		return 1.0 * base
+	elif msd == 5:
+		return 1.0 * base
+	elif msd == 6:
+		return 2.0 * base
+	elif msd == 7:
+		return 2.0 * base
+	elif msd == 8:
+		return 2.0 * base
+	else:
+		return 2.0 * base

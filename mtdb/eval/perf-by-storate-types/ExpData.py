@@ -23,9 +23,9 @@ def Load():
 			_exp_groups[egn] = _LoadExpGroupReport(fn_exp_group_result)
 
 
-def GetExpGroup(exp_group_name):
+def LastExpAttr(exp_group_name, attr_name):
 	global _exp_groups
-	return _exp_groups[exp_group_name]
+	return getattr(_exp_groups[exp_group_name].items[-1], attr_name)
 
 
 class _GenExpGroupReport():
@@ -170,7 +170,7 @@ class _LoadExpGroupReport():
 			self.exe_time_ms          = tokens[1]
 			self.num_writes           = tokens[2]
 			self.num_reads            = tokens[3]
-			self.throughput           = tokens[4]
+			self.throughput           = float(tokens[4])
 			self.lat_w_avg            = tokens[5]
 			self.lat_w__50            = tokens[6]
 			self.lat_w__99            = tokens[7]

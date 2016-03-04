@@ -17,7 +17,7 @@ Y_TICS_INTERVAL = system("echo $Y_TICS_INTERVAL")
 #   http://stackoverflow.com/questions/9739315/how-to-convert-string-to-number-in-gnuplot
 #c_lat=c_lat+0
 
-c_thrp = 5               # throughput
+c_x    = 0               # column(c_x)/1000.0, when c_x=5 is throughput
 c_ru   = COL_IDX_LAT + 0 # y metric (res usage)
 c_sat  = 12              # Saturated (overloaded)
 
@@ -37,12 +37,13 @@ y_pos(y)=Y_MIN+(y_max_0-Y_MIN)/100.0*y
 set terminal pdfcairo enhanced size 2in, 1.5in
 set output FN_OUT
 
-set tmargin at screen 0.965
-set bmargin at screen 0.260
-set lmargin at screen 0.2290
-set rmargin at screen 0.990
+#set tmargin at screen 0.965
+#set bmargin at screen 0.260
+#set lmargin at screen 0.2290
+#set rmargin at screen 0.990
 
-set xlabel "Throughput (K OP/sec)"
+#set xlabel "Throughput (K OP/sec)"
+set xlabel "Req rate (x 10000 W reqs / simulation time min)" font ",9" offset -1.7,0.6
 set ylabel LABEL_Y offset 1,0
 
 set border (1 + 2) back lc rgb "#808080"
@@ -70,6 +71,6 @@ set label word(LABELS, i) at x_pos(x3), y_pos(y0 - y_interval*i) tc rgb word(col
 lw1=2
 
 plot \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_ru) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_ru) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_ru) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not
+for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) <= 1 ? column(c_ru) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
+for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(c_ru) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
+for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(c_ru) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not

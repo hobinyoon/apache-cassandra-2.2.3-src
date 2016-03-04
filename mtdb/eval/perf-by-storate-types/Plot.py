@@ -93,9 +93,31 @@ def _ThroughputVsLatency0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_l
 
 def _ResUsage():
 	with Cons.MeasureTime("Resource usage by storage types ..."):
+		_ResUsage0("throughput", 5)
+		_ResUsage0("lat_w_avg",  6)
+		_ResUsage0("lat_w__99",  8)
+		_ResUsage0("lat_r_avg",  9)
+		_ResUsage0("lat_r__99", 11)
+
 		_ResUsage0("cpu_user", 15)
 		_ResUsage0("cpu_sys",  16)
 		_ResUsage0("cpu_wait", 17)
+
+		bases = [18, 27, 36]
+		devs = ["xvda", "xvdb", "xvdd"]
+		for i in range(len(bases)):
+			_ResUsage0("disk_%s_read_kb"  % devs[i], bases[i] + 0)
+			_ResUsage0("disk_%s_read_io"  % devs[i], bases[i] + 1)
+			_ResUsage0("disk_%s_write_kb" % devs[i], bases[i] + 2)
+			_ResUsage0("disk_%s_write_io" % devs[i], bases[i] + 3)
+			_ResUsage0("disk_%s_rw_size"  % devs[i], bases[i] + 4)
+			_ResUsage0("disk_%s_q_len"    % devs[i], bases[i] + 5)
+			_ResUsage0("disk_%s_wait"     % devs[i], bases[i] + 6)
+			_ResUsage0("disk_%s_svc_time" % devs[i], bases[i] + 7)
+			_ResUsage0("disk_%s_util"     % devs[i], bases[i] + 8)
+
+		_ResUsage0("net_kb_in", 45)
+		_ResUsage0("net_kb_out", 46)
 
 
 def _ResUsage0(y_metric, col_idx_lat):
@@ -114,7 +136,7 @@ def _ResUsage0(y_metric, col_idx_lat):
 	env["COL_IDX_LAT"] = str(col_idx_lat)
 
 	y_max = ExpData.MaxExpAttr(y_metric)
-	y_alpha = 1.1
+	y_alpha = 1.0
 	y_max *= y_alpha
 	env["Y_MAX"] = str(y_max)
 	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
@@ -139,7 +161,7 @@ def _RunSubp(cmd, env_, print_cmd=False):
 def _TicsInterval(v_max):
 	# Get most-significant digit
 	# 1 -> 0.4 : 2 tic marks
-	# 2 -> 0.5 : 4 tic marks
+	# 2 -> 1   : 2 tic marks
 	# 3 -> 1   : 3 tic marks
 	# 4 -> 2   : 2 tic marks
 	# 5 -> 2   : 2 tic marks
@@ -147,18 +169,22 @@ def _TicsInterval(v_max):
 	# 7 -> 2   : 3 tic marks
 	# 8 -> 2   : 4 tic marks
 	# 9 -> 2   : 4 tic marks
-	a = [0.4, 0.5, 1, 2, 2, 2, 2, 4, 2]
+	a = [0.4, 1, 1, 2, 2, 2, 2, 4, 2]
 
 	v_max = float(v_max)
-	#Cons.P("v_max=%f" % v_max)
 	v = v_max
 	v_prev = v
-	while v > 1.0:
-		v_prev = v
-		v /= 10.0
-	msd = int(v_prev)
+	if v >= 1.0:
+		while v > 1.0:
+			v_prev = v
+			v /= 10.0
+		msd = int(v_prev)
+	else:
+		while v < 1.0:
+			v_prev = v
+			v *= 10.0
+		msd = int(v)
 
-	base = math.pow(10, int(math.log10(v_max)))
+	base = math.pow(10, math.floor(math.log10(v_max)))
 	ti = a[msd - 1] * base
-	#Cons.P("ti=%f" % ti)
 	return ti

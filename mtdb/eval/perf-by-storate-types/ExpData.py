@@ -171,12 +171,12 @@ class _LoadExpGroupReport():
 			self.num_writes           = tokens[2]
 			self.num_reads            = tokens[3]
 			self.throughput           = float(tokens[4])
-			self.lat_w_avg            = tokens[5]
+			self.lat_w_avg            = float(tokens[5])
 			self.lat_w__50            = tokens[6]
-			self.lat_w__99            = tokens[7]
-			self.lat_r_avg            = tokens[8]
+			self.lat_w__99            = float(tokens[7])
+			self.lat_r_avg            = float(tokens[8])
 			self.lat_r__50            = tokens[9]
-			self.lat_r__99            = tokens[10]
+			self.lat_r__99            = float(tokens[10])
 			self.saturated            = tokens[11]
 			self.num_cass_threads_min = tokens[12]
 			self.num_cass_threads_max = tokens[13]

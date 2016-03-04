@@ -24,7 +24,7 @@ def _Baseline():
 		fn_out = "throughput-w-avg-latency-ebs-mag-ebs-ssd-local-ssd.pdf"
 		env["FN_OUT"] = fn_out
 
-		env["LABEL_Y"] = "Avg write (ms)"
+		env["LABEL_Y"] = "Avg write latency (ms)"
 		_RunSubp("gnuplot %s/throughput-latency.gnuplot" % os.path.dirname(__file__), env)
 		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 		sys.exit(0)

@@ -1,4 +1,3 @@
-import operator
 import os
 import re
 import sys
@@ -82,9 +81,24 @@ class _GenExpGroupReport():
 				" disk.xvdb.rw_size disk.xvdb.q_len disk.xvdb.wait disk.xvdb.svc_time disk.xvdb.util"
 				" net.kb_in net.kb_out"
 				))
-			for e in self.exps:
+
+			for i in range(len(self.exps)):
+				e = self.exps[i]
 				lat_w = e.loadgen_log.lat_w
 				lat_r = e.loadgen_log.lat_r
+
+				# saturated flag
+				#   0: not saturated
+				#   1: last non-saturated one
+				#   2: saturated
+				if e.saturated == 0:
+					if i < len(self.exps) - 1:
+						if self.exps[i + 1].saturated == 1:
+							saturated = 1
+						else:
+							saturated = 0
+				elif e.saturated == 1:
+					saturated = 2
 
 				fo.write("%s\n" % (fmt % (
 					e.log_dt_loadgen
@@ -92,7 +106,7 @@ class _GenExpGroupReport():
 					, e.loadgen_log.Throughput()
 					, lat_w.avg, lat_w._50, lat_w._99
 					, lat_r.avg, lat_r._50, lat_r._99
-					, e.saturated
+					, saturated
 					, e.num_cass_threads.min, e.num_cass_threads.max
 					, e.collectl.GetAttrAvg("cpu_user"), e.collectl.GetAttrAvg("cpu_sys"), e.collectl.GetAttrAvg("cpu_wait")
 					, e.collectl.GetAttrAvg("disk_xvdb_read_kb"), e.collectl.GetAttrAvg("disk_xvdb_read_io")

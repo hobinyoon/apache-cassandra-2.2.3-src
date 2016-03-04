@@ -28,6 +28,21 @@ def LastExpAttr(exp_group_name, attr_name):
 	return getattr(_exp_groups[exp_group_name].items[-1], attr_name)
 
 
+def MaxExpAttr(attr_name):
+	global _exp_groups
+	v = None
+	for egn, eg in _exp_groups.iteritems():
+		#Cons.P("egn=%s" % egn)
+		#Cons.P("len(eg.items)=%d" % len(eg.items))
+		for i in eg.items:
+			#Cons.P(getattr(i, attr_name))
+			if v == None:
+				v = getattr(i, attr_name)
+			else:
+				v = max(v, getattr(i, attr_name))
+	return v
+
+
 class _GenExpGroupReport():
 	def __init__(self, exp_group_name):
 		self.fn_exp_list = "exp-results/%s" % Conf.Get("exp_result")[exp_group_name]
@@ -162,7 +177,7 @@ class _LoadExpGroupReport():
 				t = line.split()
 				if len(t) != 28:
 					raise RuntimeError("Unexpected format [%s]" % line)
-			self.items.append(_LoadExpGroupReport._Item(t))
+				self.items.append(_LoadExpGroupReport._Item(t))
 
 	class _Item():
 		def __init__(self, tokens):
@@ -181,16 +196,16 @@ class _LoadExpGroupReport():
 			self.num_cass_threads_min = tokens[12]
 			self.num_cass_threads_max = tokens[13]
 			self.cpu_user             = float(tokens[14])
-			self.cpu_sys              = tokens[15]
-			self.cpu_wait             = tokens[16]
-			self.disk_xvdb_read_kb    = tokens[17]
-			self.disk_xvdb_read_io    = tokens[18]
-			self.disk_xvdb_write_kb   = tokens[19]
-			self.disk_xvdb_write_io   = tokens[20]
-			self.disk_xvdb_rw_size    = tokens[21]
-			self.disk_xvdb_q_len      = tokens[22]
-			self.disk_xvdb_wait       = tokens[23]
-			self.disk_xvdb_svc_time   = tokens[24]
-			self.disk_xvdb_util       = tokens[25]
-			self.net_kb_in            = tokens[26]
-			self.net_kb_out           = tokens[27]
+			self.cpu_sys              = float(tokens[15])
+			self.cpu_wait             = float(tokens[16])
+			self.disk_xvdb_read_kb    = float(tokens[17])
+			self.disk_xvdb_read_io    = float(tokens[18])
+			self.disk_xvdb_write_kb   = float(tokens[19])
+			self.disk_xvdb_write_io   = float(tokens[20])
+			self.disk_xvdb_rw_size    = float(tokens[21])
+			self.disk_xvdb_q_len      = float(tokens[22])
+			self.disk_xvdb_wait       = float(tokens[23])
+			self.disk_xvdb_svc_time   = float(tokens[24])
+			self.disk_xvdb_util       = float(tokens[25])
+			self.net_kb_in            = float(tokens[26])
+			self.net_kb_out           = float(tokens[27])

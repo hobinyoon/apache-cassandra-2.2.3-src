@@ -18,13 +18,13 @@ Y_TICS_INTERVAL = system("echo $Y_TICS_INTERVAL")
 #c_lat=c_lat+0
 
 c_thrp = 5               # throughput
-c_lat  = COL_IDX_LAT + 0 # Latency
+c_ru   = COL_IDX_LAT + 0 # y metric (res usage)
 c_sat  = 12              # Saturated (overloaded)
 
 ## Get min and max values
 set terminal unknown
 plot \
-for [i=1:words(FN_IN)] word(FN_IN, i) u 0:(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp
+for [i=1:words(FN_IN)] word(FN_IN, i) u 0:(column(c_sat) <= 1 ? column(c_ru) : 1/0) w lp
 X_MIN=GPVAL_DATA_X_MIN
 X_MAX=GPVAL_DATA_X_MAX
 Y_MIN=GPVAL_DATA_Y_MIN
@@ -37,7 +37,7 @@ y_pos(y)=Y_MIN+(y_max_0-Y_MIN)/100.0*y
 set terminal pdfcairo enhanced size 2in, 1.5in
 set output FN_OUT
 
-set tmargin at screen 0.985
+set tmargin at screen 0.965
 set bmargin at screen 0.260
 set lmargin at screen 0.2290
 set rmargin at screen 0.990
@@ -70,6 +70,6 @@ set label word(LABELS, i) at x_pos(x3), y_pos(y0 - y_interval*i) tc rgb word(col
 lw1=2
 
 plot \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not
+for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_ru) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
+for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_ru) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
+for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_ru) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not

@@ -93,24 +93,17 @@ def _ThroughputVsLatency0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_l
 
 def _ResUsage():
 	with Cons.MeasureTime("Resource usage by storage types ..."):
-		# TODO: clean up
-		y_alpha = 1.18
-
-		egns = ["ebs-mag", "local-ssd-ebs-mag", "ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
-		# gnuplot word() doesn't work with new line
-		#labels = ["EBS\\nMag", "LS+EM", "EBS\\nSSD", "Local\\nSSD", "LS+ES"]
-		labels = ["EM", "LS+EM", "ES", "LS", "LS+ES"]
-		_ResUsage0(egns, labels, "local-ssd-ebs-mag", "Avg write", "cpu_user", 15)
-
-		# TODO
-#		egns = ["ebs-ssd", "local-ssd-ebs-ssd", "local-ssd"]
-#		labels = ["EBS\\nSSD", "LS+ES", "Local\\nSSD"]
-#		y_max = ExpData.LastExpAttr("ebs-ssd", "lat_r_avg") * y_alpha
-#		_ResUsagey0(egns, labels, "local-ssd-ebs-ssd", "Avg write", "lat_w_avg", 6, y_max)
-#		_ResUsagey0(egns, labels, "local-ssd-ebs-ssd", "Avg read" , "lat_r_avg", 9, y_max)
+		_ResUsage0("cpu_user", 15)
+		_ResUsage0("cpu_sys",  16)
+		_ResUsage0("cpu_wait", 17)
 
 
-def _ResUsage0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_lat):
+def _ResUsage0(y_metric, col_idx_lat):
+	egns = ["ebs-mag", "local-ssd-ebs-mag", "ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
+	# gnuplot word() doesn't work with new line
+	#labels = ["EBS\\nMag", "LS+EM", "EBS\\nSSD", "Local\\nSSD", "LS+ES"]
+	labels = ["EM", "LS+EM", "ES", "LS", "LS+ES"]
+
 	fn_out = "num-reqs-vs-%s-by-storage-types.pdf" % (y_metric)
 
 	env = os.environ.copy()
@@ -120,10 +113,7 @@ def _ResUsage0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_lat):
 	env["LABEL_Y"] = y_metric.replace("_", "\\_")
 	env["COL_IDX_LAT"] = str(col_idx_lat)
 
-	y_max = 0.0
-	for egn in egns:
-		y_max = max(y_max, ExpData.LastExpAttr(egn, y_metric))
-	#Cons.P("y_max=%d" % y_max)
+	y_max = ExpData.MaxExpAttr(y_metric)
 	y_alpha = 1.1
 	y_max *= y_alpha
 	env["Y_MAX"] = str(y_max)

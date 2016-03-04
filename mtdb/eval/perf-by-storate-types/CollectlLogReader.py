@@ -131,7 +131,7 @@ class _ParseRawLog:
 		write_io = t[8]
 
 		rw_size = t[10]
-		# TODO: can q_len be a hint?
+		# These can be hits too
 		q_len = t[11]
 		wait = t[12]
 		svc_time = t[13]

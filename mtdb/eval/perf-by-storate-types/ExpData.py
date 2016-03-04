@@ -15,11 +15,8 @@ import NumCassThreadsReader
 _exp_groups = {}
 
 def Load():
-	exp_group_names = []
-	for k in Conf.Get("exp_result"):
-		exp_group_names.append(k)
-
-	for egn in exp_group_names:
+	global _exp_groups
+	for egn in Conf.Get("exp_result"):
 		fn_exp_group_result = "plot-data/%s" % egn
 		if not os.path.isfile(fn_exp_group_result):
 			_GenExpGroupReport(egn)
@@ -137,7 +134,7 @@ class _LoadExpGroupReport():
 		self.items = []
 		with open(fn) as fo:
 			for line in fo.readlines():
-				#Cons.P(line.rstrip())
+				Cons.P(line.rstrip())
 				if len(line) == 0:
 					continue
 				if line[0] == "#":

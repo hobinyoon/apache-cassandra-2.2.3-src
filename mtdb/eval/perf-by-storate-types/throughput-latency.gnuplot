@@ -1,16 +1,20 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
-FN_IN_EBS_MAG           = system("echo $FN_IN_EBS_MAG")
-FN_IN_EBS_SSD           = system("echo $FN_IN_EBS_SSD")
-FN_IN_LOCAL_SSD         = system("echo $FN_IN_LOCAL_SSD")
-FN_IN_LOCAL_SSD_EBS_MAG = system("echo $FN_IN_LOCAL_SSD_EBS_MAG")
-FN_IN_LOCAL_SSD_EBS_SSD = system("echo $FN_IN_LOCAL_SSD_EBS_SSD")
-EBS_MAG_LAST_X = system("echo $EBS_MAG_LAST_X")
-EBS_MAG_LAST_Y = system("echo $EBS_MAG_LAST_Y")
-EBS_SSD_LAST_X = system("echo $EBS_SSD_LAST_X")
-EBS_SSD_LAST_Y = system("echo $EBS_SSD_LAST_Y")
-LOCAL_SSD_LAST_X = system("echo $LOCAL_SSD_LAST_X")
-LOCAL_SSD_LAST_Y = system("echo $LOCAL_SSD_LAST_Y")
+FN_IN_0 = system("echo $FN_IN_0")
+FN_IN_1 = system("echo $FN_IN_1")
+FN_IN_2 = system("echo $FN_IN_2")
+
+LAST_X_0 = system("echo $LAST_X_0")
+LAST_Y_0 = system("echo $LAST_Y_0")
+LAST_X_1 = system("echo $LAST_X_1")
+LAST_Y_1 = system("echo $LAST_Y_1")
+LAST_X_2 = system("echo $LAST_X_2")
+LAST_Y_2 = system("echo $LAST_Y_2")
+
+LABEL_0 = system("echo $LABEL_0")
+LABEL_1 = system("echo $LABEL_1")
+LABEL_2 = system("echo $LABEL_2")
+
 COL_IDX_LAT = system("echo $COL_IDX_LAT")
 
 FN_OUT = system("echo $FN_OUT")
@@ -36,9 +40,9 @@ c_sat  = 12              # Saturated (overloaded)
 ## Get min and max values
 set terminal unknown
 plot \
-FN_IN_EBS_MAG   u (column(c_thrp)/1000):(column(c_lat)) with linespoints, \
-FN_IN_EBS_SSD   u (column(c_thrp)/1000):(column(c_lat)) with linespoints, \
-FN_IN_LOCAL_SSD u (column(c_thrp)/1000):(column(c_lat)) with linespoints
+FN_IN_0 u (column(c_thrp)/1000):(column(c_lat)) with linespoints, \
+FN_IN_1 u (column(c_thrp)/1000):(column(c_lat)) with linespoints, \
+FN_IN_2 u (column(c_thrp)/1000):(column(c_lat)) with linespoints
 X_MIN=GPVAL_DATA_X_MIN
 X_MAX=GPVAL_DATA_X_MAX
 Y_MIN=GPVAL_DATA_Y_MIN
@@ -65,9 +69,9 @@ color0="blue"
 color1="dark-plum"
 color2="red"
 
-set label "EBS\nMagnetic" at (EBS_MAG_LAST_X  /1000.0), EBS_MAG_LAST_Y   center offset 0,1.2 tc rgb color0 font ",8"
-set label "EBS\nSSD"      at (EBS_SSD_LAST_X  /1000.0), EBS_SSD_LAST_Y   center offset 0,1.2 tc rgb color1 font ",8"
-set label "LOCAL\nSSD"    at (LOCAL_SSD_LAST_X/1000.0), LOCAL_SSD_LAST_Y center offset 0,1.2 tc rgb color2 font ",8"
+set label LABEL_0 at (LAST_X_0 / 1000.0), LAST_Y_0 center offset 0,1.2 tc rgb color0 font ",8"
+set label LABEL_1 at (LAST_X_1 / 1000.0), LAST_Y_1 center offset 0,1.2 tc rgb color1 font ",8"
+set label LABEL_2 at (LAST_X_2 / 1000.0), LAST_Y_2 center offset 0,1.2 tc rgb color2 font ",8"
 
 set xrange [0:11]
 set yrange [0:Y_MAX]
@@ -75,12 +79,12 @@ set yrange [0:Y_MAX]
 lw1=3
 
 plot \
-FN_IN_EBS_MAG   u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color0 not, \
-FN_IN_EBS_SSD   u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color1 not, \
-FN_IN_LOCAL_SSD u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color2 not, \
-FN_IN_EBS_MAG   u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color0 lt 0 lw lw1 not, \
-FN_IN_EBS_SSD   u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color1 lt 0 lw lw1 not, \
-FN_IN_LOCAL_SSD u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color2 lt 0 lw lw1 not, \
-FN_IN_EBS_MAG   u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color0 not, \
-FN_IN_EBS_SSD   u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color1 not, \
-FN_IN_LOCAL_SSD u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color2 not
+FN_IN_0 u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color0 not, \
+FN_IN_1 u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color1 not, \
+FN_IN_2 u (column(c_thrp)/1000.0):(column(c_sat) <= 1 ? column(c_lat) : 1/0) w lp pt 7 ps 0.2 lc rgb color2 not, \
+FN_IN_0 u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color0 lt 0 lw lw1 not, \
+FN_IN_1 u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color1 lt 0 lw lw1 not, \
+FN_IN_2 u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w l lc rgb color2 lt 0 lw lw1 not, \
+FN_IN_0 u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color0 not, \
+FN_IN_1 u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color1 not, \
+FN_IN_2 u (column(c_thrp)/1000.0):(column(c_sat) >= 1 ? column(c_lat) : 1/0) w p pt 6 ps 0.2 lc rgb color2 not

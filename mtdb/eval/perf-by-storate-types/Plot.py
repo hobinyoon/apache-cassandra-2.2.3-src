@@ -11,42 +11,74 @@ import ExpData
 
 def Plot():
 	_Baseline()
+	_Mutants()
 
 
 def _Baseline():
 	with Cons.MeasureTime("Baseline ..."):
-		# Give some room for the top label by multiplying by y_alpha
+		# Give some room for the top label with y_alpha
 		y_alpha = 1.18
+
+		egns = ["ebs-mag", "ebs-ssd", "local-ssd"]
+		labels = ["EBS\\nMag", "EBS\\nSSD", "Local\\nSSD"]
 		y_max = ExpData.LastExpAttr("ebs-mag", "lat_r_avg") * y_alpha
-		_Baseline0("Avg write", "lat_w_avg", 6, y_max)
-		_Baseline0("Avg read" , "lat_r_avg", 9, y_max)
+		_Plot0(egns, labels, "baseline", "Avg write", "lat_w_avg", 6, y_max)
+		_Plot0(egns, labels, "baseline", "Avg read" , "lat_r_avg", 9, y_max)
 
 		y_max = ExpData.LastExpAttr("ebs-mag", "lat_r__99") * y_alpha
-		_Baseline0("99th write", "lat_w__99",  8, y_max)
-		_Baseline0("99th read" , "lat_r__99", 11, y_max)
+		_Plot0(egns, labels, "baseline", "99th write", "lat_w__99",  8, y_max)
+		_Plot0(egns, labels, "baseline", "99th read" , "lat_r__99", 11, y_max)
 
 
-def _Baseline0(label_y_prefix, y_metric, col_idx_lat, y_max):
+def _Mutants():
+	with Cons.MeasureTime("Local SSD + EBS Mag ..."):
+		y_alpha = 1.18
+
+		egns = ["ebs-mag", "local-ssd-ebs-mag", "local-ssd"]
+		labels = ["EBS\\nMag", "LS+EM", "Local\\nSSD"]
+		y_max = ExpData.LastExpAttr("ebs-mag", "lat_r_avg") * y_alpha
+		_Plot0(egns, labels, "local-ssd-ebs-mag", "Avg write", "lat_w_avg", 6, y_max)
+		_Plot0(egns, labels, "local-ssd-ebs-mag", "Avg read" , "lat_r_avg", 9, y_max)
+
+		egns = ["ebs-ssd", "local-ssd-ebs-ssd", "local-ssd"]
+		labels = ["EBS\\nSSD", "LS+ES", "Local\\nSSD"]
+		y_max = ExpData.LastExpAttr("ebs-ssd", "lat_r_avg") * y_alpha
+		_Plot0(egns, labels, "local-ssd-ebs-ssd", "Avg write", "lat_w_avg", 6, y_max)
+		_Plot0(egns, labels, "local-ssd-ebs-ssd", "Avg read" , "lat_r_avg", 9, y_max)
+
+
+def _Plot0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_lat, y_max):
 	env = os.environ.copy()
-	env["FN_IN_EBS_MAG"] =           "plot-data/ebs-mag"
-	env["FN_IN_EBS_SSD"] =           "plot-data/ebs-ssd"
-	env["FN_IN_LOCAL_SSD"] =         "plot-data/local-ssd"
-	env["FN_IN_LOCAL_SSD_EBS_MAG"] = "plot-data/local-ssd-ebs-mag"
-	env["FN_IN_LOCAL_SSD_EBS_SSD"] = "plot-data/local-ssd-ebs-ssd"
-	fn_out = "throughput-%s-ebs-mag-ebs-ssd-local-ssd.pdf" % y_metric
+
+	for i in range(len(egns)):
+		k = "FN_IN_%d" % i
+		v = "plot-data/%s" % egns[i]
+		env[k] = v
+
+	fn_out = "throughput-%s-%s.pdf" % (fn0, y_metric)
 	env["FN_OUT"] = fn_out
 	env["LABEL_Y"] = label_y_prefix + " latency (ms)"
 
-	env["EBS_MAG_LAST_X"] =   str(ExpData.LastExpAttr("ebs-mag",   "throughput"))
-	env["EBS_MAG_LAST_Y"] =   str(ExpData.LastExpAttr("ebs-mag",   y_metric))
-	env["EBS_SSD_LAST_X"] =   str(ExpData.LastExpAttr("ebs-ssd",   "throughput"))
-	env["EBS_SSD_LAST_Y"] =   str(ExpData.LastExpAttr("ebs-ssd",   y_metric))
-	env["LOCAL_SSD_LAST_X"] = str(ExpData.LastExpAttr("local-ssd", "throughput"))
-	env["LOCAL_SSD_LAST_Y"] = str(ExpData.LastExpAttr("local-ssd", y_metric))
+	for i in range(len(egns)):
+		egn = egns[i]
+		k = "LAST_X_%d" % i
+		v = ExpData.LastExpAttr(egn, "throughput")
+		env[k] = str(v)
+
+		k = "LAST_Y_%d" % i
+		v = ExpData.LastExpAttr(egn, y_metric)
+		env[k] = str(v)
+
+	for i in range(len(labels)):
+		egn = egns[i]
+		k = "LABEL_%d" % i
+		v = labels[i]
+		env[k] = v
+
 	env["COL_IDX_LAT"] = str(col_idx_lat)
 
 	env["Y_MAX"] = str(y_max)
-	env["X_TICS_INTERVAL"] = str(_TicsInterval(ExpData.LastExpAttr("local-ssd", "throughput") / 1000.0))
+	env["X_TICS_INTERVAL"] = str(_TicsInterval(ExpData.LastExpAttr(egns[2], "throughput") / 1000.0))
 	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
 
 	_RunSubp("gnuplot %s/throughput-latency.gnuplot" % os.path.dirname(__file__), env)

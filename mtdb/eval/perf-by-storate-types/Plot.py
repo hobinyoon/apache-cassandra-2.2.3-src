@@ -37,13 +37,13 @@ def _ReqrateVsMetrics():
 			_ReqrateVsMetric0("disk_%s_q_len"    % devs[i], bases[i] + 5)
 			_ReqrateVsMetric0("disk_%s_wait"     % devs[i], bases[i] + 6)
 			_ReqrateVsMetric0("disk_%s_svc_time" % devs[i], bases[i] + 7)
-			_ReqrateVsMetric0("disk_%s_util"     % devs[i], bases[i] + 8)
+			_ReqrateVsMetric0("disk_%s_util"     % devs[i], bases[i] + 8, y_max=100)
 
 		_ReqrateVsMetric0("net_kb_in", 45)
 		_ReqrateVsMetric0("net_kb_out", 46)
 
 
-def _ReqrateVsMetric0(y_metric, col_idx_lat):
+def _ReqrateVsMetric0(y_metric, col_idx_lat, y_max = None):
 	egns = ["ebs-mag", "local-ssd-ebs-mag", "ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
 	# gnuplot word() doesn't work with new line
 	#labels = ["EBS\\nMag", "LS+EM", "EBS\\nSSD", "Local\\nSSD", "LS+ES"]
@@ -58,7 +58,8 @@ def _ReqrateVsMetric0(y_metric, col_idx_lat):
 	env["LABEL_Y"] = y_metric.replace("_", "\\_")
 	env["COL_IDX_LAT"] = str(col_idx_lat)
 
-	y_max = ExpData.MaxExpAttr(y_metric)
+	if y_max == None:
+		y_max = ExpData.MaxExpAttr(y_metric)
 	y_alpha = 1.0
 	y_max *= y_alpha
 	env["Y_MAX"] = str(y_max)
@@ -159,7 +160,7 @@ def _RunSubp(cmd, env_, print_cmd=False):
 
 def _TicsInterval(v_max):
 	# Get most-significant digit
-	# 1 -> 0.4 : 2 tic marks
+	# 1 -> 0.5 : 2 tic marks
 	# 2 -> 1   : 2 tic marks
 	# 3 -> 1   : 3 tic marks
 	# 4 -> 2   : 2 tic marks
@@ -168,19 +169,18 @@ def _TicsInterval(v_max):
 	# 7 -> 2   : 3 tic marks
 	# 8 -> 2   : 4 tic marks
 	# 9 -> 2   : 4 tic marks
-	a = [0.4, 1, 1, 2, 2, 2, 2, 4, 2]
+	a = [0.5, 1, 1, 2, 2, 2, 2, 4, 2]
 
 	v_max = float(v_max)
 	v = v_max
-	v_prev = v
 	if v >= 1.0:
-		while v > 1.0:
+		v_prev = v
+		while v >= 1.0:
 			v_prev = v
 			v /= 10.0
 		msd = int(v_prev)
 	else:
 		while v < 1.0:
-			v_prev = v
 			v *= 10.0
 		msd = int(v)
 

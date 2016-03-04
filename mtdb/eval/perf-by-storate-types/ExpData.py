@@ -15,31 +15,28 @@ import NumCassThreadsReader
 _exp_groups = {}
 
 def Load():
-	global _exp_groups
-	with Cons.MeasureTime("Loading exp sets ..."):
-		exp_group_names = []
-		for k in Conf.Get("exp_result"):
-			exp_group_names.append(k)
+	exp_group_names = []
+	for k in Conf.Get("exp_result"):
+		exp_group_names.append(k)
 
-		for egn in exp_group_names:
-			fn_exp_set = "exp-results/%s" % Conf.Get("exp_result")[egn]
-			#Cons.P("%s %s" % (egn, fn_exp_set))
-			egst = ExpGroupStorageType(fn_exp_set)
-			Cons.P("%s: loaded %d exps" % (egn, len(egst.exps)))
-			_exp_groups[egn] = ExpGroupStorageType(fn_exp_set)
+	for egn in exp_group_names:
+		fn_exp_group_result = "plot-data/%s" % egn
+		if not os.path.isfile(fn_exp_group_result):
+			_GenExpGroupReport(egn)
+		_exp_groups[egn] = _LoadExpGroupReport(fn_exp_group_result)
 
 
-def ExpGroups():
-	return _exp_groups
-
-
-class ExpGroupStorageType():
-	def __init__(self, fn):
+class _GenExpGroupReport():
+	def __init__(self, exp_group_name):
+		self.fn_exp_list = "exp-results/%s" % Conf.Get("exp_result")[exp_group_name]
+		self.exp_group_name = exp_group_name
 		self.exps = []
-		self._Load(fn)
+		with Cons.MeasureTime("Generating exp group report for %s ..." % self.exp_group_name):
+			self._Load()
+			self._GenReport()
 
-	def _Load(self, fn):
-		with open(fn) as fo:
+	def _Load(self):
+		with open(self.fn_exp_list) as fo:
 			for line in fo.readlines():
 				#Cons.P(line)
 				line = line.rstrip()
@@ -47,159 +44,136 @@ class ExpGroupStorageType():
 					continue
 				if line[0] == "#":
 					continue
-				self.exps.append(Exp(line))
+				self.exps.append(_GenExpGroupReport.Exp(line))
 		#Cons.P(self)
 
+	def _GenReport(self):
+		fn_exp_group_result = "plot-data/%s" % self.exp_group_name
+		fn = fn_exp_group_result
+		with open(fn, "w") as fo:
+			fo.write("# storage_type: %s\n" % self.exp_group_name)
+			fo.write("#\n")
+			fmt = "%13s" \
+					" %7d %7d %8d" \
+					" %5.0f" \
+					" %7.3f %3.0f %4.0f" \
+					" %7.3f %3.0f %4.0f" \
+					" %2d" \
+					" %2d %3d" \
+					" %6.2f %6.2f %6.2f" \
+					" %8.2f %7.2f" \
+					" %8.2f %6.2f" \
+					" %5.2f %5.2f %5.2f %5.2f %5.2f" \
+					" %5.0f %5.0f"
+			fo.write("%s\n" % Util.BuildHeader(fmt,
+				"loadgen_datetime"
+				" exe_time_ms num_writes num_reads"
+				" throughput(ios/sec)"
+				" lat_w.avg lat_w._50 lat_w._99"
+				" lat_r.avg lat_r._50 lat_r._99"
+				" saturated(overloaded)"
+				" num_cass_threads.min num_cass_threads.max"
+				" cpu.user cpu.sys cpu.wait"
+				" disk.xvdb.read_kb disk.xvdb.read_io"
+				" disk.xvdb.write_kb disk.xvdb.write_io"
+				" disk.xvdb.rw_size disk.xvdb.q_len disk.xvdb.wait disk.xvdb.svc_time disk.xvdb.util"
+				" net.kb_in net.kb_out"
+				))
+			for e in self.exps:
+				lat_w = e.loadgen_log.lat_w
+				lat_r = e.loadgen_log.lat_r
+
+				fo.write("%s\n" % (fmt % (
+					e.log_dt_loadgen
+					, e.loadgen_log.exe_time_ms, e.loadgen_log.num_writes, e.loadgen_log.num_reads
+					, e.loadgen_log.Throughput()
+					, lat_w.avg, lat_w._50, lat_w._99
+					, lat_r.avg, lat_r._50, lat_r._99
+					, e.saturated
+					, e.num_cass_threads.min, e.num_cass_threads.max
+					, e.collectl.GetAttrAvg("cpu_user"), e.collectl.GetAttrAvg("cpu_sys"), e.collectl.GetAttrAvg("cpu_wait")
+					, e.collectl.GetAttrAvg("disk_xvdb_read_kb"), e.collectl.GetAttrAvg("disk_xvdb_read_io")
+					, e.collectl.GetAttrAvg("disk_xvdb_write_kb"), e.collectl.GetAttrAvg("disk_xvdb_write_io")
+					, e.collectl.GetAttrAvg("disk_xvdb_rw_size"), e.collectl.GetAttrAvg("disk_xvdb_q_len"), e.collectl.GetAttrAvg("disk_xvdb_wait"), e.collectl.GetAttrAvg("disk_xvdb_svc_time"), e.collectl.GetAttrAvg("disk_xvdb_util")
+					, e.collectl.GetAttrAvg("net_kb_in"), e.collectl.GetAttrAvg("net_kb_out")
+					)))
+		Cons.P("Created file %s %d" % (fn, os.path.getsize(fn)))
+
 	def __str__(self):
 		return " ".join("%s=%s" % item for item in vars(self).items())
 
+	class Exp():
+		def __init__(self, line):
+			self._Parse(line)
 
-class Exp():
-	def __init__(self, line):
-		self._Parse(line)
+		def _Parse(self, line):
+			t = line.split()
+			if len(t) != 8:
+				raise RuntimeError("Unexpected format [%s]" % line)
+			self.server_name = t[0]
+			self.server_ip = t[1]
+			self.log_dt_loadgen = t[2]
+			self.log_dt_num_cass_threads = t[3]
+			self.log_dt_collectl = t[4]
+			self.hot_data_size = t[5]
+			self.cold_data_size = t[6]
+			self.saturated = int(t[7])
+			self.loadgen_log = LoadgenLogReader.Read(self.log_dt_loadgen)
+			self.num_cass_threads = NumCassThreadsReader.Read(self.log_dt_num_cass_threads)
+			self.collectl = CollectlLogReader.Read(self.log_dt_collectl, self.loadgen_log)
 
-	def _Parse(self, line):
-		t = line.split()
-		if len(t) != 8:
-			raise RuntimeError("Unexpected format [%s]" % line)
-		self.server_name = t[0]
-		self.server_ip = t[1]
-		self.log_dt_loadgen = t[2]
-		self.log_dt_num_cass_threads = t[3]
-		self.log_dt_collectl = t[4]
-		self.hot_data_size = t[5]
-		self.cold_data_size = t[6]
-		self.saturated = int(t[7])
-		self.loadgen_log = LoadgenLogReader.Read(self.log_dt_loadgen)
-		self.num_cass_threads = NumCassThreadsReader.Read(self.log_dt_num_cass_threads)
-		self.collectl = CollectlLogReader.Read(self.log_dt_collectl, self.loadgen_log)
+			# TODO: Cassndra log. What do you get from it?
+			# - Hot and cold storage size, which you use to calculate cost. This is
+			#   worth plotting.
+			# - When tablets migrate.
+			# - Number of requests to each tablet.
 
-		# TODO: Cassndra log. What do you get from it?
-		# - Hot and cold storage size, which you use to calculate cost. This is
-		#   worth plotting.
-		# - When tablets migrate.
-		# - Number of requests to each tablet.
-
-	def __str__(self):
-		return " ".join("%s=%s" % item for item in vars(self).items())
-
+		def __str__(self):
+			return " ".join("%s=%s" % item for item in vars(self).items())
 
 
+class _LoadExpGroupReport():
+	def __init__(self, fn):
+		self.items = []
+		with open(fn) as fo:
+			for line in fo.readlines():
+				#Cons.P(line.rstrip())
+				if len(line) == 0:
+					continue
+				if line[0] == "#":
+					continue
+				t = line.split()
+				if len(t) != 28:
+					raise RuntimeError("Unexpected format [%s]" % line)
+			self.items.append(_LoadExpGroupReport._Item(t))
 
-
-
-
-
-
-
-
-
-# TODO: clean up
-#def Throughput(storage_type, key_max_value):
-#	rows = _rows_by_storage[storage_type]
-#	rows.sort(key=operator.attrgetter(key_max_value))
-#	r = rows[-1]
-#	return float(r.writes + r.reads) * 1000.0 / r.exe_time
-#
-#
-#def Latency(storage_type, attr_name):
-#	rows = _rows_by_storage[storage_type]
-#	rows.sort(key=operator.attrgetter(attr_name))
-#	o = rows[-1]
-#	for a in attr_name.split("."):
-#		o = getattr(o, a)
-#	return o
-#
-#
-#def MaxLatency(attr_name):
-#	max_latency = 0
-#
-#	for kmv in ["lat_r." + attr_name, "lat_w." + attr_name]:
-#		for st, rows in _rows_by_storage.iteritems():
-#			rows.sort(key=operator.attrgetter(kmv))
-#			o = rows[-1]
-#			for a in kmv.split("."):
-#				o = getattr(o, a)
-#			max_latency = max(max_latency, o)
-#
-#	return max_latency
-#
-#
-#def AvgAvgLat(storage_type, attr_name):
-#	rows = _rows_by_storage[storage_type]
-#	sum_lat = 0.0
-#	sum_throughput = 0.0
-#	max_throughput = 0.0
-#	for r in rows:
-#		o = r
-#		for a in attr_name.split("."):
-#			o = getattr(o, a)
-#		sum_lat += o
-#		thr = float(r.writes + r.reads) * 1000.0 / r.exe_time
-#		sum_throughput += thr
-#		max_throughput = max(max_throughput, thr)
-#	avg_avg_lat = sum_lat / sum_throughput
-#	Cons.P("%s %s avg_avg_lat=%f" % (storage_type, attr_name, avg_avg_lat))
-#	return [max_throughput, max_throughput * avg_avg_lat]
-#
-#
-#_rows_by_storage = {}
-#_fn_plot_data = None
-#
-
-# TODO: clean up
-#class ExpItem:
-#	def __init__(self, raw_lines):
-#		#Cons.P(raw_lines)
-#		self.raw_lines = raw_lines
-#		self.saturated = 0
-#		self._ParseLines()
-#
-#	def _ParseLines(self):
-#		i = 0
-#		while i < len(self.raw_lines):
-#			line = self.raw_lines[i]
-#			#Cons.P("line=[%s]" % line)
-#			if i == 0:
-#				# Local SSD	160223-052200	10,000	"  # # of writes: 266670
-#				t = line.split("\t")
-#				if len(t) != 4:
-#					raise RuntimeError("Unexpected format [%s]" % line)
-#				self.storage = t[0]
-#				self.exp_datetime = t[1]
-#				# Not very relevant. This is from the loadgen client
-#				self.num_Ws_per_simulation_time_min = t[2]
-#				t1 = t[3].split("# of writes: ")
-#				if len(t1) != 2:
-#					raise RuntimeError("Unexpected format [%s]" % t[3])
-#				self.writes = int(t1[1])
-#			elif "# saturated" in line:
-#				self.saturated = 2
-#			elif "# of reads : " in line:
-#				t = line.split("# of reads : ")
-#				if len(t) != 2:
-#					raise RuntimeError("Unexpected format [%s]" % line)
-#				self.reads = int(t[1])
-#			elif "# Write latency:" in line:
-#				i += 1
-#				line = self.raw_lines[i]
-#				self.lat_w = _Latency(line)
-#			elif "# Read latency:" in line:
-#				i += 1
-#				line = self.raw_lines[i]
-#				self.lat_r = _Latency(line)
-#			elif i == len(self.raw_lines) - 1:
-#				t = line.split()
-#				if (len(t) != 2) or (t[1] != "ms\""):
-#					raise RuntimeError("Unexpected format [%s]" % line)
-#				self.exe_time = int(t[0])
-#			i += 1
-#
-#	def __str__(self):
-#		items = []
-#		for i in sorted(vars(self).items()):
-#			if i[0] == "raw_lines":
-#				continue
-#			items.append("%s=%s" % (i[0], i[1]))
-#			#Cons.P("%s:%s" % (i[0], i[1]))
-#		return "[%s]" % (" ".join(items))
+	class _Item():
+		def __init__(self, tokens):
+			self.loadgen_datetime     = tokens[0]
+			self.exe_time_ms          = tokens[1]
+			self.num_writes           = tokens[2]
+			self.num_reads            = tokens[3]
+			self.throughput           = tokens[4]
+			self.lat_w_avg            = tokens[5]
+			self.lat_w__50            = tokens[6]
+			self.lat_w__99            = tokens[7]
+			self.lat_r_avg            = tokens[8]
+			self.lat_r__50            = tokens[9]
+			self.lat_r__99            = tokens[10]
+			self.saturated            = tokens[11]
+			self.num_cass_threads_min = tokens[12]
+			self.num_cass_threads_max = tokens[13]
+			self.cpu_user             = tokens[14]
+			self.cpu_sys              = tokens[15]
+			self.cpu_wait             = tokens[16]
+			self.disk_xvdb_read_kb    = tokens[17]
+			self.disk_xvdb_read_io    = tokens[18]
+			self.disk_xvdb_write_kb   = tokens[19]
+			self.disk_xvdb_write_io   = tokens[20]
+			self.disk_xvdb_rw_size    = tokens[21]
+			self.disk_xvdb_q_len      = tokens[22]
+			self.disk_xvdb_wait       = tokens[23]
+			self.disk_xvdb_svc_time   = tokens[24]
+			self.disk_xvdb_util       = tokens[25]
+			self.net_kb_in            = tokens[26]
+			self.net_kb_out           = tokens[27]

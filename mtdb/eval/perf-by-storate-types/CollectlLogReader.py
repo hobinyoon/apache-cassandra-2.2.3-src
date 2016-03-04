@@ -13,7 +13,7 @@ def Read(log_datetime, loadgen_log):
 	# If the digested file doesn't exist, read the raw one and create one
 	fn_digested = "plot-data/collectl-digested-%s" % log_datetime
 	if not os.path.isfile(fn_digested):
-		rlp = _ParseRawLog(log_datetime, loadgen_log)
+		_ParseRawLog(log_datetime, loadgen_log)
 	return _LogDigested(fn_digested)
 
 

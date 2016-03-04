@@ -32,10 +32,9 @@ class _ParseRawLog:
 					"Collectl log time doesn't have a date part :("
 					% (self.loadgen_exp_dt_begin, self.loadgen_exp_dt_end))
 
-		# TODO: what I want
 		# - CPU
 		#     (user, kernel, iowait) * (avg, min, max, _50, _99)
-		# - Disk usage: (per device) * (what?)
+		# - Disk usage: (per device) * (everything)
 		# - Network usage: eth0 in/out. Check if it is saturated or what.
 		# - Mem is always full, since it is pressured. Linux buffer cache is assumed to be always full.
 
@@ -184,196 +183,217 @@ class _ParseRawLog:
 			self.time_res_usage[time] = _ResUsage()
 		self.time_res_usage[time].AddNetwork(kb_in, pkt_in, size_in, mult_i, cmp_i, errs_i, kb_out, pkt_out, size_o, cmp_o, errs_o)
 
-	def _ReportByTime(self):
-		fmt = "%12s %3d %3d %3d" \
-				" %5d %4d" \
-				" %5d %4d" \
-				" %4d %4d" \
-				" %3d %2d %2d" \
-				" %4d %4d %4d %1d %1d %1d" \
-				" %4d %4d %4d %1d %1d"
-
-		# TODO: could be something else, or multiple if you use multiple storages
-		disk_dev_name = "xvdb"
-
-		Cons.P(Util.BuildHeader(fmt,
-			"time cpu.user cpu.sys cpu.wait"
-			" disk.%s.read_kb disk.%s.read_io"
-			" disk.%s.write_kb disk.%s.write_io"
-			" disk.%s.rw_size disk.%s.q_len"
-			" disk.%s.wait disk.%s.svc_time disk.%s.util"
-			" net.kb_in net.pkt_in net.size_in net.mult_i net.cmp_i net.errs_i"
-			" net.kb_out net.pkt_out net.size_o net.cmp_o net.errs_o"
-			% (disk_dev_name, disk_dev_name
-				, disk_dev_name, disk_dev_name
-				, disk_dev_name, disk_dev_name
-				, disk_dev_name, disk_dev_name, disk_dev_name)
-			))
-
-		for time, ru in sorted(self.time_res_usage.iteritems()):
-			Cons.P(fmt % (
-				time
-				, ru.CpuAttr("user"), ru.CpuAttr("sys"), ru.CpuAttr("wait")
-				, ru.DiskAttr(disk_dev_name, "read_kb"), ru.DiskAttr(disk_dev_name, "read_io")
-				, ru.DiskAttr(disk_dev_name, "write_kb"), ru.DiskAttr(disk_dev_name, "write_io")
-				, ru.DiskAttr(disk_dev_name, "rw_size"), ru.DiskAttr(disk_dev_name, "q_len")
-				, ru.DiskAttr(disk_dev_name, "wait"), ru.DiskAttr(disk_dev_name, "svc_time"), ru.DiskAttr(disk_dev_name, "util")
-				, ru.NetAttr("kb_in"), ru.NetAttr("pkt_in") , ru.NetAttr("size_in") , ru.NetAttr("mult_i") , ru.NetAttr("cmp_i") , ru.NetAttr("errs_i")
-				, ru.NetAttr("kb_out") , ru.NetAttr("pkt_out") , ru.NetAttr("size_o") , ru.NetAttr("cmp_o") , ru.NetAttr("errs_o")
-				))
-
-	def _ReportAvg(self):
-		# TODO: need to be presented with other metrics
-
-		fmt = "%5.2f %5.2f %5.2f" \
-				" %7.2f %6.2f" \
-				" %7.2f %6.2f" \
-				" %6.2f %6.2f" \
-				" %5.2f %4.2f %4.2f" \
-				" %4d %4d %4d %1d %1d %1d" \
-				" %4d %4d %4d %1d %1d"
-
-		# TODO: could be something else, or multiple if you use multiple storages
-		#   xvda: EBS SSD
-		#   xvdb: First local SSD
-		#   xvdc: (Never used). A Second local SSD
-		#   xvdd: EBS Magnetic
-		disk_dev_name = "xvdb"
-
-		Cons.P(Util.BuildHeader(fmt,
-			"cpu.user cpu.sys cpu.wait"
-			" disk.%s.read_kb disk.%s.read_io"
-			" disk.%s.write_kb disk.%s.write_io"
-			" disk.%s.rw_size disk.%s.q_len"
-			" disk.%s.wait disk.%s.svc_time disk.%s.util"
-			" net.kb_in net.pkt_in net.size_in net.mult_i net.cmp_i net.errs_i"
-			" net.kb_out net.pkt_out net.size_o net.cmp_o net.errs_o"
-			% (disk_dev_name, disk_dev_name
-				, disk_dev_name, disk_dev_name
-				, disk_dev_name, disk_dev_name
-				, disk_dev_name, disk_dev_name, disk_dev_name)
-			))
-
-		cpu_user = 0
-		cpu_sys  = 0
-		cpu_wait = 0
-		disk_read_kb  = 0
-		disk_read_io  = 0
-		disk_write_kb = 0
-		disk_write_io = 0
-		disk_rw_size  = 0
-		disk_q_len    = 0
-		disk_wait     = 0
-		disk_svc_time = 0
-		disk_util     = 0
-		net_kb_in   = 0
-		net_pkt_in  = 0
-		net_size_in = 0
-		net_mult_i  = 0
-		net_cmp_i   = 0
-		net_errs_i  = 0
-		net_kb_out  = 0
-		net_pkt_out = 0
-		net_size_o  = 0
-		net_cmp_o   = 0
-		net_errs_o  = 0
-
-		for time, ru in self.time_res_usage.iteritems():
-			cpu_user += ru.CpuAttr("user")
-			cpu_sys  += ru.CpuAttr("sys")
-			cpu_wait += ru.CpuAttr("wait")
-			disk_read_kb  += ru.DiskAttr(disk_dev_name, "read_kb")
-			disk_read_io  += ru.DiskAttr(disk_dev_name, "read_io")
-			disk_write_kb += ru.DiskAttr(disk_dev_name, "write_kb")
-			disk_write_io += ru.DiskAttr(disk_dev_name, "write_io")
-			disk_rw_size  += ru.DiskAttr(disk_dev_name, "rw_size")
-			disk_q_len    += ru.DiskAttr(disk_dev_name, "q_len")
-			disk_wait     += ru.DiskAttr(disk_dev_name, "wait")
-			disk_svc_time += ru.DiskAttr(disk_dev_name, "svc_time")
-			disk_util     += ru.DiskAttr(disk_dev_name, "util")
-			net_kb_in   += ru.NetAttr("kb_in")
-			net_pkt_in  += ru.NetAttr("pkt_in")
-			net_size_in += ru.NetAttr("size_in")
-			net_mult_i  += ru.NetAttr("mult_i")
-			net_cmp_i   += ru.NetAttr("cmp_i")
-			net_errs_i  += ru.NetAttr("errs_i")
-			net_kb_out  += ru.NetAttr("kb_out")
-			net_pkt_out += ru.NetAttr("pkt_out")
-			net_size_o  += ru.NetAttr("size_o")
-			net_cmp_o   += ru.NetAttr("cmp_o")
-			net_errs_o  += ru.NetAttr("errs_o")
-
-		len_ = float(len(self.time_res_usage))
-		cpu_user /= len_
-		cpu_sys  /= len_
-		cpu_wait /= len_
-		disk_read_kb  /= len_
-		disk_read_io  /= len_
-		disk_write_kb /= len_
-		disk_write_io /= len_
-		disk_rw_size  /= len_
-		disk_q_len    /= len_
-		disk_wait     /= len_
-		disk_svc_time /= len_
-		disk_util     /= len_
-		net_kb_in   /= len_
-		net_pkt_in  /= len_
-		net_size_in /= len_
-		net_mult_i  /= len_
-		net_cmp_i   /= len_
-		net_errs_i  /= len_
-		net_kb_out  /= len_
-		net_pkt_out /= len_
-		net_size_o  /= len_
-		net_cmp_o   /= len_
-		net_errs_o  /= len_
-
-		Cons.P(fmt % (
-			cpu_user, cpu_sys, cpu_wait
-			, disk_read_kb, disk_read_io
-			, disk_write_kb, disk_write_io
-			, disk_rw_size, disk_q_len, disk_wait, disk_svc_time, disk_util
-			, net_kb_in, net_pkt_in, net_size_in, net_mult_i, net_cmp_i, net_errs_i
-			, net_kb_out, net_pkt_out, net_size_o, net_cmp_o, net_errs_o
-			))
+#	def _ReportByTime(self):
+#		fmt = "%12s %3d %3d %3d" \
+#				" %5d %4d" \
+#				" %5d %4d" \
+#				" %4d %4d" \
+#				" %3d %2d %2d" \
+#				" %4d %4d %4d %1d %1d %1d" \
+#				" %4d %4d %4d %1d %1d"
+#
+#		disk_dev_name = "xvdb"
+#
+#		Cons.P(Util.BuildHeader(fmt,
+#			"time cpu.user cpu.sys cpu.wait"
+#			" disk.%s.read_kb disk.%s.read_io"
+#			" disk.%s.write_kb disk.%s.write_io"
+#			" disk.%s.rw_size disk.%s.q_len"
+#			" disk.%s.wait disk.%s.svc_time disk.%s.util"
+#			" net.kb_in net.pkt_in net.size_in net.mult_i net.cmp_i net.errs_i"
+#			" net.kb_out net.pkt_out net.size_o net.cmp_o net.errs_o"
+#			% (disk_dev_name, disk_dev_name
+#				, disk_dev_name, disk_dev_name
+#				, disk_dev_name, disk_dev_name
+#				, disk_dev_name, disk_dev_name, disk_dev_name)
+#			))
+#
+#		for time, ru in sorted(self.time_res_usage.iteritems()):
+#			Cons.P(fmt % (
+#				time
+#				, ru.CpuAttr("user"), ru.CpuAttr("sys"), ru.CpuAttr("wait")
+#				, ru.DiskAttr(disk_dev_name, "read_kb"), ru.DiskAttr(disk_dev_name, "read_io")
+#				, ru.DiskAttr(disk_dev_name, "write_kb"), ru.DiskAttr(disk_dev_name, "write_io")
+#				, ru.DiskAttr(disk_dev_name, "rw_size"), ru.DiskAttr(disk_dev_name, "q_len")
+#				, ru.DiskAttr(disk_dev_name, "wait"), ru.DiskAttr(disk_dev_name, "svc_time"), ru.DiskAttr(disk_dev_name, "util")
+#				, ru.NetAttr("kb_in"), ru.NetAttr("pkt_in") , ru.NetAttr("size_in") , ru.NetAttr("mult_i") , ru.NetAttr("cmp_i") , ru.NetAttr("errs_i")
+#				, ru.NetAttr("kb_out") , ru.NetAttr("pkt_out") , ru.NetAttr("size_o") , ru.NetAttr("cmp_o") , ru.NetAttr("errs_o")
+#				))
+#
+#	def _ReportAvg(self):
+#		fmt = "%5.2f %5.2f %5.2f" \
+#				" %7.2f %6.2f" \
+#				" %7.2f %6.2f" \
+#				" %6.2f %6.2f" \
+#				" %5.2f %4.2f %4.2f" \
+#				" %4d %4d %4d %1d %1d %1d" \
+#				" %4d %4d %4d %1d %1d"
+#
+#		disk_dev_name = "xvdb"
+#
+#		Cons.P(Util.BuildHeader(fmt,
+#			"cpu.user cpu.sys cpu.wait"
+#			" disk.%s.read_kb disk.%s.read_io"
+#			" disk.%s.write_kb disk.%s.write_io"
+#			" disk.%s.rw_size disk.%s.q_len"
+#			" disk.%s.wait disk.%s.svc_time disk.%s.util"
+#			" net.kb_in net.pkt_in net.size_in net.mult_i net.cmp_i net.errs_i"
+#			" net.kb_out net.pkt_out net.size_o net.cmp_o net.errs_o"
+#			% (disk_dev_name, disk_dev_name
+#				, disk_dev_name, disk_dev_name
+#				, disk_dev_name, disk_dev_name
+#				, disk_dev_name, disk_dev_name, disk_dev_name)
+#			))
+#
+#		cpu_user = 0
+#		cpu_sys  = 0
+#		cpu_wait = 0
+#		disk_read_kb  = 0
+#		disk_read_io  = 0
+#		disk_write_kb = 0
+#		disk_write_io = 0
+#		disk_rw_size  = 0
+#		disk_q_len    = 0
+#		disk_wait     = 0
+#		disk_svc_time = 0
+#		disk_util     = 0
+#		net_kb_in   = 0
+#		net_pkt_in  = 0
+#		net_size_in = 0
+#		net_mult_i  = 0
+#		net_cmp_i   = 0
+#		net_errs_i  = 0
+#		net_kb_out  = 0
+#		net_pkt_out = 0
+#		net_size_o  = 0
+#		net_cmp_o   = 0
+#		net_errs_o  = 0
+#
+#		for time, ru in self.time_res_usage.iteritems():
+#			cpu_user += ru.CpuAttr("user")
+#			cpu_sys  += ru.CpuAttr("sys")
+#			cpu_wait += ru.CpuAttr("wait")
+#			disk_read_kb  += ru.DiskAttr(disk_dev_name, "read_kb")
+#			disk_read_io  += ru.DiskAttr(disk_dev_name, "read_io")
+#			disk_write_kb += ru.DiskAttr(disk_dev_name, "write_kb")
+#			disk_write_io += ru.DiskAttr(disk_dev_name, "write_io")
+#			disk_rw_size  += ru.DiskAttr(disk_dev_name, "rw_size")
+#			disk_q_len    += ru.DiskAttr(disk_dev_name, "q_len")
+#			disk_wait     += ru.DiskAttr(disk_dev_name, "wait")
+#			disk_svc_time += ru.DiskAttr(disk_dev_name, "svc_time")
+#			disk_util     += ru.DiskAttr(disk_dev_name, "util")
+#			net_kb_in   += ru.NetAttr("kb_in")
+#			net_pkt_in  += ru.NetAttr("pkt_in")
+#			net_size_in += ru.NetAttr("size_in")
+#			net_mult_i  += ru.NetAttr("mult_i")
+#			net_cmp_i   += ru.NetAttr("cmp_i")
+#			net_errs_i  += ru.NetAttr("errs_i")
+#			net_kb_out  += ru.NetAttr("kb_out")
+#			net_pkt_out += ru.NetAttr("pkt_out")
+#			net_size_o  += ru.NetAttr("size_o")
+#			net_cmp_o   += ru.NetAttr("cmp_o")
+#			net_errs_o  += ru.NetAttr("errs_o")
+#
+#		len_ = float(len(self.time_res_usage))
+#		cpu_user /= len_
+#		cpu_sys  /= len_
+#		cpu_wait /= len_
+#		disk_read_kb  /= len_
+#		disk_read_io  /= len_
+#		disk_write_kb /= len_
+#		disk_write_io /= len_
+#		disk_rw_size  /= len_
+#		disk_q_len    /= len_
+#		disk_wait     /= len_
+#		disk_svc_time /= len_
+#		disk_util     /= len_
+#		net_kb_in   /= len_
+#		net_pkt_in  /= len_
+#		net_size_in /= len_
+#		net_mult_i  /= len_
+#		net_cmp_i   /= len_
+#		net_errs_i  /= len_
+#		net_kb_out  /= len_
+#		net_pkt_out /= len_
+#		net_size_o  /= len_
+#		net_cmp_o   /= len_
+#		net_errs_o  /= len_
+#
+#		Cons.P(fmt % (
+#			cpu_user, cpu_sys, cpu_wait
+#			, disk_read_kb, disk_read_io
+#			, disk_write_kb, disk_write_io
+#			, disk_rw_size, disk_q_len, disk_wait, disk_svc_time, disk_util
+#			, net_kb_in, net_pkt_in, net_size_in, net_mult_i, net_cmp_i, net_errs_i
+#			, net_kb_out, net_pkt_out, net_size_o, net_cmp_o, net_errs_o
+#			))
 
 	# Collectl stat by time
 	def _CreateDigestFile(self):
 		fn = "plot-data/collectl-digested-%s" % self.log_datetime
 		with open(fn, "w") as fo:
 			fmt = "%12s %3d %3d %3d" \
+					\
 					" %5d %4d" \
 					" %5d %4d" \
 					" %4d %4d" \
 					" %3d %2d %2d" \
+					\
+					" %5d %4d" \
+					" %5d %4d" \
+					" %4d %4d" \
+					" %3d %2d %2d" \
+					\
+					" %5d %4d" \
+					" %5d %4d" \
+					" %4d %4d" \
+					" %3d %2d %2d" \
+					\
 					" %4d %4d %4d %1d %1d %1d" \
 					" %4d %4d %4d %1d %1d"
 
-			# TODO: could be something else, or multiple if you use multiple storages
-			disk_dev_name = "xvdb"
-
+			header_items = ""
+			# xvda: EBS SSD
+			# xvdb: First local SSD
+			# xvdc: (Never used). A Second local SSD
+			# xvdd: EBS Magnetic
+			for disk_dev_name in ["xvda", "xvdb", "xvdd"]:
+				header_items += (" disk.%s.read_kb disk.%s.read_io"
+					" disk.%s.write_kb disk.%s.write_io"
+					" disk.%s.rw_size disk.%s.q_len"
+					" disk.%s.wait disk.%s.svc_time disk.%s.util"
+					% (disk_dev_name, disk_dev_name
+						, disk_dev_name, disk_dev_name
+						, disk_dev_name, disk_dev_name
+						, disk_dev_name, disk_dev_name, disk_dev_name))
 			fo.write("%s\n" % Util.BuildHeader(fmt,
 				"time cpu.user cpu.sys cpu.wait"
-				" disk.%s.read_kb disk.%s.read_io"
-				" disk.%s.write_kb disk.%s.write_io"
-				" disk.%s.rw_size disk.%s.q_len"
-				" disk.%s.wait disk.%s.svc_time disk.%s.util"
+				"%s"
 				" net.kb_in net.pkt_in net.size_in net.mult_i net.cmp_i net.errs_i"
 				" net.kb_out net.pkt_out net.size_o net.cmp_o net.errs_o"
-				% (disk_dev_name, disk_dev_name
-					, disk_dev_name, disk_dev_name
-					, disk_dev_name, disk_dev_name
-					, disk_dev_name, disk_dev_name, disk_dev_name)
+				% header_items
 				))
 
 			for time, ru in sorted(self.time_res_usage.iteritems()):
 				fo.write("%s\n" % (fmt % (
 					time
 					, ru.CpuAttr("user"), ru.CpuAttr("sys"), ru.CpuAttr("wait")
-					, ru.DiskAttr(disk_dev_name, "read_kb"), ru.DiskAttr(disk_dev_name, "read_io")
-					, ru.DiskAttr(disk_dev_name, "write_kb"), ru.DiskAttr(disk_dev_name, "write_io")
-					, ru.DiskAttr(disk_dev_name, "rw_size"), ru.DiskAttr(disk_dev_name, "q_len")
-					, ru.DiskAttr(disk_dev_name, "wait"), ru.DiskAttr(disk_dev_name, "svc_time"), ru.DiskAttr(disk_dev_name, "util")
+
+					, ru.DiskAttr("xvda", "read_kb"), ru.DiskAttr("xvda", "read_io")
+					, ru.DiskAttr("xvda", "write_kb"), ru.DiskAttr("xvda", "write_io")
+					, ru.DiskAttr("xvda", "rw_size"), ru.DiskAttr("xvda", "q_len")
+					, ru.DiskAttr("xvda", "wait"), ru.DiskAttr("xvda", "svc_time"), ru.DiskAttr("xvda", "util")
+
+					, ru.DiskAttr("xvdb", "read_kb"), ru.DiskAttr("xvdb", "read_io")
+					, ru.DiskAttr("xvdb", "write_kb"), ru.DiskAttr("xvdb", "write_io")
+					, ru.DiskAttr("xvdb", "rw_size"), ru.DiskAttr("xvdb", "q_len")
+					, ru.DiskAttr("xvdb", "wait"), ru.DiskAttr("xvdb", "svc_time"), ru.DiskAttr("xvdb", "util")
+
+					, ru.DiskAttr("xvdd", "read_kb"), ru.DiskAttr("xvdd", "read_io")
+					, ru.DiskAttr("xvdd", "write_kb"), ru.DiskAttr("xvdd", "write_io")
+					, ru.DiskAttr("xvdd", "rw_size"), ru.DiskAttr("xvdd", "q_len")
+					, ru.DiskAttr("xvdd", "wait"), ru.DiskAttr("xvdd", "svc_time"), ru.DiskAttr("xvdd", "util")
+
 					, ru.NetAttr("kb_in"), ru.NetAttr("pkt_in") , ru.NetAttr("size_in") , ru.NetAttr("mult_i") , ru.NetAttr("cmp_i") , ru.NetAttr("errs_i")
 					, ru.NetAttr("kb_out") , ru.NetAttr("pkt_out") , ru.NetAttr("size_o") , ru.NetAttr("cmp_o") , ru.NetAttr("errs_o")
 					)))
@@ -466,6 +486,8 @@ class _ResUsage:
 		return r
 
 	def DiskAttr(self, dev_name, attr_name):
+		if dev_name not in self.disk:
+			return 0
 		return getattr(self.disk[dev_name], attr_name)
 
 	def NetAttr(self, attr_name):
@@ -482,7 +504,8 @@ class _LogDigested:
 		sum = 0
 		for k, rum in self.time_res_usage.iteritems():
 			sum += getattr(rum, attr_name)
-		return float(sum) / len(self.time_res_usage)
+		v = float(sum) / len(self.time_res_usage)
+		return v
 
 	def _LoadFile(self):
 		fn = self.fn
@@ -493,10 +516,8 @@ class _LogDigested:
 				if line[0] == "#":
 					continue
 				t = line.split()
-				if len(t) != 24:
+				if len(t) != 42:
 					raise RuntimeError("Unexpected format: [%s]" % line)
-
-				# TODO: implement xvda, xvdd too
 				time = t[0]
 				self.time_res_usage[time] = _LogDigested.ResUsageMetrics(t)
 
@@ -505,23 +526,41 @@ class _LogDigested:
 			self.cpu_user           = int(tokens[1])
 			self.cpu_sys            = int(tokens[2])
 			self.cpu_wait           = int(tokens[3])
-			self.disk_xvdb_read_kb  = int(tokens[4])
-			self.disk_xvdb_read_io  = int(tokens[5])
-			self.disk_xvdb_write_kb = int(tokens[6])
-			self.disk_xvdb_write_io = int(tokens[7])
-			self.disk_xvdb_rw_size  = int(tokens[8])
-			self.disk_xvdb_q_len    = int(tokens[9])
-			self.disk_xvdb_wait     = int(tokens[10])
-			self.disk_xvdb_svc_time = int(tokens[11])
-			self.disk_xvdb_util     = int(tokens[12])
-			self.net_kb_in          = int(tokens[13])
-			self.net_pkt_in         = int(tokens[14])
-			self.net_size_in        = int(tokens[15])
-			self.net_mult_i         = int(tokens[16])
-			self.net_cmp_i          = int(tokens[17])
-			self.net_errs_i         = int(tokens[18])
-			self.net_kb_out         = int(tokens[19])
-			self.net_pkt_out        = int(tokens[20])
-			self.net_size_o         = int(tokens[21])
-			self.net_cmp_o          = int(tokens[22])
-			self.net_errs_o         = int(tokens[23])
+			self.disk_xvda_read_kb  = int(tokens[4])
+			self.disk_xvda_read_io  = int(tokens[5])
+			self.disk_xvda_write_kb = int(tokens[6])
+			self.disk_xvda_write_io = int(tokens[7])
+			self.disk_xvda_rw_size  = int(tokens[8])
+			self.disk_xvda_q_len    = int(tokens[9])
+			self.disk_xvda_wait     = int(tokens[10])
+			self.disk_xvda_svc_time = int(tokens[11])
+			self.disk_xvda_util     = int(tokens[12])
+			self.disk_xvdb_read_kb  = int(tokens[13])
+			self.disk_xvdb_read_io  = int(tokens[14])
+			self.disk_xvdb_write_kb = int(tokens[15])
+			self.disk_xvdb_write_io = int(tokens[16])
+			self.disk_xvdb_rw_size  = int(tokens[17])
+			self.disk_xvdb_q_len    = int(tokens[18])
+			self.disk_xvdb_wait     = int(tokens[19])
+			self.disk_xvdb_svc_time = int(tokens[20])
+			self.disk_xvdb_util     = int(tokens[21])
+			self.disk_xvdd_read_kb  = int(tokens[22])
+			self.disk_xvdd_read_io  = int(tokens[23])
+			self.disk_xvdd_write_kb = int(tokens[24])
+			self.disk_xvdd_write_io = int(tokens[25])
+			self.disk_xvdd_rw_size  = int(tokens[26])
+			self.disk_xvdd_q_len    = int(tokens[27])
+			self.disk_xvdd_wait     = int(tokens[28])
+			self.disk_xvdd_svc_time = int(tokens[29])
+			self.disk_xvdd_util     = int(tokens[30])
+			self.net_kb_in          = int(tokens[31])
+			self.net_pkt_in         = int(tokens[32])
+			self.net_size_in        = int(tokens[33])
+			self.net_mult_i         = int(tokens[34])
+			self.net_cmp_i          = int(tokens[35])
+			self.net_errs_i         = int(tokens[36])
+			self.net_kb_out         = int(tokens[37])
+			self.net_pkt_out        = int(tokens[38])
+			self.net_size_o         = int(tokens[39])
+			self.net_cmp_o          = int(tokens[40])
+			self.net_errs_o         = int(tokens[41])

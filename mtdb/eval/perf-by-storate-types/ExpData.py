@@ -78,9 +78,19 @@ class _GenExpGroupReport():
 					" %2d" \
 					" %2d %3d" \
 					" %6.2f %6.2f %6.2f" \
+					\
 					" %8.2f %7.2f" \
 					" %8.2f %6.2f" \
 					" %5.2f %5.2f %5.2f %5.2f %5.2f" \
+					\
+					" %8.2f %7.2f" \
+					" %8.2f %6.2f" \
+					" %5.2f %5.2f %5.2f %5.2f %5.2f" \
+					\
+					" %8.2f %7.2f" \
+					" %8.2f %6.2f" \
+					" %5.2f %5.2f %5.2f %5.2f %5.2f" \
+					\
 					" %5.0f %5.0f"
 			fo.write("%s\n" % Util.BuildHeader(fmt,
 				"loadgen_datetime"
@@ -91,9 +101,19 @@ class _GenExpGroupReport():
 				" saturated(overloaded)"
 				" num_cass_threads.min num_cass_threads.max"
 				" cpu.user cpu.sys cpu.wait"
+
+				" disk.xvda.read_kb disk.xvda.read_io"
+				" disk.xvda.write_kb disk.xvda.write_io"
+				" disk.xvda.rw_size disk.xvda.q_len disk.xvda.wait disk.xvda.svc_time disk.xvda.util"
+
 				" disk.xvdb.read_kb disk.xvdb.read_io"
 				" disk.xvdb.write_kb disk.xvdb.write_io"
 				" disk.xvdb.rw_size disk.xvdb.q_len disk.xvdb.wait disk.xvdb.svc_time disk.xvdb.util"
+
+				" disk.xvdd.read_kb disk.xvdd.read_io"
+				" disk.xvdd.write_kb disk.xvdd.write_io"
+				" disk.xvdd.rw_size disk.xvdd.q_len disk.xvdd.wait disk.xvdd.svc_time disk.xvdd.util"
+
 				" net.kb_in net.kb_out"
 				))
 
@@ -124,9 +144,19 @@ class _GenExpGroupReport():
 					, saturated
 					, e.num_cass_threads.min, e.num_cass_threads.max
 					, e.collectl.GetAttrAvg("cpu_user"), e.collectl.GetAttrAvg("cpu_sys"), e.collectl.GetAttrAvg("cpu_wait")
+
+					, e.collectl.GetAttrAvg("disk_xvda_read_kb"), e.collectl.GetAttrAvg("disk_xvda_read_io")
+					, e.collectl.GetAttrAvg("disk_xvda_write_kb"), e.collectl.GetAttrAvg("disk_xvda_write_io")
+					, e.collectl.GetAttrAvg("disk_xvda_rw_size"), e.collectl.GetAttrAvg("disk_xvda_q_len"), e.collectl.GetAttrAvg("disk_xvda_wait"), e.collectl.GetAttrAvg("disk_xvda_svc_time"), e.collectl.GetAttrAvg("disk_xvda_util")
+
 					, e.collectl.GetAttrAvg("disk_xvdb_read_kb"), e.collectl.GetAttrAvg("disk_xvdb_read_io")
 					, e.collectl.GetAttrAvg("disk_xvdb_write_kb"), e.collectl.GetAttrAvg("disk_xvdb_write_io")
 					, e.collectl.GetAttrAvg("disk_xvdb_rw_size"), e.collectl.GetAttrAvg("disk_xvdb_q_len"), e.collectl.GetAttrAvg("disk_xvdb_wait"), e.collectl.GetAttrAvg("disk_xvdb_svc_time"), e.collectl.GetAttrAvg("disk_xvdb_util")
+
+					, e.collectl.GetAttrAvg("disk_xvdd_read_kb"), e.collectl.GetAttrAvg("disk_xvdd_read_io")
+					, e.collectl.GetAttrAvg("disk_xvdd_write_kb"), e.collectl.GetAttrAvg("disk_xvdd_write_io")
+					, e.collectl.GetAttrAvg("disk_xvdd_rw_size"), e.collectl.GetAttrAvg("disk_xvdd_q_len"), e.collectl.GetAttrAvg("disk_xvdd_wait"), e.collectl.GetAttrAvg("disk_xvdd_svc_time"), e.collectl.GetAttrAvg("disk_xvdd_util")
+
 					, e.collectl.GetAttrAvg("net_kb_in"), e.collectl.GetAttrAvg("net_kb_out")
 					)))
 		Cons.P("Created file %s %d" % (fn, os.path.getsize(fn)))
@@ -175,7 +205,7 @@ class _LoadExpGroupReport():
 				if line[0] == "#":
 					continue
 				t = line.split()
-				if len(t) != 28:
+				if len(t) != 46:
 					raise RuntimeError("Unexpected format [%s]" % line)
 				self.items.append(_LoadExpGroupReport._Item(t))
 
@@ -198,14 +228,32 @@ class _LoadExpGroupReport():
 			self.cpu_user             = float(tokens[14])
 			self.cpu_sys              = float(tokens[15])
 			self.cpu_wait             = float(tokens[16])
-			self.disk_xvdb_read_kb    = float(tokens[17])
-			self.disk_xvdb_read_io    = float(tokens[18])
-			self.disk_xvdb_write_kb   = float(tokens[19])
-			self.disk_xvdb_write_io   = float(tokens[20])
-			self.disk_xvdb_rw_size    = float(tokens[21])
-			self.disk_xvdb_q_len      = float(tokens[22])
-			self.disk_xvdb_wait       = float(tokens[23])
-			self.disk_xvdb_svc_time   = float(tokens[24])
-			self.disk_xvdb_util       = float(tokens[25])
-			self.net_kb_in            = float(tokens[26])
-			self.net_kb_out           = float(tokens[27])
+			self.disk_xvda_read_kb    = float(tokens[17])
+			self.disk_xvda_read_io    = float(tokens[18])
+			self.disk_xvda_write_kb   = float(tokens[19])
+			self.disk_xvda_write_io   = float(tokens[20])
+			self.disk_xvda_rw_size    = float(tokens[21])
+			self.disk_xvda_q_len      = float(tokens[22])
+			self.disk_xvda_wait       = float(tokens[23])
+			self.disk_xvda_svc_time   = float(tokens[24])
+			self.disk_xvda_util       = float(tokens[25])
+			self.disk_xvdb_read_kb    = float(tokens[26])
+			self.disk_xvdb_read_io    = float(tokens[27])
+			self.disk_xvdb_write_kb   = float(tokens[28])
+			self.disk_xvdb_write_io   = float(tokens[29])
+			self.disk_xvdb_rw_size    = float(tokens[30])
+			self.disk_xvdb_q_len      = float(tokens[31])
+			self.disk_xvdb_wait       = float(tokens[32])
+			self.disk_xvdb_svc_time   = float(tokens[33])
+			self.disk_xvdb_util       = float(tokens[34])
+			self.disk_xvdd_read_kb    = float(tokens[35])
+			self.disk_xvdd_read_io    = float(tokens[36])
+			self.disk_xvdd_write_kb   = float(tokens[37])
+			self.disk_xvdd_write_io   = float(tokens[38])
+			self.disk_xvdd_rw_size    = float(tokens[39])
+			self.disk_xvdd_q_len      = float(tokens[40])
+			self.disk_xvdd_wait       = float(tokens[41])
+			self.disk_xvdd_svc_time   = float(tokens[42])
+			self.disk_xvdd_util       = float(tokens[43])
+			self.net_kb_in            = float(tokens[44])
+			self.net_kb_out           = float(tokens[45])

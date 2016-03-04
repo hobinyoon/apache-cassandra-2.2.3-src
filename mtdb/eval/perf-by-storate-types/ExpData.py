@@ -180,7 +180,7 @@ class _LoadExpGroupReport():
 			self.saturated            = tokens[11]
 			self.num_cass_threads_min = tokens[12]
 			self.num_cass_threads_max = tokens[13]
-			self.cpu_user             = tokens[14]
+			self.cpu_user             = float(tokens[14])
 			self.cpu_sys              = tokens[15]
 			self.cpu_wait             = tokens[16]
 			self.disk_xvdb_read_kb    = tokens[17]

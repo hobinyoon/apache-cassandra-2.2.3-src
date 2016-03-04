@@ -10,44 +10,50 @@ import ExpData
 
 
 def Plot():
+	# TODO
+	#_ThroughputVsLatency()
+	_ResUsage()
+
+
+def _ThroughputVsLatency():
 	_Baseline()
 	_Mutants()
 
 
 def _Baseline():
-	with Cons.MeasureTime("Baseline ..."):
+	with Cons.MeasureTime("Baseline throughput vs latency ..."):
 		# Give some room for the top label with y_alpha
 		y_alpha = 1.18
 
 		egns = ["ebs-mag", "ebs-ssd", "local-ssd"]
 		labels = ["EBS\\nMag", "EBS\\nSSD", "Local\\nSSD"]
 		y_max = ExpData.LastExpAttr("ebs-mag", "lat_r_avg") * y_alpha
-		_Plot0(egns, labels, "baseline", "Avg write", "lat_w_avg", 6, y_max)
-		_Plot0(egns, labels, "baseline", "Avg read" , "lat_r_avg", 9, y_max)
+		_ThroughputVsLatency0(egns, labels, "baseline", "Avg write", "lat_w_avg", 6, y_max)
+		_ThroughputVsLatency0(egns, labels, "baseline", "Avg read" , "lat_r_avg", 9, y_max)
 
 		y_max = ExpData.LastExpAttr("ebs-mag", "lat_r__99") * y_alpha
-		_Plot0(egns, labels, "baseline", "99th write", "lat_w__99",  8, y_max)
-		_Plot0(egns, labels, "baseline", "99th read" , "lat_r__99", 11, y_max)
+		_ThroughputVsLatency0(egns, labels, "baseline", "99th write", "lat_w__99",  8, y_max)
+		_ThroughputVsLatency0(egns, labels, "baseline", "99th read" , "lat_r__99", 11, y_max)
 
 
 def _Mutants():
-	with Cons.MeasureTime("Local SSD + EBS Mag ..."):
+	with Cons.MeasureTime("Mutants throughput vs latency ..."):
 		y_alpha = 1.18
 
 		egns = ["ebs-mag", "local-ssd-ebs-mag", "local-ssd"]
 		labels = ["EBS\\nMag", "LS+EM", "Local\\nSSD"]
 		y_max = ExpData.LastExpAttr("ebs-mag", "lat_r_avg") * y_alpha
-		_Plot0(egns, labels, "local-ssd-ebs-mag", "Avg write", "lat_w_avg", 6, y_max)
-		_Plot0(egns, labels, "local-ssd-ebs-mag", "Avg read" , "lat_r_avg", 9, y_max)
+		_ThroughputVsLatency0(egns, labels, "local-ssd-ebs-mag", "Avg write", "lat_w_avg", 6, y_max)
+		_ThroughputVsLatency0(egns, labels, "local-ssd-ebs-mag", "Avg read" , "lat_r_avg", 9, y_max)
 
 		egns = ["ebs-ssd", "local-ssd-ebs-ssd", "local-ssd"]
 		labels = ["EBS\\nSSD", "LS+ES", "Local\\nSSD"]
 		y_max = ExpData.LastExpAttr("ebs-ssd", "lat_r_avg") * y_alpha
-		_Plot0(egns, labels, "local-ssd-ebs-ssd", "Avg write", "lat_w_avg", 6, y_max)
-		_Plot0(egns, labels, "local-ssd-ebs-ssd", "Avg read" , "lat_r_avg", 9, y_max)
+		_ThroughputVsLatency0(egns, labels, "local-ssd-ebs-ssd", "Avg write", "lat_w_avg", 6, y_max)
+		_ThroughputVsLatency0(egns, labels, "local-ssd-ebs-ssd", "Avg read" , "lat_r_avg", 9, y_max)
 
 
-def _Plot0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_lat, y_max):
+def _ThroughputVsLatency0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_lat, y_max):
 	env = os.environ.copy()
 
 	for i in range(len(egns)):
@@ -82,6 +88,48 @@ def _Plot0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_lat, y_max):
 	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
 
 	_RunSubp("gnuplot %s/throughput-latency.gnuplot" % os.path.dirname(__file__), env)
+	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+
+
+def _ResUsage():
+	with Cons.MeasureTime("Resource usage by storage types ..."):
+		# TODO: clean up
+		y_alpha = 1.18
+
+		egns = ["ebs-mag", "local-ssd-ebs-mag", "ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
+		# gnuplot word() doesn't work with new line
+		#labels = ["EBS\\nMag", "LS+EM", "EBS\\nSSD", "Local\\nSSD", "LS+ES"]
+		labels = ["EM", "LS+EM", "ES", "LS", "LS+ES"]
+		_ResUsage0(egns, labels, "local-ssd-ebs-mag", "Avg write", "cpu_user", 15)
+
+		# TODO
+#		egns = ["ebs-ssd", "local-ssd-ebs-ssd", "local-ssd"]
+#		labels = ["EBS\\nSSD", "LS+ES", "Local\\nSSD"]
+#		y_max = ExpData.LastExpAttr("ebs-ssd", "lat_r_avg") * y_alpha
+#		_ResUsagey0(egns, labels, "local-ssd-ebs-ssd", "Avg write", "lat_w_avg", 6, y_max)
+#		_ResUsagey0(egns, labels, "local-ssd-ebs-ssd", "Avg read" , "lat_r_avg", 9, y_max)
+
+
+def _ResUsage0(egns, labels, fn0, label_y_prefix, y_metric, col_idx_lat):
+	fn_out = "num-reqs-vs-%s-by-storage-types.pdf" % (y_metric)
+
+	env = os.environ.copy()
+	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+	env["LABELS"] = " ".join(l for l in labels)
+	env["FN_OUT"] = fn_out
+	env["LABEL_Y"] = y_metric.replace("_", "\\_")
+	env["COL_IDX_LAT"] = str(col_idx_lat)
+
+	y_max = 0.0
+	for egn in egns:
+		y_max = max(y_max, ExpData.LastExpAttr(egn, y_metric))
+	#Cons.P("y_max=%d" % y_max)
+	y_alpha = 1.1
+	y_max *= y_alpha
+	env["Y_MAX"] = str(y_max)
+	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
+
+	_RunSubp("gnuplot %s/num-reqs-vs-res-usage.gnuplot" % os.path.dirname(__file__), env)
 	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

@@ -9,13 +9,55 @@ import Util
 
 import Conf
 import ExpData
-import LoadgenLogReader
 
 _rows_by_storage = {}
 _fn_plot_data = None
 
 
-# TODO
+# TODO: I may not need this at all
+#def Gen():
+#	with Cons.MeasureTime("Generating plot data ..."):
+#		exp_group_names = ["local-ssd", "ebs-ssd", "local-ssd-ebs-ssd"]
+#		plot_data = {}
+#		for egn in exp_group_names:
+#			plot_data[egn] = ExpData.GetExpGroup(egn)
+#
+#		for k, eg in plot_data.iteritems():
+#			Cons.P(k)
+#			#Cons.P(eg)
+#			for e in eg.items:
+#				Cons.P(""
+#						% (e.
+#							))
+#
+#			self.loadgen_datetime     = tokens[0]
+#			self.exe_time_ms          = tokens[1]
+#			self.num_writes           = tokens[2]
+#			self.num_reads            = tokens[3]
+#			self.throughput           = tokens[4]
+#			self.lat_w_avg            = tokens[5]
+#			self.lat_w__50            = tokens[6]
+#			self.lat_w__99            = tokens[7]
+#			self.lat_r_avg            = tokens[8]
+#			self.lat_r__50            = tokens[9]
+#			self.lat_r__99            = tokens[10]
+#			self.saturated            = tokens[11]
+#			self.num_cass_threads_min = tokens[12]
+#			self.num_cass_threads_max = tokens[13]
+#			self.cpu_user             = tokens[14]
+#			self.cpu_sys              = tokens[15]
+#			self.cpu_wait             = tokens[16]
+#			self.disk_xvdb_read_kb    = tokens[17]
+#			self.disk_xvdb_read_io    = tokens[18]
+#			self.disk_xvdb_write_kb   = tokens[19]
+#			self.disk_xvdb_write_io   = tokens[20]
+#			self.disk_xvdb_rw_size    = tokens[21]
+#			self.disk_xvdb_q_len      = tokens[22]
+#			self.disk_xvdb_wait       = tokens[23]
+#			self.disk_xvdb_svc_time   = tokens[24]
+#			self.disk_xvdb_util       = tokens[25]
+#			self.net_kb_in            = tokens[26]
+#			self.net_kb_out           = tokens[27]
 
 
 

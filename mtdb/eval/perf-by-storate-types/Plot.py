@@ -6,18 +6,29 @@ sys.path.insert(0, "../../util/python")
 import Cons
 
 import Conf
-import PlotData
 
 
 def Plot():
-	with Cons.MeasureTime("Plotting ..."):
-		fn_in = PlotData._fn_plot_data
-		env = os.environ.copy()
-		env["FN_IN"] = fn_in
+	_Baseline()
 
-		fn_out = "data/throughput-w-avg-latency-linear-regression-%s.pdf" % Conf.Get("exp_datetime")
+
+def _Baseline():
+	with Cons.MeasureTime("Baseline ..."):
+		env = os.environ.copy()
+		env["FN_IN_EBS_MAG"] =           "plot-data/ebs-mag"
+		env["FN_IN_EBS_SSD"] =           "plot-data/ebs-ssd"
+		env["FN_IN_LOCAL_SSD"] =         "plot-data/local-ssd"
+		env["FN_IN_LOCAL_SSD_EBS_MAG"] = "plot-data/local-ssd-ebs-mag"
+		env["FN_IN_LOCAL_SSD_EBS_SSD"] = "plot-data/local-ssd-ebs-ssd"
+
+		fn_out = "throughput-w-avg-latency-ebs-mag-ebs-ssd-local-ssd.pdf"
 		env["FN_OUT"] = fn_out
-		env["LABEL_Y"] = "Avg write"
+
+		env["LABEL_Y"] = "Avg write (ms)"
+		_RunSubp("gnuplot %s/throughput-latency.gnuplot" % os.path.dirname(__file__), env)
+		Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+		sys.exit(0)
+
 		env["EBS_MAG_LABEL_X"] = str(PlotData.Throughput("EBS Mag", "lat_w.avg"))
 		env["EBS_MAG_LABEL_Y"] = str(PlotData.Latency("EBS Mag", "lat_w.avg"))
 		env["EBS_SSD_LABEL_X"] = str(PlotData.Throughput("EBS SSD GP2", "lat_w.avg"))
@@ -35,7 +46,6 @@ def Plot():
 		aal = PlotData.AvgAvgLat("Local SSD", "lat_w.avg")
 		env["AVG_AVG_LAT_LOCAL_SSD_X"] = str(aal[0])
 		env["AVG_AVG_LAT_LOCAL_SSD_Y"] = str(aal[1])
-		_RunSubp("gnuplot %s/throughput-latency.gnuplot" % os.path.dirname(__file__), env)
 
 		#fn_out = "data/throughput-w-99-latency-%s.pdf" % Conf.Get("exp_datetime")
 		#env["FN_OUT"] = fn_out

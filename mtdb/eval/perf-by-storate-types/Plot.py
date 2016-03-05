@@ -20,55 +20,40 @@ def Plot():
 # TODO: def _EM_LS_LSEM():
 
 def _ES_LS_LSES():
-	_ES_LS_LSES0_disk("disk_xvda_util", "disk_xvdb_util", 18 + 8, 27 + 8, y_max=100)
+	_ES_LS_LSES0_disk("read_kb" , 0, None)
+	_ES_LS_LSES0_disk("read_io" , 1, None)
+	_ES_LS_LSES0_disk("write_kb", 2, None)
+	_ES_LS_LSES0_disk("write_io", 3, None)
+	_ES_LS_LSES0_disk("rw_size" , 4, None)
+	_ES_LS_LSES0_disk("q_len"   , 5, None)
+	_ES_LS_LSES0_disk("wait"    , 6, None)
+	_ES_LS_LSES0_disk("svc_time", 7, None)
+	_ES_LS_LSES0_disk("util"    , 8, 100)
 
-#	bases = [18, 27]
-#	devs = ["xvda", "xvdb"]
-#	for i in range(len(bases)):
-		#_ES_LS_LSES0("disk_%s_read_kb"  % devs[i], bases[i] + 0)
-		#_ES_LS_LSES0("disk_%s_read_io"  % devs[i], bases[i] + 1)
-		#_ES_LS_LSES0("disk_%s_write_kb" % devs[i], bases[i] + 2)
-		#_ES_LS_LSES0("disk_%s_write_io" % devs[i], bases[i] + 3)
-		#_ES_LS_LSES0("disk_%s_rw_size"  % devs[i], bases[i] + 4)
-		#_ES_LS_LSES0("disk_%s_q_len"    % devs[i], bases[i] + 5)
-		#_ES_LS_LSES0("disk_%s_wait"     % devs[i], bases[i] + 6)
-		#_ES_LS_LSES0("disk_%s_svc_time" % devs[i], bases[i] + 7)
-
-		# TODO: I want them side by side
-
-		#_ES_LS_LSES0("disk_%s_util"     % devs[i], bases[i] + 8, y_max=100)
-
-		# TODO: Dev plot layout is different from CPU, or network layout
+	# TODO: Dev plot layout is different from CPU, or network layout
 
 
-#	bases = [18, 27]
-#	devs = ["xvda", "xvdb"]
-#	for i in range(len(bases)):
-#		# TODO: start with util, and compare other ones too
-#		#_ES_LS_LSES0("disk_%s_read_kb"  % devs[i], bases[i] + 0)
-#		#_ES_LS_LSES0("disk_%s_read_io"  % devs[i], bases[i] + 1)
-#		#_ES_LS_LSES0("disk_%s_write_kb" % devs[i], bases[i] + 2)
-#		#_ES_LS_LSES0("disk_%s_write_io" % devs[i], bases[i] + 3)
-#		#_ES_LS_LSES0("disk_%s_rw_size"  % devs[i], bases[i] + 4)
-#		#_ES_LS_LSES0("disk_%s_q_len"    % devs[i], bases[i] + 5)
-#		#_ES_LS_LSES0("disk_%s_wait"     % devs[i], bases[i] + 6)
-#		#_ES_LS_LSES0("disk_%s_svc_time" % devs[i], bases[i] + 7)
-#		_ES_LS_LSES0("disk_%s_util"     % devs[i], bases[i] + 8, y_max=100)
+def _ES_LS_LSES0_disk(y_metric, col_idx, y_max = None):
+	bases = [18, 27, 36]
+	devs = ["xvda", "xvdb", "xvdd"]
+	_ES_LS_LSES0_disk0(
+			y_metric
+			, "disk_%s_%s" % (devs[0], y_metric)
+			, "disk_%s_%s" % (devs[1], y_metric)
+			, bases[0] + col_idx
+			, bases[1] + col_idx,
+			y_max)
 
 
-def _ES_LS_LSES0_disk(y_metric0, y_metric1, col_idx0, col_idx1, y_max = None):
+def _ES_LS_LSES0_disk0(y_metric, y_metric0, y_metric1, col_idx0, col_idx1, y_max = None):
 	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
-	# gnuplot word() doesn't work with new line
-	#labels = ["EBS\\nMag", "LS+EM", "EBS\\nSSD", "Local\\nSSD", "LS+ES"]
-	# TODO: use a map inside the gnuplot script
 	what_to_compare = "-vs-".join(egns)
 
-	# TODO: metric
-	y_metric0 = "util"
-	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric0)
+	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
 	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+	env["TITLE"] = "disk " + y_metric.replace("_", "\\_")
 	env["LEGEND_LABELS"] = "ES LS LSES"
 	env["FN_OUT"] = fn_out
 	env["LABEL_Y_0"] = "EBS SSD"
@@ -77,45 +62,14 @@ def _ES_LS_LSES0_disk(y_metric0, y_metric1, col_idx0, col_idx1, y_max = None):
 	env["COL_IDX_1"] = str(col_idx1)
 
 	if y_max == None:
-		y_max = max(ExpData.MaxExpAttr(y_metric0), ExpData.MaxExpAttr(y_metric0))
+		y_max = max(ExpData.MaxExpAttr(y_metric0), ExpData.MaxExpAttr(y_metric1))
 	y_alpha = 1.0
 	y_max *= y_alpha
 	env["Y_MAX"] = str(y_max)
 	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
 
-	# TODO: it can be merged with the other script
 	_RunSubp("gnuplot %s/3way.num-reqs-vs-dev-metric.gnuplot" % os.path.dirname(__file__), env)
 	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-
-
-#def _ES_LS_LSES0(y_metric, col_idx_lat, y_max = None):
-#	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
-#	# gnuplot word() doesn't work with new line
-#	#labels = ["EBS\\nMag", "LS+EM", "EBS\\nSSD", "Local\\nSSD", "LS+ES"]
-#	# TODO: use a map inside the gnuplot script
-#	labels = ["ES", "LS", "LS+ES"]
-#	what_to_compare = "-vs-".join(egns)
-#
-#	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
-#
-#	env = os.environ.copy()
-#	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
-#	env["LABELS"] = " ".join(l for l in labels)
-#	env["FN_OUT"] = fn_out
-#	# TODO
-#	env["LABEL_Y"] = y_metric.replace("disk_xvda_", "EBS SSD ").replace("disk_xvdb_", "Local SSD ").replace("_", "\\_")
-#	env["COL_IDX_LAT"] = str(col_idx_lat)
-#
-#	if y_max == None:
-#		y_max = ExpData.MaxExpAttr(y_metric)
-#	y_alpha = 1.0
-#	y_max *= y_alpha
-#	env["Y_MAX"] = str(y_max)
-#	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
-#
-#	# TODO: it can be merged with the other script
-#	_RunSubp("gnuplot %s/3way.num-reqs-vs-dev-metric.gnuplot" % os.path.dirname(__file__), env)
-#	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
 def _ReqrateVsMetrics():

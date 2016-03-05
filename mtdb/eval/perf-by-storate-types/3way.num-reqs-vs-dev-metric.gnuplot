@@ -5,6 +5,7 @@ FN_IN = system("echo $FN_IN")
 COL_IDX_0 = system("echo $COL_IDX_0")
 COL_IDX_1 = system("echo $COL_IDX_1")
 FN_OUT = system("echo $FN_OUT")
+TITLE = system("echo $TITLE")
 LEGEND_LABELS = system("echo $LEGEND_LABELS")
 LABEL_Y_0 = system("echo $LABEL_Y_0")
 LABEL_Y_1 = system("echo $LABEL_Y_1")
@@ -30,7 +31,7 @@ terminal_size_y=0.5 * terminal_size_x
 set terminal pdfcairo enhanced size (terminal_size_x)in, (terminal_size_y)in
 set output FN_OUT
 
-set multiplot layout 1,2 title "Disk utilization (%)" offset 0,-0.15
+set multiplot layout 1,2 title TITLE offset 0,-0.15
 
 #set tmargin at screen 0.60
 set bmargin at screen 0.240
@@ -46,15 +47,16 @@ set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,Y_TICS_INTERVAL
 
 colors="#FF0000 #0000FF #00BB00 #DD00DD #00A0A0 #606060 #8A2BE2 #DAA520 #000000"
 
-set xrange [0:11]
+set xrange [0:12]
 set yrange [0:Y_MAX]
 
 # Legend
-y1=125
-y2=y1+10
+y1=Y_MAX*1.25
+y1p=Y_MAX*0.01
+y2=y1+10*y1p
 
 x0=14
-x2=9
+x2=10
 legend_label_x(i) = \
 (i==1 ? x0-x2 : \
 (i==2 ? x0 : \
@@ -62,7 +64,7 @@ x0+x2 \
 ))
 
 legend_arrow_len_half = 1.5
-legend_arrow_dot_height_half = 0.5
+legend_arrow_dot_height_half = 0.5*y1p
 
 legend_label2(w) = \
 (w eq "ES" ? "EBS SSD only" : \

@@ -20,6 +20,9 @@ def Plot():
 # TODO: def _EM_LS_LSEM():
 
 def _ES_LS_LSES():
+	_ES_LS_LSES0_cpu()
+	_ES_LS_LSES0_network()
+
 	_ES_LS_LSES0_disk("read_kb" , 0, None)
 	_ES_LS_LSES0_disk("read_io" , 1, None)
 	_ES_LS_LSES0_disk("write_kb", 2, None)
@@ -30,7 +33,51 @@ def _ES_LS_LSES():
 	_ES_LS_LSES0_disk("svc_time", 7, None)
 	_ES_LS_LSES0_disk("util"    , 8, 100)
 
-	# TODO: Dev plot layout is different from CPU, or network layout
+
+def _ES_LS_LSES0_cpu():
+	col_idx = [15, 16, 17]
+	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
+	what_to_compare = "-vs-".join(egns)
+
+	y_metric = "cpu"
+	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
+
+	env = os.environ.copy()
+	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+	env["LEGEND_LABELS"] = "ES LS LSES"
+	env["FN_OUT"] = fn_out
+	env["LABELS"] = "cpu_user cpy_sys cpu_wait".replace("_", "\\_")
+	env["COL_IDX"] = " ".join(str(i) for i in col_idx)
+
+	y_max = 350
+	env["Y_MAX"] = str(y_max)
+	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
+
+	_RunSubp("gnuplot %s/3way.num-reqs-vs-cpu.gnuplot" % os.path.dirname(__file__), env)
+	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+
+
+def _ES_LS_LSES0_network():
+	col_idx = [45, 46]
+	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
+	what_to_compare = "-vs-".join(egns)
+
+	y_metric = "network"
+	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
+
+	env = os.environ.copy()
+	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+	env["LEGEND_LABELS"] = "ES LS LSES"
+	env["FN_OUT"] = fn_out
+	env["LABELS"] = "kB_in kB_out".replace("_", "\\_")
+	env["COL_IDX"] = " ".join(str(i) for i in col_idx)
+
+	y_max = max(ExpData.MaxExpAttr("net_kb_in"), ExpData.MaxExpAttr("net_kb_out"))
+	env["Y_MAX"] = str(y_max)
+	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
+
+	_RunSubp("gnuplot %s/3way.num-reqs-vs-network.gnuplot" % os.path.dirname(__file__), env)
+	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
 def _ES_LS_LSES0_disk(y_metric, col_idx, y_max = None):
@@ -49,7 +96,7 @@ def _ES_LS_LSES0_disk0(y_metric, y_metric0, y_metric1, col_idx0, col_idx1, y_max
 	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
 	what_to_compare = "-vs-".join(egns)
 
-	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
+	fn_out = "plot-data/%s.num-reqs-vs-disk-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
 	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
@@ -63,12 +110,10 @@ def _ES_LS_LSES0_disk0(y_metric, y_metric0, y_metric1, col_idx0, col_idx1, y_max
 
 	if y_max == None:
 		y_max = max(ExpData.MaxExpAttr(y_metric0), ExpData.MaxExpAttr(y_metric1))
-	y_alpha = 1.0
-	y_max *= y_alpha
 	env["Y_MAX"] = str(y_max)
 	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
 
-	_RunSubp("gnuplot %s/3way.num-reqs-vs-dev-metric.gnuplot" % os.path.dirname(__file__), env)
+	_RunSubp("gnuplot %s/3way.num-reqs-vs-disk.gnuplot" % os.path.dirname(__file__), env)
 	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

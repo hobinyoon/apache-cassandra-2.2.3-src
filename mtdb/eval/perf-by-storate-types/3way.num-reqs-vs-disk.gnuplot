@@ -38,14 +38,14 @@ set bmargin at screen 0.240
 #set lmargin at screen 0.2290
 #set rmargin at screen 0.990
 
-set xlabel "Req rate (x 10000 W reqs / simulation time min)" offset 10.7,0
+set xlabel "Req rate" offset 10.7,0
 set ylabel LABEL_Y_0 offset 1,0
 
 set border (1 + 2) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,2
 set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,Y_TICS_INTERVAL
 
-colors="#FF0000 #0000FF #00BB00 #DD00DD #00A0A0 #606060 #8A2BE2 #DAA520 #000000"
+colors="#0000FF #FF0000 brown"
 
 set xrange [0:12]
 set yrange [0:Y_MAX]
@@ -53,7 +53,7 @@ set yrange [0:Y_MAX]
 # Legend
 y1=Y_MAX*1.25
 y1p=Y_MAX*0.01
-y2=y1+10*y1p
+y2=y1+12*y1p
 
 x0=14
 x2=10

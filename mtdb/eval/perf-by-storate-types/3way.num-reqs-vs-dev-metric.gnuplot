@@ -50,16 +50,15 @@ set xrange [0:11]
 set yrange [0:Y_MAX]
 
 # Legend
-x4=14
-x5=8
-
 y1=125
 y2=y1+10
 
+x0=14
+x2=9
 legend_label_x(i) = \
-(i==1 ? x4-x5 : \
-(i==2 ? x4 : \
-x4+x5 \
+(i==1 ? x0-x2 : \
+(i==2 ? x0 : \
+x0+x2 \
 ))
 
 legend_arrow_len_half = 1.5
@@ -74,8 +73,6 @@ legend_label2(w) = \
 "unexpected" \
 )))))
 legend_label1(i) = legend_label2(word(LEGEND_LABELS, i))
-
-#set label word(LEGEND_LABELS, i) at legend_label_x(i), y1 center font ",10" tc rgb word(colors, i);
 
 do for [i=1:3] {
 set label legend_label1(i) at legend_label_x(i), y1 center font ",10" tc rgb word(colors, i)

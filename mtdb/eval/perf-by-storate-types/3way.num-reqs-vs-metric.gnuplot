@@ -6,7 +6,7 @@ COL_IDX = system("echo $COL_IDX")
 FN_OUT = system("echo $FN_OUT")
 LEGEND_LABELS = system("echo $LEGEND_LABELS")
 
-LABELS = system("echo $LABELS")
+LABEL = system("echo $LABEL")
 
 Y_MAX = system("echo $Y_MAX")
 Y_TICS_INTERVAL = system("echo $Y_TICS_INTERVAL")
@@ -23,22 +23,17 @@ c_sat     = 12        # Saturated (overloaded)
 #set terminal unknown
 #X_MIN=GPVAL_DATA_X_MIN
 
-terminal_size_x=3.5
-terminal_size_y=0.45 * terminal_size_x
+terminal_size_x=2
+terminal_size_y=1.5
 set terminal pdfcairo enhanced size (terminal_size_x)in, (terminal_size_y)in
 set output FN_OUT
 
-set multiplot layout 1,2 offset 0,-0.1
+set tmargin at screen 0.80240
+set rmargin at screen 0.95
 
-set bmargin at screen 0.240
-set lmargin 8.1
-set rmargin 1.4
-
-label(i) = word(LABELS, i)
-
-set xlabel "Req rate" offset 10.2,0.2
+set xlabel "Req rate" #offset 10.2,0.2
 ylabel_offset_x=1.6
-set ylabel label(1) offset ylabel_offset_x,0
+set ylabel LABEL offset ylabel_offset_x,0
 
 set border (1 + 2) back lc rgb "#808080"
 set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,2
@@ -54,8 +49,8 @@ y1=Y_MAX*1.15
 y1p=Y_MAX*0.01
 y2=y1+12*y1p
 
-x0=14
-x2=10
+x0=5
+x2=5
 legend_label_x(i) = \
 (i==1 ? x0-x2 : \
 (i==2 ? x0 : \
@@ -66,9 +61,9 @@ legend_arrow_len_half = 1.5
 legend_arrow_dot_height_half = 0.5*y1p
 
 legend_label2(w) = \
-(w eq "ES" ? "EBS SSD only" : \
-(w eq "EM" ? "EBS Magnetic only" : \
-(w eq "LS" ? "Local SSD only" : \
+(w eq "ES" ? "ES" : \
+(w eq "EM" ? "EM" : \
+(w eq "LS" ? "LS" : \
 (w eq "LSES" ? "LS + ES" : \
 (w eq "LSEM" ? "LS + EM" : \
 "unexpected" \
@@ -89,13 +84,3 @@ plot \
 for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) <= 1 ? column(col_idx(1)) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
 for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(col_idx(1)) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
 for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(col_idx(1)) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not
-
-unset label
-unset arrow
-set xlabel ""
-set ylabel label(2) offset ylabel_offset_x,0
-
-plot \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) <= 1 ? column(col_idx(2)) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(col_idx(2)) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(col_idx(2)) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not

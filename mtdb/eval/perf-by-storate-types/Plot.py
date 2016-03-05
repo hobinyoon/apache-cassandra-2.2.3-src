@@ -13,25 +13,50 @@ def Plot():
 	_ES_LS_LSES()
 
 	# TODO
-	#_ReqrateVsMetrics()
 	#_ThroughputVsLatency()
 
 
 # TODO: def _EM_LS_LSEM():
 
 def _ES_LS_LSES():
+	_ES_LS_LSES0_metric("throughput",  5)
+	_ES_LS_LSES0_metric("lat_w_avg" ,  6)
+	_ES_LS_LSES0_metric("lat_w__99" ,  8)
+	_ES_LS_LSES0_metric("lat_r_avg" ,  9)
+	_ES_LS_LSES0_metric("lat_r__99" , 11)
+
 	_ES_LS_LSES0_cpu()
 	_ES_LS_LSES0_network()
-
-	_ES_LS_LSES0_disk("read_kb" , 0, None)
-	_ES_LS_LSES0_disk("read_io" , 1, None)
-	_ES_LS_LSES0_disk("write_kb", 2, None)
-	_ES_LS_LSES0_disk("write_io", 3, None)
-	_ES_LS_LSES0_disk("rw_size" , 4, None)
-	_ES_LS_LSES0_disk("q_len"   , 5, None)
-	_ES_LS_LSES0_disk("wait"    , 6, None)
-	_ES_LS_LSES0_disk("svc_time", 7, None)
+	_ES_LS_LSES0_disk("read_kb" , 0)
+	_ES_LS_LSES0_disk("read_io" , 1)
+	_ES_LS_LSES0_disk("write_kb", 2)
+	_ES_LS_LSES0_disk("write_io", 3)
+	_ES_LS_LSES0_disk("rw_size" , 4)
+	_ES_LS_LSES0_disk("q_len"   , 5)
+	_ES_LS_LSES0_disk("wait"    , 6)
+	_ES_LS_LSES0_disk("svc_time", 7)
 	_ES_LS_LSES0_disk("util"    , 8, 100)
+
+
+def _ES_LS_LSES0_metric(y_metric, col_idx):
+	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
+	what_to_compare = "-vs-".join(egns)
+
+	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
+
+	env = os.environ.copy()
+	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+	env["LEGEND_LABELS"] = "ES LS LSES"
+	env["FN_OUT"] = fn_out
+	env["LABEL"] = y_metric.replace("_", "\\_")
+	env["COL_IDX"] = str(col_idx)
+
+	y_max = ExpData.MaxExpAttr(y_metric, egns = egns)
+	env["Y_MAX"] = str(y_max)
+	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
+
+	_RunSubp("gnuplot %s/3way.num-reqs-vs-metric.gnuplot" % os.path.dirname(__file__), env)
+	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 
 def _ES_LS_LSES0_cpu():
@@ -114,61 +139,6 @@ def _ES_LS_LSES0_disk0(y_metric, y_metric0, y_metric1, col_idx0, col_idx1, y_max
 	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
 
 	_RunSubp("gnuplot %s/3way.num-reqs-vs-disk.gnuplot" % os.path.dirname(__file__), env)
-	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
-
-
-def _ReqrateVsMetrics():
-	with Cons.MeasureTime("Resource usage by storage types ..."):
-		_ReqrateVsMetric0("throughput", 5)
-		_ReqrateVsMetric0("lat_w_avg",  6)
-		_ReqrateVsMetric0("lat_w__99",  8)
-		_ReqrateVsMetric0("lat_r_avg",  9)
-		_ReqrateVsMetric0("lat_r__99", 11)
-
-		_ReqrateVsMetric0("cpu_user", 15)
-		_ReqrateVsMetric0("cpu_sys",  16)
-		_ReqrateVsMetric0("cpu_wait", 17)
-
-		bases = [18, 27, 36]
-		devs = ["xvda", "xvdb", "xvdd"]
-		for i in range(len(bases)):
-			_ReqrateVsMetric0("disk_%s_read_kb"  % devs[i], bases[i] + 0)
-			_ReqrateVsMetric0("disk_%s_read_io"  % devs[i], bases[i] + 1)
-			_ReqrateVsMetric0("disk_%s_write_kb" % devs[i], bases[i] + 2)
-			_ReqrateVsMetric0("disk_%s_write_io" % devs[i], bases[i] + 3)
-			_ReqrateVsMetric0("disk_%s_rw_size"  % devs[i], bases[i] + 4)
-			_ReqrateVsMetric0("disk_%s_q_len"    % devs[i], bases[i] + 5)
-			_ReqrateVsMetric0("disk_%s_wait"     % devs[i], bases[i] + 6)
-			_ReqrateVsMetric0("disk_%s_svc_time" % devs[i], bases[i] + 7)
-			_ReqrateVsMetric0("disk_%s_util"     % devs[i], bases[i] + 8, y_max=100)
-
-		_ReqrateVsMetric0("net_kb_in", 45)
-		_ReqrateVsMetric0("net_kb_out", 46)
-
-
-def _ReqrateVsMetric0(y_metric, col_idx_lat, y_max = None):
-	egns = ["ebs-mag", "local-ssd-ebs-mag", "ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
-	# gnuplot word() doesn't work with new line
-	#labels = ["EBS\\nMag", "LS+EM", "EBS\\nSSD", "Local\\nSSD", "LS+ES"]
-	labels = ["EM", "LS+EM", "ES", "LS", "LS+ES"]
-
-	fn_out = "plot-data/num-reqs-vs-%s-by-storage-types.pdf" % (y_metric)
-
-	env = os.environ.copy()
-	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
-	env["LABELS"] = " ".join(l for l in labels)
-	env["FN_OUT"] = fn_out
-	env["LABEL_Y"] = y_metric.replace("_", "\\_")
-	env["COL_IDX_LAT"] = str(col_idx_lat)
-
-	if y_max == None:
-		y_max = ExpData.MaxExpAttr(y_metric)
-	y_alpha = 1.0
-	y_max *= y_alpha
-	env["Y_MAX"] = str(y_max)
-	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
-
-	_RunSubp("gnuplot %s/num-reqs-vs-metric.gnuplot" % os.path.dirname(__file__), env)
 	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

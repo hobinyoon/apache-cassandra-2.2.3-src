@@ -77,7 +77,7 @@ legend_label1(i) = legend_label2(word(LEGEND_LABELS, i))
 
 do for [i=1:3] {
 set label legend_label1(i) at legend_label_x(i), y1 center font ",10" tc rgb word(colors, i)
-set arrow from legend_label_x(i)-legend_arrow_len_half,y2 to legend_label_x(i)+legend_arrow_len_half,y2 nohead lc rgb word(colors, i)
+set arrow from legend_label_x(i)-legend_arrow_len_half,y2 to legend_label_x(i)+legend_arrow_len_half,y2 nohead lc rgb word(colors, i) lw 1.5
 set arrow from legend_label_x(i),y2+legend_arrow_dot_height_half to legend_label_x(i),y2-legend_arrow_dot_height_half nohead lw 3 lc rgb word(colors, i)
 }
 

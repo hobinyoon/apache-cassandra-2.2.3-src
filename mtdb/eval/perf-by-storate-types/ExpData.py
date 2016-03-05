@@ -28,18 +28,28 @@ def LastExpAttr(exp_group_name, attr_name):
 	return getattr(_exp_groups[exp_group_name].items[-1], attr_name)
 
 
-def MaxExpAttr(attr_name):
+def MaxExpAttr(attr_name, egns = None):
 	global _exp_groups
-	v = None
-	for egn, eg in _exp_groups.iteritems():
-		#Cons.P("egn=%s" % egn)
-		#Cons.P("len(eg.items)=%d" % len(eg.items))
-		for i in eg.items:
-			#Cons.P(getattr(i, attr_name))
-			if v == None:
-				v = getattr(i, attr_name)
-			else:
-				v = max(v, getattr(i, attr_name))
+	if egns == None:
+		v = None
+		for egn, eg in _exp_groups.iteritems():
+			#Cons.P("egn=%s" % egn)
+			#Cons.P("len(eg.items)=%d" % len(eg.items))
+			for i in eg.items:
+				#Cons.P(getattr(i, attr_name))
+				if v == None:
+					v = getattr(i, attr_name)
+				else:
+					v = max(v, getattr(i, attr_name))
+	else:
+		v = None
+		for egn in egns:
+			eg = _exp_groups[egn]
+			for i in eg.items:
+				if v == None:
+					v = getattr(i, attr_name)
+				else:
+					v = max(v, getattr(i, attr_name))
 	return v
 
 

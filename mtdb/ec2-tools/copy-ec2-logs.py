@@ -27,6 +27,10 @@ def CopyEc2Logs():
 	fn = "ec2-server-list"
 	with open(fn) as fo:
 		for line in fo.readlines():
+			if len(line) == 0:
+				continue
+			if line[0] == "#":
+				continue
 			server_list.append(line.strip())
 
 	with Cons.MeasureTime("Copying ec2 server logs ..."):

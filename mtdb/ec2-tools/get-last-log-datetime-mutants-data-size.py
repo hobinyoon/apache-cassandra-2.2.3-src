@@ -32,6 +32,10 @@ def GetLogDatetimeAndMutantsDataSize():
 	fn = "ec2-server-list"
 	with open(fn) as fo:
 		for line in fo.readlines():
+			if len(line) == 0:
+				continue
+			if line[0] == "#":
+				continue
 			server_list.append(line.strip())
 
 	fmt = "%3s %15s %13s %13s %13s %8s %8s"

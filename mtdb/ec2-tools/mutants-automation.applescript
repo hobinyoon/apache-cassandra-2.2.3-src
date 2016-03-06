@@ -1,5 +1,6 @@
-global num_servers
-set num_servers to 10
+-- 2 machines per experiment
+global num_experiments
+set num_experiments to 15
 
 
 on open_window_tabs()
@@ -11,7 +12,7 @@ on open_window_tabs()
 		-- set currentWindow to front window
 		
 		-- Open new tabs
-		repeat (num_servers * 2 - 1) times
+		repeat (num_experiments * 2 - 1) times
 			tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
 		end repeat
 	end tell
@@ -27,7 +28,7 @@ on ssh()
 		
 		set tab_id to 0
 		set s_id to 0
-		repeat until tab_id is (num_servers * 2)
+		repeat until tab_id is (num_experiments * 2)
 			set tab_id to tab_id + 1
 			set cmd to "sshs" & s_id
 			do script (cmd) in tab tab_id of currentWindow
@@ -49,7 +50,7 @@ on screen()
 		set currentWindow to front window
 		
 		set tab_id to 0
-		repeat until tab_id is (num_servers * 2)
+		repeat until tab_id is (num_experiments * 2)
 			set tab_id to tab_id + 1
 			set cmd to "screen"
 			do script (cmd) in tab tab_id of currentWindow
@@ -64,7 +65,7 @@ on install_pkgs_0()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 0
-		repeat until tab_id is (num_servers * 2)
+		repeat until tab_id is (num_experiments * 2)
 			set tab_id to tab_id + 1
 			set cmd to "sudo add-apt-repository -y ppa:webupd8team/java"
 			set cmd to cmd & " && sudo apt-get update"
@@ -92,7 +93,7 @@ end install_pkgs_0
 on install_pkgs_1()
 	tell application "Terminal" to activate
 	set tab_id to 0
-	repeat until tab_id is (num_servers * 2)
+	repeat until tab_id is (num_experiments * 2)
 		set tab_id to tab_id + 1
 		tell application "System Events" to key code 36 -- enter
 		delay 0.2
@@ -109,7 +110,7 @@ on install_pkgs_2()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 0
-		repeat until tab_id is (num_servers * 2)
+		repeat until tab_id is (num_experiments * 2)
 			set tab_id to tab_id + 1
 			set cmd to "yes"
 			do script (cmd) in tab tab_id of currentWindow
@@ -123,7 +124,7 @@ on killall_screen()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 0
-		repeat until tab_id is (num_servers * 2)
+		repeat until tab_id is (num_experiments * 2)
 			set tab_id to tab_id + 1
 			set cmd to "killall screen"
 			do script (cmd) in tab tab_id of currentWindow
@@ -135,7 +136,7 @@ end killall_screen
 on exit_screen()
 	tell application "Terminal" to activate
 	set tab_id to 0
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "d" using {control down}
 		tell application "System Events" to keystroke "a" using {control down}
@@ -169,7 +170,7 @@ end exit_screen
 on server_screen_split_htop()
 	tell application "Terminal" to activate
 	set tab_id to 0
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		
 		tell application "System Events" to keystroke "a" using {control down}
@@ -214,7 +215,7 @@ on client_screen_split_htop()
 	set tab_id to 0
 	-- Start from the 2nd tab, which is the first client tab
 	tell application "System Events" to key code 124 using {shift down, command down}
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		
 		tell application "System Events" to keystroke "a" using {control down}
@@ -251,7 +252,7 @@ on build_cass_pressuremem_loadgen()
 		
 		set tab_id to 0
 		set s_id to 0
-		repeat until tab_id is (num_servers * 2)
+		repeat until tab_id is (num_experiments * 2)
 			set tab_id to tab_id + 1
 			set cmd to "cd ~/work && git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git && ln -s ~/work/apache-cassandra-2.2.3-src ~/work/cassandra && cd ~/work/cassandra/mtdb/tools/pressure-memory && mkdir -p .build && cd .build && cmake .. && make -j && cdcass && time ant"
 			do script (cmd) in tab tab_id of currentWindow
@@ -271,7 +272,7 @@ end build_cass_pressuremem_loadgen
 on git_pull()
 	tell application "Terminal" to activate
 	set tab_id to 0
-	repeat until tab_id is (num_servers * 2)
+	repeat until tab_id is (num_experiments * 2)
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "c" using {control down}
 		
@@ -283,7 +284,7 @@ on git_pull()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 0
-		repeat until tab_id is (num_servers * 2)
+		repeat until tab_id is (num_experiments * 2)
 			set tab_id to tab_id + 1
 			set cmd to "cdcass && git pull"
 			do script (cmd) in tab tab_id of currentWindow
@@ -296,7 +297,7 @@ on server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_e
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "sudo mkfs.ext4 -m 0 /dev/xvdd"
 			set cmd to cmd & " && sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
 			set cmd to cmd & " && sudo umount /mnt"
@@ -333,7 +334,7 @@ on server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
 			set cmd to cmd & " && sudo umount /mnt"
 			set cmd to cmd & " && sudo mkdir -p /mnt/local-ssd"
@@ -363,7 +364,7 @@ on server_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_data_to_ebs_ssd()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
 			set cmd to cmd & " && sudo umount /mnt"
 			set cmd to cmd & " && sudo mkdir -p /mnt/local-ssd"
@@ -393,7 +394,7 @@ on server_edit_cassandra_yaml()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "sed -i -r 's/^    migrate_to_cold_storage:.+/    migrate_to_cold_storage: true/' ~/work/cassandra/conf/cassandra.yaml"
 			do script (cmd) in tab tab_id of currentWindow
 			set cmd to "sed -i -r 's/^    tablet_coldness_threshold:.+/    tablet_coldness_threshold: 75/' ~/work/cassandra/conf/cassandra.yaml"
@@ -414,7 +415,7 @@ on client_edit_cassandra_yaml()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 2
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "sed -i -r 's/^        num_writes_per_simulation_time_mins:.+/        num_writes_per_simulation_time_mins: " & (tab_id * 5000) & "/' ~/work/cassandra/conf/cassandra.yaml"
 			do script (cmd) in tab tab_id of currentWindow
 			set cmd to "grep num_writes_per_simulation_time_mins: ~/work/cassandra/conf/cassandra.yaml"
@@ -430,7 +431,7 @@ end client_edit_cassandra_yaml
 on save_screen_layout()
 	tell application "Terminal" to activate
 	set tab_id to 0
-	repeat until tab_id is (num_servers * 2)
+	repeat until tab_id is (num_experiments * 2)
 		set tab_id to tab_id + 1
 		
 		tell application "System Events" to keystroke "a" using {control down}
@@ -449,7 +450,7 @@ on mkdir_collectl()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "mkdir ~/work/cassandra/mtdb/logs/collectl"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Go to the next server tab
@@ -463,7 +464,7 @@ on run_server()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "sudo -- sh -c 'echo 1 > /proc/sys/vm/drop_caches' && cdcass && time ant && rm -rf ~/work/cassandra/data/* && rm -rf /mnt/cold-storage/mtdb-cold/* && (killall mon-num-cass-threads.sh >/dev/null 2>&1 || true) && (~/work/cassandra/mtdb/tools/mon-num-cass-threads.sh &) && (killall collectl >/dev/null 2>&1 || true) && ((collectl -i 1 -sCDN -oTm > ~/work/cassandra/mtdb/logs/collectl/collectl-`date +'%y%m%d-%H%M%S'` 2>/dev/null) &) && bin/cassandra -f | grep --color -E '^|MTDB:'"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Give enough delay to make sure the logs have different datetimes.
@@ -480,7 +481,7 @@ on server_pressure_memory()
 	tell application "Terminal" to activate
 	
 	set tab_id to 0
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "a" using {control down}
 		tell application "System Events" to keystroke tab
@@ -497,7 +498,7 @@ on server_pressure_memory()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "cd ~/work/cassandra/mtdb/tools/pressure-memory/.build"
 			set cmd to cmd & " && (./pressure-memory &)"
 			set cmd to cmd & " && watchsstables"
@@ -509,7 +510,7 @@ on server_pressure_memory()
 	end tell
 	
 	set tab_id to 0
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "a" using {control down}
 		tell application "System Events" to keystroke tab
@@ -525,7 +526,7 @@ on client_run_loadgen()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 2
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "cd ~/work/cassandra/mtdb/loadgen && ./create-db.sh && ./loadgen"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Make sure we get different exp datetime
@@ -540,7 +541,7 @@ end client_run_loadgen
 on screen_detach()
 	tell application "Terminal" to activate
 	set tab_id to 0
-	repeat until tab_id is (num_servers * 2)
+	repeat until tab_id is (num_experiments * 2)
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "a" using {control down}
 		tell application "System Events" to keystroke "d"
@@ -555,7 +556,7 @@ on screen_reattach()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "screen -r"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Go to the next tab
@@ -569,7 +570,7 @@ on server_get_client_logs_and_process()
 	tell application "Terminal" to activate
 	
 	set tab_id to 0
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "a" using {control down}
 		tell application "System Events" to keystroke tab
@@ -588,7 +589,7 @@ on server_get_client_logs_and_process()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "(killall pressure-memory > /dev/null 2>&1 || true) && (sudo killall collectl > /dev/null 2>&1 || true) && (sudo killall mon-num-cass-threads.sh > /dev/null 2>&1 || true) && rsync -ave \"ssh -o StrictHostKeyChecking=no\" $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs && cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline && (\\rm *.pdf >/dev/null 2>&1 || true) && ./plot-cost-latency-tablet-timelines.py && du -hs ~/work/cassandra/data/"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Go to the next server tab
@@ -597,7 +598,7 @@ on server_get_client_logs_and_process()
 	end tell
 	
 	set tab_id to 0
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "a" using {control down}
 		tell application "System Events" to keystroke tab
@@ -614,7 +615,7 @@ on server_rename_client_log()
 	tell application "Terminal" to activate
 	
 	set tab_id to 0
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "a" using {control down}
 		tell application "System Events" to keystroke tab
@@ -631,7 +632,7 @@ on server_rename_client_log()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			-- I don't like the float division. oh well.
 			set cmd to "mv ~/work/cassandra/mtdb/logs/loadgen/160302-023811 ~/work/cassandra/mtdb/logs/loadgen/160302-023811-" & ((tab_id - 1) / 2) & " && mv ~/work/cassandra/mtdb/logs/cassandra/160302-023811 ~/work/cassandra/mtdb/logs/cassandra/160302-023811-" & ((tab_id - 1) / 2)
 			do script (cmd) in tab tab_id of currentWindow
@@ -641,7 +642,7 @@ on server_rename_client_log()
 	end tell
 	
 	set tab_id to 0
-	repeat until tab_id is num_servers
+	repeat until tab_id is num_experiments
 		set tab_id to tab_id + 1
 		tell application "System Events" to keystroke "a" using {control down}
 		tell application "System Events" to keystroke tab
@@ -658,7 +659,7 @@ on server_kill_monitor_processes()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "(killall pressure-memory > /dev/null 2>&1 || true) && (sudo killall collectl > /dev/null 2>&1 || true) && (sudo killall mon-num-cass-threads.sh > /dev/null 2>&1 || true)"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Go to the next server tab
@@ -672,7 +673,7 @@ on server_switch_data_dir_to_ebs_mag()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "cdcass"
 			set cmd to cmd & " && \\rm data"
 			set cmd to cmd & " && ln -s /mnt/ebs-mag/cass-data data"
@@ -688,7 +689,7 @@ on server_switch_data_dir_to_local_ssd()
 	tell application "Terminal"
 		set currentWindow to front window
 		set tab_id to 1
-		repeat until tab_id > (num_servers * 2)
+		repeat until tab_id > (num_experiments * 2)
 			set cmd to "cdcass"
 			set cmd to cmd & " && \\rm data"
 			set cmd to cmd & " && ln -s /mnt/local-ssd/cass-data data"
@@ -764,7 +765,6 @@ on run_all()
 	-- Switch data directory to ebs mag
 	-- my server_switch_data_dir_to_ebs_mag()
 end run_all
-
 
 
 

@@ -2,7 +2,7 @@
 global num_experiments
 set num_experiments to 15
 
-
+-- TODO: create a named window, if not exist. open the named window and work on it.
 on open_window_tabs()
 	tell application "Terminal"
 		activate
@@ -767,4 +767,5 @@ on run_all()
 end run_all
 
 
+my open_window_tabs_ssh_screen()
 

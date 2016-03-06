@@ -16,8 +16,8 @@ _exp_groups = {}
 def Load():
 	with Cons.MeasureTime("Loading exp data ..."):
 		global _exp_groups
-		for egn in Conf.Get("exp_result"):
-			fn_exp_group_result = "plot-data/%s" % egn
+		for egn, v in Conf.Get("exp_result").iteritems():
+			fn_exp_group_result = "plot-data/%s" % v["fn"]
 			if not os.path.isfile(fn_exp_group_result):
 				_GenExpGroupReport(egn)
 			_exp_groups[egn] = _LoadExpGroupReport(fn_exp_group_result)
@@ -55,7 +55,7 @@ def MaxExpAttr(attr_name, egns = None):
 
 class _GenExpGroupReport():
 	def __init__(self, exp_group_name):
-		self.fn_exp_list = "exp-results/%s" % Conf.Get("exp_result")[exp_group_name]
+		self.fn_exp_list = "exp-results/%s" % Conf.Get("exp_result")[exp_group_name]["fn"]
 		self.exp_group_name = exp_group_name
 		self.exps = []
 		with Cons.MeasureTime("Generating exp group report for %s ..." % self.exp_group_name):
@@ -75,7 +75,7 @@ class _GenExpGroupReport():
 		#Cons.P(self)
 
 	def _GenReport(self):
-		fn_exp_group_result = "plot-data/%s" % self.exp_group_name
+		fn_exp_group_result = "plot-data/%s" % Conf.Get("exp_result")[self.exp_group_name]["fn"]
 		fn = fn_exp_group_result
 		with open(fn, "w") as fo:
 			fo.write("# storage_type: %s\n" % self.exp_group_name)

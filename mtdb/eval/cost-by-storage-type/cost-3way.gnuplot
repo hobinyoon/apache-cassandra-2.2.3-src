@@ -10,6 +10,11 @@ Y_TICS_INTERVAL = system("echo $Y_TICS_INTERVAL")
 set terminal pdfcairo enhanced size 2in, 1.5in
 set output FN_OUT
 
+set lmargin at screen 0.2
+set rmargin at screen 1.0
+set tmargin at screen 0.98
+set bmargin at screen 0.13
+
 set ylabel "Storage cost" offset 1.2,0
 
 set border (1 + 2) back lc rgb "#808080"

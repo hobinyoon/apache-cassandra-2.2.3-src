@@ -9,7 +9,9 @@ exp_result:
     fn: ebs-mag-160302-193548
     short-name: EM
   local-ssd-ebs-mag:
-    fn: local-ssd-ebs-mag-160303-004309
+    fn: local-ssd-ebs-mag-160307-011346-160303-004309
+    #fn: local-ssd-ebs-mag-160307-011346
+    #fn: local-ssd-ebs-mag-160303-004309
     short-name: LSEM
   local-ssd-ebs-ssd:
     fn: local-ssd-ebs-ssd-160302-230443

@@ -30,11 +30,11 @@ set linetype 3 lc rgb "red"
 
 BOX_WIDTH=0.4
 
-set arrow from (1-BOX_WIDTH/2),cost_hot to 2,cost_hot nohead lt 0 lw 2
+set arrow from (1-BOX_WIDTH/2),cost_hot to (2-BOX_WIDTH/2),cost_hot nohead lt 0 lw 4
 set arrow from 1,cost_hot to 1,cost_mutants size screen 0.04,25
 set label (sprintf("-%.2f%%", 100.0 * (cost_hot - cost_mutants)/cost_hot)) at (1-BOX_WIDTH*0.2),(cost_hot+cost_mutants)/2 right
 
-set style fill solid 0.3 #noborder
+set style fill solid 0.15 #noborder
 
 # boxxyerrorbars parameters
 #   x  y  xlow  xhigh  ylow  yhigh

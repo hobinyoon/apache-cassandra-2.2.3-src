@@ -160,9 +160,9 @@ def _WhatToCompareShortName(egns):
 
 
 def _ThroughputVsLatency0(egns):
-	_ThroughputVsLatency1(egns, "Avg write" , "lat_w_avg",  6)
+	_ThroughputVsLatency1(egns, "Avg write" , "lat_w_avg",  6, y_max = ExpData.MaxExpAttr("lat_r_avg", egns))
 	_ThroughputVsLatency1(egns, "Avg read"  , "lat_r_avg",  9)
-	_ThroughputVsLatency1(egns, "99th write", "lat_w__99",  8)
+	_ThroughputVsLatency1(egns, "99th write", "lat_w__99",  8, y_max = ExpData.MaxExpAttr("lat_r__99", egns))
 	_ThroughputVsLatency1(egns, "99th read" , "lat_r__99", 11)
 
 

@@ -73,6 +73,12 @@ class ExpCost():
 
 		ebs_mag   = 0.05
 
+		# Total date size of the experiment 160307-024348
+		data_size_during_exp = 5680490802
+		# of i2.2xlarge, which has 2 800 GB SSDs
+		inst_store_size = 2 * 800 * 1024 * 1024 * 1024
+		size_alpha = float(inst_store_size) / data_size_during_exp
+
 		self.exp_name = exp_name
 		if exp_name == "EM":
 			if cold_stg_cost != 0:
@@ -97,6 +103,14 @@ class ExpCost():
 			self.cold_stg_cost = 0
 		else:
 			raise RuntimeError("Unexpected %s" % exp_name)
+
+		# Assume the data size that fully fits in the local storage
+		self.hot_stg_cost *= size_alpha
+		self.cold_stg_cost *= size_alpha
+
+		# In K$
+		self.hot_stg_cost /= 1000.0
+		self.cold_stg_cost /= 1000.0
 	
 	def TotalCost(self):
 		return self.hot_stg_cost + self.cold_stg_cost

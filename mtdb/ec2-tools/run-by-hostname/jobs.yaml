@@ -1,0 +1,4 @@
+# Run jobs by the machine hostname prefix
+
+# TODO: does it support "hyphen"?
+s0-c3-2xlarge-05: dkdkdk

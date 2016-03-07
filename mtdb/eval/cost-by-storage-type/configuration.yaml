@@ -5,7 +5,8 @@ LS-EM:
   1:
     LS-EM: 160307-011354
   2:
-    LS:    160302-151243
+    LS:    160307-024348
+    #LS:    160302-151243
 
 LS-ES:
   0:
@@ -13,7 +14,8 @@ LS-ES:
   1:
     LS-ES: 160302-230451
   2:
-    LS:    160302-151243
+    LS:    160307-024348
+    #LS:    160302-151243
 
 # data path:
 #   ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline/plot-data/160302-151243-storage-size-by-time

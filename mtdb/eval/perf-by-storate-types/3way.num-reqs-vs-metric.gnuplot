@@ -1,7 +1,7 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
 set print "-"
-FN_IN = system("echo $FN_IN")
+FN_INS = system("echo $FN_INS")
 COL_IDX = system("echo $COL_IDX")
 FN_OUT = system("echo $FN_OUT")
 LEGEND_LABELS = system("echo $LEGEND_LABELS")
@@ -81,6 +81,6 @@ lw1=2
 col_idx(i) = word(COL_IDX, i) + 0
 
 plot \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) <= 1 ? column(col_idx(1)) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(col_idx(1)) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(col_idx(1)) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) <= 1 ? column(col_idx(1)) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) >= 1 ? column(col_idx(1)) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) >= 1 ? column(col_idx(1)) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not

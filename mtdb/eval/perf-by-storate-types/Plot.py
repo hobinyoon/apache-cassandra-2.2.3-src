@@ -14,8 +14,7 @@ def Plot():
 	_ThroughputVsLatency()
 
 	# Request rates vs all metrics
-	#_ES_LS_LSES()
-
+	_ES_LS_LSES()
 
 
 # TODO: def _EM_LS_LSEM():
@@ -47,7 +46,12 @@ def _ES_LS_LSES0_metric(y_metric, col_idx):
 	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
-	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+
+	fn_ins = []
+	for egn in egns:
+		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+	env["FN_INS"] = " ".join(fn_ins)
+
 	env["LEGEND_LABELS"] = "ES LS LSES"
 	env["FN_OUT"] = fn_out
 	env["LABEL"] = y_metric.replace("_", "\\_")
@@ -70,7 +74,12 @@ def _ES_LS_LSES0_cpu():
 	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
-	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+
+	fn_ins = []
+	for egn in egns:
+		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+	env["FN_INS"] = " ".join(fn_ins)
+
 	env["LEGEND_LABELS"] = "ES LS LSES"
 	env["FN_OUT"] = fn_out
 	env["LABELS"] = "cpu_user cpy_sys cpu_wait".replace("_", "\\_")
@@ -93,7 +102,12 @@ def _ES_LS_LSES0_network():
 	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
-	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+
+	fn_ins = []
+	for egn in egns:
+		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+	env["FN_INS"] = " ".join(fn_ins)
+
 	env["LEGEND_LABELS"] = "ES LS LSES"
 	env["FN_OUT"] = fn_out
 	env["LABELS"] = "kB_in kB_out".replace("_", "\\_")
@@ -126,7 +140,12 @@ def _ES_LS_LSES0_disk0(y_metric, y_metric0, y_metric1, col_idx0, col_idx1, y_max
 	fn_out = "plot-data/%s.num-reqs-vs-disk-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
-	env["FN_IN"] = " ".join(("plot-data/%s" % egns[i]) for i in range(len(egns)))
+
+	fn_ins = []
+	for egn in egns:
+		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+	env["FN_INS"] = " ".join(fn_ins)
+
 	env["TITLE"] = "disk " + y_metric.replace("_", "\\_")
 	env["LEGEND_LABELS"] = "ES LS LSES"
 	env["FN_OUT"] = fn_out

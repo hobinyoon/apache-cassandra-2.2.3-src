@@ -1,7 +1,7 @@
 # Tested with gnuplot 4.6 patchlevel 6
 
 set print "-"
-FN_IN = system("echo $FN_IN")
+FN_INS = system("echo $FN_INS")
 COL_IDX_0 = system("echo $COL_IDX_0")
 COL_IDX_1 = system("echo $COL_IDX_1")
 FN_OUT = system("echo $FN_OUT")
@@ -87,9 +87,9 @@ set arrow from legend_label_x(i),y2+legend_arrow_dot_height_half to legend_label
 lw1=2
 
 plot \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) <= 1 ? column(COL_IDX_0) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(COL_IDX_0) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(COL_IDX_0) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) <= 1 ? column(COL_IDX_0) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) >= 1 ? column(COL_IDX_0) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) >= 1 ? column(COL_IDX_0) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not
 
 unset label
 unset arrow
@@ -97,6 +97,6 @@ unset obj
 set ylabel LABEL_Y_1 offset 1,0
 
 plot \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) <= 1 ? column(COL_IDX_1) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(COL_IDX_1) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
-for [i=1:words(FN_IN)] word(FN_IN, i) u (column(c_x)):(column(c_sat) >= 1 ? column(COL_IDX_1) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) <= 1 ? column(COL_IDX_1) : 1/0) w lp pt 7 ps 0.15 lc rgb word(colors, i) not, \
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) >= 1 ? column(COL_IDX_1) : 1/0) w l lc rgb word(colors, i) lt 0 lw lw1 not, \
+for [i=1:words(FN_INS)] word(FN_INS, i) u (column(c_x)):(column(c_sat) >= 1 ? column(COL_IDX_1) : 1/0) w p pt 6 ps 0.2 lc rgb word(colors, i) not

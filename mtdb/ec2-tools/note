@@ -65,6 +65,11 @@ Install packages, vmtouch
 	&& cd linux-home \
 	&& ./setup-linux.sh
 
+	When jdk installation stalls. /var/cache/oracle-jdk8-installer/jdk-8u74-linux-x64.tar.gz
+
+	(rsync -ave "ssh -o StrictHostKeyChecking=no" ubuntu@54.175.75.173:/var/cache/oracle-jdk8-installer ~/ || true) \
+	&& (sudo cp -a ~/oracle-jdk8-installer /var/cache/ || true)
+
 
 Setup Cassandra directory both on server and client. It goes to the root
 volume. It's okay. Can be done in the background to save time.
@@ -219,3 +224,6 @@ Copy logs to a local machine, like mt-s7
 
 Get load datatime and Mutants data size
 	./get-last-log-datetime-mutants-data-size.py
+
+Backup logs to toothless
+	hobin@mts7$ rsync -av ~/work/cassandra/mtdb/logs 143.215.205.244:mutants-logs/

@@ -1,6 +1,6 @@
 -- 2 machines per experiment
 global num_experiments
-set num_experiments to 15
+set num_experiments to 7
 
 -- TODO: create a named window, if not exist. open the named window and work on it.
 on open_window_tabs()
@@ -15,6 +15,9 @@ on open_window_tabs()
 		repeat (num_experiments * 2 - 1) times
 			tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
 		end repeat
+		
+		-- Move to the next (first) tab		
+		tell application "System Events" to key code 124 using {shift down, command down}
 	end tell
 end open_window_tabs
 
@@ -61,6 +64,7 @@ on screen()
 end screen
 
 
+-- This can not be scripted inside the server machine, since it doesn't have Mutants source yet.
 on install_pkgs_0()
 	tell application "Terminal"
 		set currentWindow to front window
@@ -242,7 +246,7 @@ on client_screen_split_htop()
 	
 end client_screen_split_htop
 
-
+-- This can not be scripted, since the mutants source is not there yet.
 on build_cass_pressuremem_loadgen()
 	tell application "Terminal"
 		set currentWindow to front window
@@ -254,7 +258,7 @@ on build_cass_pressuremem_loadgen()
 		set s_id to 0
 		repeat until tab_id is (num_experiments * 2)
 			set tab_id to tab_id + 1
-			set cmd to "cd ~/work && git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git && ln -s ~/work/apache-cassandra-2.2.3-src ~/work/cassandra && cd ~/work/cassandra/mtdb/tools/pressure-memory && mkdir -p .build && cd .build && cmake .. && make -j && cdcass && time ant"
+			set cmd to "cd ~/work && (git clone git@github.com:hobinyoon/apache-cassandra-2.2.3-src.git || true) && ln -s ~/work/apache-cassandra-2.2.3-src ~/work/cassandra && cd ~/work/cassandra/mtdb/tools/pressure-memory && mkdir -p .build && cd .build && cmake .. && make -j && cdcass && time ant"
 			do script (cmd) in tab tab_id of currentWindow
 			delay delay_after_ssh
 			
@@ -298,29 +302,7 @@ on server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_e
 		set currentWindow to front window
 		set tab_id to 1
 		repeat until tab_id > (num_experiments * 2)
-			set cmd to "sudo mkfs.ext4 -m 0 /dev/xvdd"
-			set cmd to cmd & " && sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
-			set cmd to cmd & " && sudo umount /mnt"
-			set cmd to cmd & " && sudo mkdir -p /mnt/local-ssd"
-			set cmd to cmd & " && sudo mount /mnt/local-ssd"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/local-ssd"
-			set cmd to cmd & " && mkdir /mnt/local-ssd/cass-data"
-			set cmd to cmd & " && mkdir ~/cass-data-vol"
-			set cmd to cmd & " && sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2"
-			set cmd to cmd & " && mkdir /mnt/ebs-ssd-gp2/cass-data"
-			set cmd to cmd & " && sudo mkdir -p /mnt/ebs-mag"
-			set cmd to cmd & " && sudo mount /mnt/ebs-mag"
-			set cmd to cmd & " && sudo mkdir /mnt/ebs-mag/cass-data"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-mag"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-mag/cass-data"
-			set cmd to cmd & " && sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold"
-			set cmd to cmd & " && (sudo mkdir -p /mnt/ebs-mag/mtdb-cold || true)"
-			set cmd to cmd & " && sudo ln -s /mnt/ebs-mag /mnt/cold-storage"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-ssd-gp2"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold"
-			set cmd to cmd & " && mkdir -p ~/work/cassandra/mtdb/logs/collectl"
-			set cmd to cmd & " && ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data"
+			set cmd to "~/work/cassandra/mtdb/ec2-tools/server-format-xvdd-mount-ebs-mag-cold-to-ebs-mag.sh"
 			do script (cmd) in tab tab_id of currentWindow
 			
 			-- Go to the next server tab
@@ -328,6 +310,21 @@ on server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_e
 		end repeat
 	end tell
 end server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_ebs_mag
+
+
+on server_format_xvdc_mount_2_local_ssds_cold_to_2nd_local_ssd()
+	tell application "Terminal"
+		set currentWindow to front window
+		set tab_id to 1
+		repeat until tab_id > (num_experiments * 2)
+			set cmd to "~/work/cassandra/mtdb/ec2-tools/server-format-xvdc-mount-2-local-ssds-cold-to-2nd-local-ssd.sh"
+			do script (cmd) in tab tab_id of currentWindow
+			
+			-- Go to the next server tab
+			set tab_id to tab_id + 2
+		end repeat
+	end tell
+end server_format_xvdc_mount_2_local_ssds_cold_to_2nd_local_ssd
 
 
 on server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
@@ -590,7 +587,7 @@ on server_get_client_logs_and_process()
 		set currentWindow to front window
 		set tab_id to 1
 		repeat until tab_id > (num_experiments * 2)
-			set cmd to "(killall pressure-memory > /dev/null 2>&1 || true) && (sudo killall collectl > /dev/null 2>&1 || true) && (sudo killall mon-num-cass-threads.sh > /dev/null 2>&1 || true) && rsync -ave \"ssh -o StrictHostKeyChecking=no\" $CASSANDRA_CLIENT_ADDR:work/cassandra/mtdb/logs/loadgen ~/work/cassandra/mtdb/logs && cd ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline && (\\rm *.pdf >/dev/null 2>&1 || true) && ./plot-cost-latency-tablet-timelines.py && du -hs ~/work/cassandra/data/"
+			set cmd to "~/work/cassandra/mtdb/ec2-tools/server-get-client-logs-and-process.sh"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Go to the next server tab
 			set tab_id to tab_id + 2
@@ -708,6 +705,22 @@ on open_window_tabs_ssh_screen()
 end open_window_tabs_ssh_screen
 
 
+-- One-time use.
+on server_ctrl_c()
+	tell application "Terminal" to activate
+	
+	set tab_id to 0
+	repeat until tab_id is num_experiments
+		set tab_id to tab_id + 1
+		tell application "System Events" to keystroke "c" using {control down}
+		-- Move to the next server tab
+		tell application "System Events" to key code 124 using {shift down, command down}
+		tell application "System Events" to key code 124 using {shift down, command down}
+		delay 0.1
+	end repeat
+end server_ctrl_c
+
+
 on run_all()
 	my open_window_tabs_ssh_screen()
 	
@@ -725,16 +738,18 @@ on run_all()
 	-- These can be grouped
 	my server_screen_split_htop()
 	my client_screen_split_htop()
+	
 	my build_cass_pressuremem_loadgen()
 	
 	my save_screen_layout()
 	my screen_detach()
 	my screen_reattach()
 	
-	-- Run either of these, depending on what dev you have
+	------------------------------------
+	-- These are VM-specific commands. Consider automating.
+	-- Run either of these, depending on what dev you have. TODO: let it follow a global configuration file, based on its hostname?
+	-- my server_format_xvdc_mount_2_local_ssds_cold_to_2nd_local_ssd()
 	my server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_ebs_mag()
-	my server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
-	my server_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_data_to_ebs_ssd()
 	
 	-- Switch data directory to ebs mag
 	-- my server_switch_data_dir_to_ebs_mag()
@@ -742,6 +757,7 @@ on run_all()
 	-- Make sure which experiment you want, by editing migrate_to_cold_storage
 	my server_edit_cassandra_yaml()
 	my client_edit_cassandra_yaml()
+	-------------------------------------
 	
 	-- This takes some time to make sure each server has different exp datetime
 	my run_server()
@@ -766,6 +782,4 @@ on run_all()
 	-- my server_switch_data_dir_to_ebs_mag()
 end run_all
 
-
-my open_window_tabs_ssh_screen()
-
+my screen_detach()

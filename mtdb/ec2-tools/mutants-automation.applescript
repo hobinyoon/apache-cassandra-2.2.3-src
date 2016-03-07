@@ -312,6 +312,21 @@ on server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_e
 end server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_ebs_mag
 
 
+on server_mount_local_ssd_cold_to_ebs_ssd()
+	tell application "Terminal"
+		set currentWindow to front window
+		set tab_id to 1
+		repeat until tab_id > (num_experiments * 2)
+			set cmd to "~/work/cassandra/mtdb/ec2-tools/server-mount-local-ssd-cold-to-ebs-ssd.sh"
+			do script (cmd) in tab tab_id of currentWindow
+			
+			-- Go to the next server tab
+			set tab_id to tab_id + 2
+		end repeat
+	end tell
+end server_mount_local_ssd_cold_to_ebs_ssd
+
+
 on server_format_xvdc_mount_2_local_ssds_cold_to_2nd_local_ssd()
 	tell application "Terminal"
 		set currentWindow to front window
@@ -325,66 +340,6 @@ on server_format_xvdc_mount_2_local_ssds_cold_to_2nd_local_ssd()
 		end repeat
 	end tell
 end server_format_xvdc_mount_2_local_ssds_cold_to_2nd_local_ssd
-
-
-on server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd()
-	tell application "Terminal"
-		set currentWindow to front window
-		set tab_id to 1
-		repeat until tab_id > (num_experiments * 2)
-			set cmd to "sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
-			set cmd to cmd & " && sudo umount /mnt"
-			set cmd to cmd & " && sudo mkdir -p /mnt/local-ssd"
-			set cmd to cmd & " && sudo mount /mnt/local-ssd"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/local-ssd"
-			set cmd to cmd & " && mkdir /mnt/local-ssd/cass-data"
-			set cmd to cmd & " && mkdir ~/cass-data-vol"
-			set cmd to cmd & " && sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2"
-			set cmd to cmd & " && mkdir /mnt/ebs-ssd-gp2/cass-data"
-			set cmd to cmd & " && sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold"
-			set cmd to cmd & " && sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-ssd-gp2"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold"
-			set cmd to cmd & " && mkdir -p ~/work/cassandra/mtdb/logs/collectl"
-			set cmd to cmd & " && ln -s /mnt/ebs-ssd-gp2/cass-data ~/work/cassandra/data"
-			do script (cmd) in tab tab_id of currentWindow
-			
-			-- Go to the next server tab
-			set tab_id to tab_id + 2
-		end repeat
-	end tell
-end server_mount_dev_prepare_dirs_cass_data_to_ebs_ssd
-
-
-on server_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_data_to_ebs_ssd()
-	tell application "Terminal"
-		set currentWindow to front window
-		set tab_id to 1
-		repeat until tab_id > (num_experiments * 2)
-			set cmd to "sudo cp ~/work/cassandra/mtdb/ec2-tools/etc-fstab /etc/fstab"
-			set cmd to cmd & " && sudo umount /mnt"
-			set cmd to cmd & " && sudo mkdir -p /mnt/local-ssd"
-			set cmd to cmd & " && sudo mount /mnt/local-ssd"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/local-ssd"
-			set cmd to cmd & " && mkdir /mnt/local-ssd/cass-data"
-			set cmd to cmd & " && mkdir ~/cass-data-vol"
-			set cmd to cmd & " && sudo ln -s ~/cass-data-vol /mnt/ebs-ssd-gp2"
-			set cmd to cmd & " && mkdir /mnt/ebs-ssd-gp2/cass-data"
-			set cmd to cmd & " && sudo mkdir -p /mnt/ebs-ssd-gp2/mtdb-cold"
-			set cmd to cmd & " && sudo ln -s /mnt/ebs-ssd-gp2 /mnt/cold-storage"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/ebs-ssd-gp2"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage"
-			set cmd to cmd & " && sudo chown -R ubuntu /mnt/cold-storage/mtdb-cold"
-			set cmd to cmd & " && mkdir -p ~/work/cassandra/mtdb/logs/collectl"
-			set cmd to cmd & " && ln -s /mnt/local-ssd/cass-data ~/work/cassandra/data"
-			do script (cmd) in tab tab_id of currentWindow
-			
-			-- Go to the next server tab
-			set tab_id to tab_id + 2
-		end repeat
-	end tell
-end server_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_data_to_ebs_ssd
 
 
 on server_edit_cassandra_yaml()
@@ -486,6 +441,8 @@ on server_pressure_memory()
 		tell application "System Events" to keystroke tab
 		tell application "System Events" to keystroke "a" using {control down}
 		tell application "System Events" to keystroke tab
+		-- Kill the foreground process just in case
+		tell application "System Events" to keystroke "c" using {control down}
 		-- Move to the next server tab
 		tell application "System Events" to key code 124 using {shift down, command down}
 		tell application "System Events" to key code 124 using {shift down, command down}
@@ -688,7 +645,7 @@ on server_switch_data_dir_to_local_ssd()
 		set tab_id to 1
 		repeat until tab_id > (num_experiments * 2)
 			set cmd to "cdcass"
-			set cmd to cmd & " && \\rm data"
+			set cmd to cmd & " && \\rm -rf data"
 			set cmd to cmd & " && ln -s /mnt/local-ssd/cass-data data"
 			do script (cmd) in tab tab_id of currentWindow
 			-- Go to the next server tab
@@ -721,6 +678,21 @@ on server_ctrl_c()
 end server_ctrl_c
 
 
+-- One-time use.
+on ctrl_c()
+	tell application "Terminal" to activate
+	
+	set tab_id to 0
+	repeat until tab_id is (num_experiments * 2)
+		set tab_id to tab_id + 1
+		tell application "System Events" to keystroke "c" using {control down}
+		-- Move to the next server tab
+		tell application "System Events" to key code 124 using {shift down, command down}
+		delay 0.1
+	end repeat
+end ctrl_c
+
+
 on run_all()
 	my open_window_tabs_ssh_screen()
 	
@@ -750,12 +722,14 @@ on run_all()
 	-- Run either of these, depending on what dev you have. TODO: let it follow a global configuration file, based on its hostname?
 	-- my server_format_xvdc_mount_2_local_ssds_cold_to_2nd_local_ssd()
 	my server_format_ebs_mag_mount_dev_prepare_dirs_cass_data_to_local_ssd_cold_to_ebs_mag()
+	my server_mount_local_ssd_cold_to_ebs_ssd()
 	
 	-- Switch data directory to ebs mag
 	-- my server_switch_data_dir_to_ebs_mag()
 	
-	-- Make sure which experiment you want, by editing migrate_to_cold_storage
+	-- Only when you want Mutants to migrate tablets
 	my server_edit_cassandra_yaml()
+	
 	my client_edit_cassandra_yaml()
 	-------------------------------------
 	
@@ -782,4 +756,10 @@ on run_all()
 	-- my server_switch_data_dir_to_ebs_mag()
 end run_all
 
-my screen_detach()
+	my save_screen_layout()
+	my screen_detach()
+
+
+
+
+

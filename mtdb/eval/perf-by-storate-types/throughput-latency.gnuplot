@@ -2,8 +2,6 @@
 
 set print "-"
 FN_INS = system("echo $FN_INS")
-LAST_X = system("echo $LAST_X")
-LAST_Y = system("echo $LAST_Y")
 EGNS = system("echo $EGNS")
 COL_METRIC = system("echo $COL_METRIC")
 FN_OUT = system("echo $FN_OUT")
@@ -36,7 +34,7 @@ set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,Y_TICS_INTERVAL
 
 colors="#0000FF brown #FF0000"
 
-label0(i) = label1(word(EGNS, i))
+label0(i) = label2(word(EGNS, i))
 label1(w) = \
 (w eq "ebs-mag" ? "EBS\nMagnetic" : \
 (w eq "ebs-ssd" ? "EBS\nSSD" : \
@@ -46,10 +44,25 @@ label1(w) = \
 (w eq "local-ssd-local-ssd" ? "Local SSD\n+ Local SSD" : \
 "unexpected" \
 ))))))
+label2(w) = \
+(w eq "ebs-mag" ? "EM" : \
+(w eq "ebs-ssd" ? "ES" : \
+(w eq "local-ssd" ? "LS" : \
+(w eq "local-ssd-ebs-mag" ? "LS+EM" : \
+(w eq "local-ssd-ebs-ssd" ? "LS+ES" : \
+(w eq "local-ssd-local-ssd" ? "LS+LS" : \
+"unexpected" \
+))))))
 
-# May have to unroll the loop when they get crammed
+# Legend
+x0=0.5
+x1=x0+1.0
+x2=x1+0.2
+label_y(i)=Y_MAX * (0.95 - 0.1 * (i - 1))
 do for [i=1:words(EGNS)] {
-set label label0(i) at (word(LAST_X, i) / 1000.0), word(LAST_Y, i)+0 center offset 0,1.2 tc rgb word(colors, i) font ",8"
+set arrow from x0, label_y(i) to x1, label_y(i) lc rgb word(colors, i) nohead
+set object circle at (x0+x1)/2, label_y(i) size screen 0.003 fc rgb word(colors, i) fs solid 1
+set label label0(i) at x2, label_y(i) tc rgb word(colors, i) font ",8"
 }
 
 set xrange [0:11]

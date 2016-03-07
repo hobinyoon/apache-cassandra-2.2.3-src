@@ -179,13 +179,13 @@ def _ThroughputVsLatency1(egns, label_y_prefix, y_metric, col_idx_lat, y_max = N
 	env["FN_OUT"] = fn_out
 	env["LABEL_Y"] = label_y_prefix + " latency (ms)"
 
-	last_x = []
-	last_y = []
-	for egn in egns:
-		last_x.append(ExpData.LastExpAttr(egn, "throughput"))
-		last_y.append(ExpData.LastExpAttr(egn, y_metric))
-	env["LAST_X"] = " ".join(str(i) for i in last_x)
-	env["LAST_Y"] = " ".join(str(i) for i in last_y)
+	#last_x = []
+	#last_y = []
+	#for egn in egns:
+	#	last_x.append(ExpData.LastExpAttr(egn, "throughput"))
+	#	last_y.append(ExpData.LastExpAttr(egn, y_metric))
+	#env["LAST_X"] = " ".join(str(i) for i in last_x)
+	#env["LAST_Y"] = " ".join(str(i) for i in last_y)
 
 	# Experiment group names
 	env["EGNS"] = " ".join(egns)

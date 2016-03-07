@@ -10,8 +10,11 @@ def Init():
 	_ParseYaml()
 
 
-def Get(key):
-	return _conf[key]
+def Get(key = None):
+	if key == None:
+		return _conf
+	else:
+		return _conf[key]
 
 
 def _ParseYaml():

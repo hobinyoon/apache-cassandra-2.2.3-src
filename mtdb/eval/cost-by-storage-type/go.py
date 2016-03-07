@@ -10,7 +10,6 @@ import Plot
 def main(argv):
 	Conf.Init()
 	ExpData.Load()
-	sys.exit(0)
 	Plot.Plot()
 
 

@@ -1,12 +1,19 @@
-cold-ebs-mag:
-  EM:    160302-193556
-  LS-EM: 160307-011354
-  LS:    160302-151243
+LS-EM:
+  # Wanted to keep the order. yaml doesn't keep orders.
+  0:
+    EM:    160302-193556
+  1:
+    LS-EM: 160307-011354
+  2:
+    LS:    160302-151243
 
-cold-ebs-ssd:
-  ES:    160302-212237
-  LS-ES: 160302-230451
-  LS:    160302-151243
+LS-ES:
+  0:
+    ES:    160302-212237
+  1:
+    LS-ES: 160302-230451
+  2:
+    LS:    160302-151243
 
 # data path:
 #   ~/work/cassandra/mtdb/process-log/calc-cost-latency-plot-tablet-timeline/plot-data/160302-151243-storage-size-by-time

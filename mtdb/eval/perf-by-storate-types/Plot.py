@@ -193,8 +193,7 @@ def _ThroughputVsLatency1(egns, label_y_prefix, y_metric, col_idx_lat, y_max = N
 	env["COL_METRIC"] = str(col_idx_lat)
 
 	if y_max == None:
-		top_margin = 1.18
-		y_max = ExpData.MaxExpAttr(y_metric, egns) * top_margin
+		y_max = ExpData.MaxExpAttr(y_metric, egns)
 
 	env["Y_MAX"] = str(y_max)
 	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))

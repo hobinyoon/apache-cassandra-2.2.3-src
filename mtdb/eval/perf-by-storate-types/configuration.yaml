@@ -1,6 +1,7 @@
 exp_result:
   local-ssd:
-    fn: local-ssd-160302-151235
+    fn: local-ssd-160307-024338-160302-151235
+    #fn: local-ssd-160302-151235
     short-name: LS
   ebs-ssd:
     fn: ebs-ssd-160302-212229

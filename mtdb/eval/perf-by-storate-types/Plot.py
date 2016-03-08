@@ -197,7 +197,8 @@ def _ThroughputVsLatency1(egns, label_y_prefix, y_metric, col_idx_lat, y_max = N
 	fn_out = "plot-data/%s--throughput-vs-%s.pdf" % (_WhatToCompareShortName(egns), y_metric)
 
 	env["FN_OUT"] = fn_out
-	env["LABEL_Y"] = label_y_prefix + " latency (ms)"
+	#env["LABEL_Y"] = label_y_prefix + " latency (ms)"
+	env["LABEL_Y"] = label_y_prefix + " (ms)"
 
 	#last_x = []
 	#last_y = []

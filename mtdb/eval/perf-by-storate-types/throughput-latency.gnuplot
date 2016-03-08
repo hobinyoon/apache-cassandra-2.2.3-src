@@ -17,13 +17,13 @@ c_sat  = 12                # Saturated (overloaded)
 #set terminal unknown
 #X_MIN=GPVAL_DATA_X_MIN
 
-set terminal pdfcairo enhanced size 2in, 1.5in
+set terminal pdfcairo enhanced size 2in, 1.8in
 set output FN_OUT
 
-#set tmargin at screen 0.985
-set bmargin at screen 0.240
-#set lmargin at screen 0.2190
-set rmargin at screen 0.990
+set tmargin at screen 0.995
+set bmargin at screen 0.202
+set lmargin at screen 0.165
+set rmargin at screen 1.0
 
 set xlabel "Throughput (K OP/sec)" offset 0,0.3
 set ylabel LABEL_Y offset 1.9,-0.5

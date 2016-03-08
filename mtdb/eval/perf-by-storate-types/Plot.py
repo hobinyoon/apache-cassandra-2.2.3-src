@@ -43,7 +43,7 @@ def _ES_LS_LSES0_metric(y_metric, col_idx):
 	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
 	what_to_compare = "-vs-".join(egns)
 
-	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
+	fn_out = "plot-data/%s--num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
 
@@ -71,7 +71,7 @@ def _ES_LS_LSES0_cpu():
 	what_to_compare = "-vs-".join(egns)
 
 	y_metric = "cpu"
-	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
+	fn_out = "plot-data/%s--num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
 
@@ -99,7 +99,7 @@ def _ES_LS_LSES0_network():
 	what_to_compare = "-vs-".join(egns)
 
 	y_metric = "network"
-	fn_out = "plot-data/%s.num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
+	fn_out = "plot-data/%s--num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
 
@@ -137,7 +137,7 @@ def _ES_LS_LSES0_disk0(y_metric, y_metric0, y_metric1, col_idx0, col_idx1, y_max
 	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
 	what_to_compare = "-vs-".join(egns)
 
-	fn_out = "plot-data/%s.num-reqs-vs-disk-%s.pdf" % (what_to_compare, y_metric)
+	fn_out = "plot-data/%s--num-reqs-vs-disk-%s.pdf" % (what_to_compare, y_metric)
 
 	env = os.environ.copy()
 
@@ -193,7 +193,8 @@ def _ThroughputVsLatency1(egns, label_y_prefix, y_metric, col_idx_lat, y_max = N
 		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
 	env["FN_INS"] = " ".join(fn_ins)
 
-	fn_out = "plot-data/%s.throughput-vs-%s.pdf" % (_WhatToCompareShortName(egns), y_metric)
+	# latex doesn't work with dot other than before the file extension
+	fn_out = "plot-data/%s--throughput-vs-%s.pdf" % (_WhatToCompareShortName(egns), y_metric)
 
 	env["FN_OUT"] = fn_out
 	env["LABEL_Y"] = label_y_prefix + " latency (ms)"

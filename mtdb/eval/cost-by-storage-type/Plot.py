@@ -18,7 +18,7 @@ def Plot():
 
 def _Cost(expg):
 	fn_in = "plot-data/cost.%s" % expg
-	fn_out = fn_in + ".pdf"
+	fn_out = fn_in.replace(".", "--") + ".pdf"
 
 	env = os.environ.copy()
 	env["FN_IN"] = fn_in

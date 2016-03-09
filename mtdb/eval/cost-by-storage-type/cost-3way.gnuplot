@@ -7,13 +7,19 @@ cost_mutants = system("echo $cost_mutants") + 0
 Y_MAX = system("echo $Y_MAX")
 Y_TICS_INTERVAL = system("echo $Y_TICS_INTERVAL")
 
-set terminal pdfcairo enhanced size 2in, 1.5in
-set output FN_OUT
+#set terminal pdfcairo enhanced size 2in, 1.5in
+##set lmargin at screen 0.2
+#set rmargin at screen 1.0
+#set tmargin at screen 0.98
+#set bmargin at screen 0.13
 
-#set lmargin at screen 0.2
+set terminal pdfcairo enhanced size 1.5in, (1.5*0.9)in
+set tmargin at screen 1.0
+set bmargin at screen 0.14
+set lmargin at screen 0.26
 set rmargin at screen 1.0
-set tmargin at screen 0.98
-set bmargin at screen 0.13
+
+set output FN_OUT
 
 set ylabel "Storage cost (K$)" offset 1.2,0
 

@@ -23,14 +23,14 @@ c_sat     = 12        # Saturated (overloaded)
 #set terminal unknown
 #X_MIN=GPVAL_DATA_X_MIN
 
-terminal_size_x=4.5
+terminal_size_x=4.5 * 0.85
 terminal_size_y=0.35 * terminal_size_x
 set terminal pdfcairo enhanced size (terminal_size_x)in, (terminal_size_y)in
 set output FN_OUT
 
 set multiplot layout 1,3 offset 0,-0.1
 
-set bmargin at screen 0.240
+set bmargin at screen 0.280
 set lmargin 5.8
 set rmargin 1.4
 
@@ -41,7 +41,7 @@ ylabel_offset_x=1.6
 set ylabel label(1) offset ylabel_offset_x,0
 
 set border (1 + 2) back lc rgb "#808080"
-set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,2
+set xtics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,4
 set ytics nomirror scale 0.5,0 tc rgb "#808080" autofreq 0,Y_TICS_INTERVAL
 
 colors="#0000FF #FF0000 brown"
@@ -50,12 +50,12 @@ set xrange [0:12]
 set yrange [0:Y_MAX]
 
 # Legend
-y1=Y_MAX*1.15
+y1=Y_MAX*1.21
 y1p=Y_MAX*0.01
 y2=y1+12*y1p
 
 x0=24
-x2=11
+x2=12
 legend_label_x(i) = \
 (i==1 ? x0-x2 : \
 (i==2 ? x0 : \
@@ -73,6 +73,7 @@ legend_label2(w) = \
 (w eq "LSEM" ? "LS + EM" : \
 "unexpected" \
 )))))
+
 legend_label1(i) = legend_label2(word(LEGEND_LABELS, i))
 
 do for [i=1:3] {

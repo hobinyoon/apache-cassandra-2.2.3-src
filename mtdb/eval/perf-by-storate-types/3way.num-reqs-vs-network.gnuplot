@@ -23,7 +23,8 @@ c_sat     = 12        # Saturated (overloaded)
 #set terminal unknown
 #X_MIN=GPVAL_DATA_X_MIN
 
-terminal_size_x=3.5 * 0.85
+# TODO: terminal size is not the same across cpu, network, and disk, if it matters.
+terminal_size_x=3.5 * 0.95
 terminal_size_y=0.45 * terminal_size_x
 set terminal pdfcairo enhanced size (terminal_size_x)in, (terminal_size_y)in
 set output FN_OUT

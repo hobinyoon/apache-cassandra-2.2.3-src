@@ -43,7 +43,7 @@ set linetype 3 lc rgb "red"
 set arrow from -0.5,0 to 2.5, 0 nohead front lc rgb "#808080"
 
 # Other cost line
-set arrow from -0.5,COST_OTHER to 2.5,COST_OTHER nohead front lt 0
+set arrow from -0.5,COST_OTHER to 2.5,COST_OTHER nohead front lt 0 lw 4
 
 COST_LOCAL_SSD=844.1333333
 

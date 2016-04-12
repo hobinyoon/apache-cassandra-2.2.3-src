@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# changed to go.py from plot.py to avoid the file name conflict with Plot.py in
+# the MacOS file system
+
 import sys
 
 import Conf

@@ -1,4 +1,4 @@
-exp_result:
+exp-result:
   local-ssd:
     fn: local-ssd-160307-024338-160302-151235
     #fn: local-ssd-160302-151235

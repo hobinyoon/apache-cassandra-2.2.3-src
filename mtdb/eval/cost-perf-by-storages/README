@@ -1,0 +1,5 @@
+exp-results/
+  It has the experiment groups, specified in configuration.yaml
+
+plot-data/
+  It has processed data files. They can be rebuilt, although it takes quite a long time like 30 mins on mt-s7.

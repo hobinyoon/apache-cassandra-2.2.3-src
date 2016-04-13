@@ -6,6 +6,7 @@ sys.path.insert(0, "../../util/python")
 import Cons
 import Util
 
+import CassLogReader
 import CollectlLogReader
 import Conf
 import LoadgenLogReader
@@ -16,7 +17,7 @@ _exp_groups = {}
 def Load():
 	with Cons.MeasureTime("Loading exp data ..."):
 		global _exp_groups
-		for egn, v in Conf.Get("exp_result").iteritems():
+		for egn, v in Conf.Get("exp-result").iteritems():
 			fn_exp_group_result = "plot-data/%s" % v["fn"]
 			if not os.path.isfile(fn_exp_group_result):
 				_GenExpGroupReport(egn)
@@ -55,7 +56,7 @@ def MaxExpAttr(attr_name, egns = None):
 
 class _GenExpGroupReport():
 	def __init__(self, exp_group_name):
-		self.fn_exp_list = "exp-results/%s" % Conf.Get("exp_result")[exp_group_name]["fn"]
+		self.fn_exp_list = "exp-results/%s" % Conf.Get("exp-result")[exp_group_name]["fn"]
 		self.exp_group_name = exp_group_name
 		self.exps = []
 		with Cons.MeasureTime("Generating exp group report for %s ..." % self.exp_group_name):
@@ -75,7 +76,7 @@ class _GenExpGroupReport():
 		#Cons.P(self)
 
 	def _GenReport(self):
-		fn_exp_group_result = "plot-data/%s" % Conf.Get("exp_result")[self.exp_group_name]["fn"]
+		fn_exp_group_result = "plot-data/%s" % Conf.Get("exp-result")[self.exp_group_name]["fn"]
 		fn = fn_exp_group_result
 		with open(fn, "w") as fo:
 			fo.write("# storage_type: %s\n" % self.exp_group_name)
@@ -101,7 +102,11 @@ class _GenExpGroupReport():
 					" %8.2f %6.2f" \
 					" %5.2f %5.2f %6.2f %5.2f %5.2f" \
 					\
-					" %5.0f %5.0f"
+					" %5.0f %5.0f" \
+					\
+					" %11.0f %11.0f" \
+					" %10.6f %10.6f"
+
 			fo.write("%s\n" % Util.BuildHeader(fmt,
 				"loadgen_datetime"
 				" exe_time_ms num_writes num_reads"
@@ -125,6 +130,9 @@ class _GenExpGroupReport():
 				" disk.xvdd.rw_size disk.xvdd.q_len disk.xvdd.wait disk.xvdd.svc_time disk.xvdd.util"
 
 				" net.kb_in net.kb_out"
+
+				" hot_stg_usage cold_stg_usage"
+				" hot_stg_cost cold_stg_cost"
 				))
 
 			for i in range(len(self.exps)):
@@ -168,6 +176,9 @@ class _GenExpGroupReport():
 					, e.collectl.GetAttrAvg("disk_xvdd_rw_size"), e.collectl.GetAttrAvg("disk_xvdd_q_len"), e.collectl.GetAttrAvg("disk_xvdd_wait"), e.collectl.GetAttrAvg("disk_xvdd_svc_time"), e.collectl.GetAttrAvg("disk_xvdd_util")
 
 					, e.collectl.GetAttrAvg("net_kb_in"), e.collectl.GetAttrAvg("net_kb_out")
+
+					, e.cass_log.hot_stg_usage, e.cass_log.cold_stg_usage
+					, e.cass_log.hot_stg_cost , e.cass_log.cold_stg_cost
 					)))
 		Cons.P("Created file %s %d" % (fn, os.path.getsize(fn)))
 
@@ -187,18 +198,20 @@ class _GenExpGroupReport():
 			self.log_dt_loadgen = t[2]
 			self.log_dt_num_cass_threads = t[3]
 			self.log_dt_collectl = t[4]
-			self.hot_data_size = t[5]
-			self.cold_data_size = t[6]
+
+			# Note: these 2 are not very reliable. When an experiment finishes, it
+			# could be in the middle of a compaction or there are still some pending
+			# compactions left. Instead, use self.hot_stg_usage and
+			# self.cold_stg_usage that are calculated from parsing Cassandra log
+			# below
+			#self.hot_data_size = t[5]
+			#self.cold_data_size = t[6]
+
 			self.saturated = int(t[7])
 			self.loadgen_log = LoadgenLogReader.Read(self.log_dt_loadgen)
 			self.num_cass_threads = NumCassThreadsReader.Read(self.log_dt_num_cass_threads)
 			self.collectl = CollectlLogReader.Read(self.log_dt_collectl, self.loadgen_log)
-
-			# TODO: Cassndra log. What do you get from it?
-			# - Hot and cold storage size, which you use to calculate cost. This is
-			#   worth plotting.
-			# - When tablets migrate.
-			# - Number of requests to each tablet.
+			self.cass_log = CassLogReader.Read(self.log_dt_loadgen)
 
 		def __str__(self):
 			return " ".join("%s=%s" % item for item in vars(self).items())
@@ -215,7 +228,7 @@ class _LoadExpGroupReport():
 				if line[0] == "#":
 					continue
 				t = line.split()
-				if len(t) != 46:
+				if len(t) != 50:
 					raise RuntimeError("Unexpected format [%s]" % line)
 				self.items.append(_LoadExpGroupReport._Item(t))
 
@@ -267,3 +280,7 @@ class _LoadExpGroupReport():
 			self.disk_xvdd_util       = float(tokens[43])
 			self.net_kb_in            = float(tokens[44])
 			self.net_kb_out           = float(tokens[45])
+			self.hot_stg_usage        = float(tokens[46])
+			self.cold_stg_usage       = float(tokens[47])
+			self.hot_stg_cost         = float(tokens[48])
+			self.cold_stg_cost        = float(tokens[49])

@@ -49,7 +49,7 @@ def _ES_LS_LSES0_metric(y_metric, col_idx):
 
 	fn_ins = []
 	for egn in egns:
-		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+		fn_ins.append("plot-data/%s" % Conf.Get("exp-result")[egn]["fn"])
 	env["FN_INS"] = " ".join(fn_ins)
 
 	env["LEGEND_LABELS"] = "ES LS LSES"
@@ -77,7 +77,7 @@ def _ES_LS_LSES0_cpu():
 
 	fn_ins = []
 	for egn in egns:
-		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+		fn_ins.append("plot-data/%s" % Conf.Get("exp-result")[egn]["fn"])
 	env["FN_INS"] = " ".join(fn_ins)
 
 	env["LEGEND_LABELS"] = "ES LS LSES"
@@ -105,7 +105,7 @@ def _ES_LS_LSES0_network():
 
 	fn_ins = []
 	for egn in egns:
-		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+		fn_ins.append("plot-data/%s" % Conf.Get("exp-result")[egn]["fn"])
 	env["FN_INS"] = " ".join(fn_ins)
 
 	env["LEGEND_LABELS"] = "ES LS LSES"
@@ -143,7 +143,7 @@ def _ES_LS_LSES0_disk0(y_metric, y_metric0, y_metric1, col_idx0, col_idx1, y_max
 
 	fn_ins = []
 	for egn in egns:
-		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+		fn_ins.append("plot-data/%s" % Conf.Get("exp-result")[egn]["fn"])
 	env["FN_INS"] = " ".join(fn_ins)
 
 	env["TITLE"] = "disk " + y_metric.replace("_", "\\_")
@@ -174,7 +174,7 @@ def _ThroughputVsLatency():
 def _WhatToCompareShortName(egns):
 	short_names = []
 	for egn in egns:
-		short_names.append(Conf.Get("exp_result")[egn]["short-name"])
+		short_names.append(Conf.Get("exp-result")[egn]["short-name"])
 	return "-".join(short_names)
 
 
@@ -190,7 +190,7 @@ def _ThroughputVsLatency1(egns, label_y_prefix, y_metric, col_idx_lat, y_max = N
 
 	fn_ins = []
 	for egn in egns:
-		fn_ins.append("plot-data/%s" % Conf.Get("exp_result")[egn]["fn"])
+		fn_ins.append("plot-data/%s" % Conf.Get("exp-result")[egn]["fn"])
 	env["FN_INS"] = " ".join(fn_ins)
 
 	# latex doesn't work with dot other than before the file extension

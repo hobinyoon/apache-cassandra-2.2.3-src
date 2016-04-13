@@ -13,7 +13,7 @@ import ExpData
 def Plot():
 	_ThroughputVsLatency()
 
-	# Request rates vs all metrics
+	# Request rates vs all metrics. Cold-only vs. hot-only vs. Mutants.
 	_ES_LS_LSES()
 
 
@@ -37,6 +37,10 @@ def _ES_LS_LSES():
 	_ES_LS_LSES0_disk("wait"    , 6)
 	_ES_LS_LSES0_disk("svc_time", 7)
 	_ES_LS_LSES0_disk("util"    , 8, 100)
+
+	_ES_LS_LSES0_storage_cost()
+	# TODO: storage size. Not sure if this gives you much insight
+	#_ES_LS_LSES0_storage_size()
 
 
 def _ES_LS_LSES0_metric(y_metric, col_idx):
@@ -160,6 +164,33 @@ def _ES_LS_LSES0_disk0(y_metric, y_metric0, y_metric1, col_idx0, col_idx1, y_max
 	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
 
 	_RunSubp("gnuplot %s/3way.num-reqs-vs-disk.gnuplot" % os.path.dirname(__file__), env)
+	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
+
+
+def _ES_LS_LSES0_storage_cost():
+	col_idx = [49, 50]
+	egns = ["ebs-ssd", "local-ssd", "local-ssd-ebs-ssd"]
+	what_to_compare = "-vs-".join(egns)
+
+	y_metric = "storage-cost"
+	fn_out = "plot-data/%s--num-reqs-vs-%s.pdf" % (what_to_compare, y_metric)
+
+	env = os.environ.copy()
+
+	fn_ins = []
+	for egn in egns:
+		fn_ins.append("plot-data/%s" % Conf.Get("exp-result")[egn]["fn"])
+	env["FN_INS"] = " ".join(fn_ins)
+
+	env["LEGEND_LABELS"] = "ES LS LSES"
+	env["FN_OUT"] = fn_out
+	env["COL_IDX"] = " ".join(str(i) for i in col_idx)
+
+	y_max = ExpData.MaxExpAttr("hot_stg_cost") + ExpData.MaxExpAttr("cold_stg_cost")
+	env["Y_MAX"] = str(y_max)
+	env["Y_TICS_INTERVAL"] = str(_TicsInterval(y_max))
+
+	_RunSubp("gnuplot %s/3way.num-reqs-vs-storage-cost.gnuplot" % os.path.dirname(__file__), env)
 	Cons.P("Created %s %d" % (fn_out, os.path.getsize(fn_out)))
 
 

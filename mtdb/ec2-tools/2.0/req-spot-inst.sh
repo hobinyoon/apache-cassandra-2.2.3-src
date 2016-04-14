@@ -9,7 +9,8 @@ ec2-request-spot-instances \
 	--group cass-server \
 	--ebs-optimized \
 	--type one-time \
-	--instance-type c3.2xlarge
+	--instance-type c3.2xlarge \
+	--user-data-file userdata-helloworld
 
 # --price PRICE
 # Specifies the maximum hourly price for any spot instance launched to

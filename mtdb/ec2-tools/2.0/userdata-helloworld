@@ -4,11 +4,10 @@ runcmd:
  - [ ls, -l, / ]
  - [ sh, -xc, 'echo $(date) ": hello world!"' ]
  - [ sh, -c, 'echo "=========hello world========="' ]
- - [ touch, /home/ec2-user/hello.txt ]
+ - [ touch, /home/ubuntu/hello.txt ]
 
 final_message: "The system is finally up"
 
 output : { all : '| tee -a /var/log/cloud-init-output.log' }
 
-# I hope this is how you comment.
-# http://stackoverflow.com/questions/23819836/using-cloud-init-user-data
+# Ref: http://stackoverflow.com/questions/23819836/using-cloud-init-user-data

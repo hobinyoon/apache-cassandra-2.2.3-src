@@ -1,0 +1,5 @@
+Check the output:
+  ssh -A ubuntu@54.226.242.105 'cat /var/log/cloud-init-output.log' | less
+	TODO: can be integrated with the script.
+	TODO: upload result to S3.
+	TODO: automate shutdown.

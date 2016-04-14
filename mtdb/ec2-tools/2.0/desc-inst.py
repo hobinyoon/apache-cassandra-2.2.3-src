@@ -33,17 +33,30 @@ class Ec2Inst:
 		if (len(t) == 18) and (t[3] == "terminated"):
 			return
 
+		# INSTANCE	i-316bbfb6	ami-1fc7d575
+		# ec2-54-235-41-118.compute-1.amazonaws.com	ip-10-123-194-30.ec2.internal
+		# running		0		c3.2xlarge	2016-04-14T22:33:30+0000	us-east-1d
+		# monitoring-disabled	54.235.41.118	10.123.194.30			ebs				hvm	xen
+		# f1da0b22-e40a-482f-8c04-1c3b8f3ebf8d	sg-67d1330a	default	true
+		if (len(t) == 20) and (t[5] == "running"):
+			self.type = t[7]
+			self.ip_addr = t[11]
+			self.running = True
+			return
+
 		# INSTANCE	i-3d1aceba	ami-1fc7d575
 		# ec2-54-160-170-177.compute-1.amazonaws.com
 		# ip-10-13-198-12.ec2.internal	running		0	c3.2xlarge
 		# 2016-04-14T20:43:02+0000	us-east-1d				monitoring-disabled
 		# 54.160.170.177	10.13.198.12		ebs	spot	sir-029kf0mc		hvm	xen
 		# 4149c7ae-0738-4c39-90c0-da33c69968be	sg-d0b9cab9	default	true
-		if len(t) != 22:
-			raise RuntimeError("Unexpected format: [%s]" % line)
-		self.type = t[7]
-		self.ip_addr = t[11]
-		self.running = True
+		if (len(t) == 22) and (t[5] == "running"):
+			self.type = t[7]
+			self.ip_addr = t[11]
+			self.running = True
+			return
+
+		raise RuntimeError("Unexpected format: [%s]" % line)
 
 
 def _GetEc2InstInfo():

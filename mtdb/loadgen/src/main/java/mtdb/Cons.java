@@ -1,7 +1,7 @@
 package mtdb;
 
 // Console output utility
-// - Not thread-safe. Doesn't guarantee ordering. It is by design
+// - Doesn't serialize. It is by design
 
 public class Cons
 {

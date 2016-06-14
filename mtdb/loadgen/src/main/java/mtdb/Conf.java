@@ -214,12 +214,14 @@ public class Conf
 		mutantsLoadgenOptions.global.fn_test_obj_ages = (String) options.valueOf("test_obj_ages");
 		mutantsLoadgenOptions.global.fn_dump_wrs = (String) options.valueOf("dump_wr");
 
-		String server_addr = System.getenv("CASSANDRA_SERVER_ADDR");
-		if (server_addr == null)
-			throw new RuntimeException("CASSANDRA_SERVER_ADDR is not set");
-		mutantsLoadgenOptions.global.server_addr = server_addr;
-
 		mutantsLoadgenOptions.db.requests = (boolean) options.valueOf("db");
+		if (mutantsLoadgenOptions.db.requests) {
+			String server_addr = System.getenv("CASSANDRA_SERVER_ADDR");
+			if (server_addr == null)
+				throw new RuntimeException("CASSANDRA_SERVER_ADDR is not set");
+			mutantsLoadgenOptions.global.server_addr = server_addr;
+		}
+
 		mutantsLoadgenOptions.db.num_threads = (int) options.valueOf("db_threads");
 		mutantsLoadgenOptions.per_obj.obj_size = (int) options.valueOf("obj_size");
 	}

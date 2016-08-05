@@ -926,8 +926,11 @@ mutants_loadgen_options:
         # Distribution of the number of reads per object
         # - Uniform: Uniform between min and max
         # - Custom: Use a file that has the number of reads per object distribution
-        #           in CDF. E.g., Huang ’14, Figure 5. number of requests per each
-        #           object
+        #           in CDF. The data is digitized from Figure 3 (d) of Huang.
+        #           An analysis of Facebook photo caching. SOSP’13.
+        #           For requests to caches, Figure 5 of Huang. Characterizing
+        #           Load Imbalance in Real-World Networked Caches. HotNets'14.
+        #           can be used.
         num_reads_dist: "Custom: facebook-num-reqs-by-rank"
 
         # Read time distribution

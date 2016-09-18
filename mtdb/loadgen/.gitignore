@@ -1,3 +1,5 @@
-.dep-class-path
-target/
+/.dep-class-path
+/target
 !data/
+/num-reads-per-obj
+/obj-ages

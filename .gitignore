@@ -1,11 +1,12 @@
-build/
-data/*
-logs/
-src/gen-java/
-src/resources/org/apache/cassandra/config/version.properties
-pylib/cqlshlib/*.pyc
+/build
+/data
+/logs
+/mtdb/logs
+/src/gen-java
+/src/resources/org/apache/cassandra/config/version.properties
+/pylib/cqlshlib/*.pyc
 
-cass-stress-trace.log
-cassandra.logdir_IS_UNDEFINED/
+/cass-stress-trace.log
+/tools/bin/cassandra.logdir_IS_UNDEFINED
 
-hs_err_pid*.log
+/hs_err_pid*.log

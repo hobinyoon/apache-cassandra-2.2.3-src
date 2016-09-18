@@ -21,6 +21,10 @@ import org.slf4j.LoggerFactory;
 
 public class MemSsTableAccessMon
 {
+    // We monitor MemTable accesses just to see what's going on internally. Not
+    // needed for the functionality.
+    // 
+    // SSTable accesses are used for tablet migration decisions.
     private static Map<Memtable, _MemTableAccCnt> _memTableAccCnt = new ConcurrentHashMap();
     private static Map<Descriptor, _SSTableAccCnt> _ssTableAccCnt = new ConcurrentHashMap();
 
@@ -114,8 +118,8 @@ public class MemSsTableAccessMon
         // There is a race condition here, but harmless.  It happens only when
         // m is not in the map yet, which is very rare.
         //
-        // I wonder if you can get the min and max timestamp of records in the
-        // memtable? I don't see it from Memtable.
+        // I wonder if you can get the min and max timestamps of records in the
+        // memtable? I don't see them from Memtable.
         _MemTableAccCnt v = _memTableAccCnt.get(m);
         if (v != null) {
             v.Increment(cf != null);
